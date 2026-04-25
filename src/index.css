@@ -1,0 +1,114 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: 'Plus Jakarta Sans', 'DM Sans', sans-serif;
+  background-color: #FAFAF8;
+  color: #1C0A00;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F2EDE8;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb {
+  background: #D4821A;
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #8B4513;
+}
+
+@layer components {
+  .clay-card {
+    @apply bg-white rounded-clay shadow-clay border border-clay-border transition-all duration-200 ease-out;
+  }
+  .clay-card-hover {
+    @apply clay-card hover:shadow-clay-hover hover:-translate-y-0.5;
+  }
+  .clay-input {
+    @apply bg-clay-border-light border border-clay-border rounded-clay-sm px-4 py-2.5 text-sm text-text-primary placeholder:text-text-tertiary outline-none transition-all duration-150 focus:border-mustard focus:ring-2 focus:ring-mustard/20;
+  }
+  .btn-primary {
+    @apply bg-btn-primary text-white font-semibold rounded-pill px-6 py-2.5 text-sm shadow-clay-sm transition-all duration-150 active:scale-95 hover:shadow-clay hover:brightness-110;
+  }
+  .btn-secondary {
+    @apply bg-transparent text-burnt-brown border-2 border-burnt-brown font-semibold rounded-pill px-6 py-2.5 text-sm transition-all duration-150 active:scale-95 hover:bg-burnt-brown-pale;
+  }
+  .btn-mustard {
+    @apply bg-btn-mustard text-white font-semibold rounded-pill px-6 py-2.5 text-sm shadow-clay-sm transition-all duration-150 active:scale-95 hover:shadow-clay hover:brightness-110;
+  }
+  .btn-success {
+    @apply bg-status-success text-white font-semibold rounded-pill px-5 py-2 text-sm transition-all duration-150 active:scale-95 hover:opacity-90;
+  }
+  .btn-danger {
+    @apply bg-status-error text-white font-semibold rounded-pill px-5 py-2 text-sm transition-all duration-150 active:scale-95 hover:opacity-90;
+  }
+  .btn-sm {
+    @apply px-4 py-1.5 text-xs;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-pill px-3 py-1 text-xs font-semibold tracking-wide;
+  }
+  .badge-success  { @apply bg-status-success/10 text-status-success; }
+  .badge-warning  { @apply bg-mustard/10 text-mustard; }
+  .badge-error    { @apply bg-status-error/10 text-status-error; }
+  .badge-info     { @apply bg-status-info/10 text-status-info; }
+  .badge-default  { @apply bg-clay-border text-text-secondary; }
+  .badge-brown    { @apply bg-burnt-brown text-white; }
+  .badge-mustard  { @apply bg-mustard text-white; }
+  .clay-table th {
+    @apply text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-4 py-3 bg-off-white border-b border-clay-border;
+  }
+  .clay-table td {
+    @apply px-4 py-3.5 text-sm text-text-primary border-b border-clay-border-light;
+  }
+  .clay-table tr:hover td {
+    @apply bg-mustard-pale;
+  }
+  .clay-table tr:last-child td {
+    @apply border-b-0;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, #F2EDE8 25%, #FAFAF8 50%, #F2EDE8 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+.nav-active {
+  position: relative;
+}
+.nav-active::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  background: #F5A623;
+  border-radius: 99px;
+}
+
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  border-radius: 12px !important;
+  border: 1px solid #E7DCD4 !important;
+  box-shadow: 0 8px 32px rgba(139,69,19,0.12) !important;
+}
