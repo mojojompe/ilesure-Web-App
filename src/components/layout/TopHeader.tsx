@@ -1,4 +1,4 @@
-import { Menu, Search, Bell, ChevronDown } from 'lucide-react';
+import { Menu, Search, Bell, ChevronDown, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 import { clsx } from 'clsx';
 
@@ -6,9 +6,10 @@ interface TopHeaderProps {
   onMenuClick: () => void;
   title: string;
   subtitle?: string;
+  onReload?: () => void;
 }
 
-export function TopHeader({ onMenuClick, title, subtitle }: TopHeaderProps) {
+export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
   const notifications = [
     { id: 1, message: 'New booking for Modern Student Hostel', time: '2 min ago' },
@@ -31,6 +32,16 @@ export function TopHeader({ onMenuClick, title, subtitle }: TopHeaderProps) {
             {subtitle && <p className="text-xs text-text-tertiary">{subtitle}</p>}
           </div>
         </div>
+
+        {onReload && (
+          <button
+            onClick={onReload}
+            className="p-2 rounded-full hover:bg-clay-border-light transition-colors"
+            title="Reload"
+          >
+            <RefreshCw className="w-4 h-4 text-text-secondary" />
+          </button>
+        )}
 
         <div className="hidden md:flex items-center gap-2 flex-1 max-w-md mx-8">
           <div className="relative flex-1">

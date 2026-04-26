@@ -1,42 +1,74 @@
-import { Building2, Users, Calendar, DollarSign, TrendingUp, Eye, Heart, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, Calendar, DollarSign, Eye, Heart, MessageCircle, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { mockAgentDashboard, mockListings, mockBookings } from '../../data/mockData';
+import { agentApi } from '../../api/agent';
+
+const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
 export function AgentDashboardPage() {
-  const overview = mockAgentDashboard;
-  const listings = mockListings.slice(0, 3);
-  const bookings = mockBookings.slice(0, 3);
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<any>(null);
+  const [listings, setListings] = useState<any[]>([]);
+  const [bookings, setBookings] = useState<any[]>([]);
 
-  const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    try {
+      const response = await agentApi.getDashboard();
+      if (response.success && response.data) {
+        setOverview(response.data.overview);
+        setListings(response.data.recentListings || []);
+        setBookings(response.data.recentBookings || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout role="agent" title="Dashboard" subtitle="Welcome back, James">
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
-    <AppLayout role="agent" title="Dashboard" subtitle="Welcome back, James">
+    <AppLayout role="agent" title="Dashboard" subtitle="Welcome back" onReload={fetchDashboard}>
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <KpiCard
           title="Total Listings"
-          value={overview.totalListings}
+          value={overview?.totalListings || 0}
           icon={Building2}
           variant={1}
         />
         <KpiCard
           title="Active Listings"
-          value={overview.activeListings}
+          value={overview?.activeListings || 0}
           icon={Building2}
           variant={2}
         />
         <KpiCard
           title="Total Bookings"
-          value={overview.totalBookings}
+          value={overview?.totalBookings || 0}
           icon={Calendar}
           variant={2}
         />
         <KpiCard
           title="Monthly Revenue"
-          value={formatCurrency(overview.monthlyRevenue)}
-          change="+12%"
+          value={formatCurrency(overview?.monthlyRevenue || 0)}
+          change={overview?.trends?.revenue ? `${overview.trends.revenue}%` : undefined}
           icon={DollarSign}
           variant={1}
         />
@@ -51,28 +83,34 @@ export function AgentDashboardPage() {
             </a>
           </div>
           <div className="space-y-3 overflow-x-auto">
-            {listings.map(listing => (
-              <div key={listing.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
-                <div className="w-12 h-12 rounded-clay-sm bg-burnt-brown-pale overflow-hidden flex-shrink-0">
-                  <img
-                    src={listing.images[0]}
-                    alt={listing.title}
-                    className="w-full h-full object-cover"
-                  />
+            {listings.length > 0 ? (
+              listings.map((listing: any) => (
+                <div key={listing.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
+                  <div className="w-12 h-12 rounded-clay-sm bg-burnt-brown-pale overflow-hidden flex-shrink-0">
+                    {listing.images?.[0] && (
+                      <img
+                        src={listing.images[0]}
+                        alt={listing.title}
+                        className="w-full h-full object-cover"
+                      />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">
+                      {listing.title}
+                    </p>
+                    <p className="text-xs text-text-tertiary">
+                      {listing.location?.city || listing.city}
+                    </p>
+                  </div>
+                  <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
+                    {listing.status}
+                  </StatusBadge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-primary truncate">
-                    {listing.title}
-                  </p>
-                  <p className="text-xs text-text-tertiary">
-                    {listing.location.city}
-                  </p>
-                </div>
-                <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
-                  {listing.status}
-                </StatusBadge>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-text-tertiary text-sm">No listings yet</p>
+            )}
           </div>
         </ClayCard>
 
@@ -84,27 +122,31 @@ export function AgentDashboardPage() {
             </a>
           </div>
           <div className="space-y-3 overflow-x-auto">
-            {bookings.map(booking => (
-              <div key={booking.id} className="p-3 rounded-clay-sm bg-clay-border-light">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-text-primary truncate">
-                    {booking.listingTitle}
+            {bookings.length > 0 ? (
+              bookings.map((booking: any) => (
+                <div key={booking.id} className="p-3 rounded-clay-sm bg-clay-border-light">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium text-text-primary truncate">
+                      {booking.listingTitle || booking.listing?.title}
+                    </p>
+                    <StatusBadge
+                      variant={
+                        booking.status === 'confirmed' ? 'success' :
+                        booking.status === 'pending' ? 'warning' :
+                        booking.status === 'cancelled' ? 'error' : 'default'
+                      }
+                    >
+                      {booking.status}
+                    </StatusBadge>
+                  </div>
+                  <p className="text-xs text-text-tertiary mt-1">
+                    {booking.userName} • {formatCurrency(booking.price)}
                   </p>
-                  <StatusBadge
-                    variant={
-                      booking.status === 'confirmed' ? 'success' :
-                      booking.status === 'pending' ? 'warning' :
-                      booking.status === 'cancelled' ? 'error' : 'default'
-                    }
-                  >
-                    {booking.status}
-                  </StatusBadge>
                 </div>
-                <p className="text-xs text-text-tertiary mt-1">
-                  {booking.userName} • {formatCurrency(booking.price)}
-                </p>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-text-tertiary text-sm">No bookings yet</p>
+            )}
           </div>
         </ClayCard>
       </div>
@@ -118,7 +160,7 @@ export function AgentDashboardPage() {
                 <Eye className="w-5 h-5 text-mustard" />
               </div>
               <div>
-                <p className="text-lg font-bold text-text-primary">6,439</p>
+                <p className="text-lg font-bold text-text-primary">{(overview?.totalViews || 0).toLocaleString()}</p>
                 <p className="text-xs text-text-tertiary">Total Views</p>
               </div>
             </div>
@@ -127,7 +169,7 @@ export function AgentDashboardPage() {
                 <Heart className="w-5 h-5 text-status-success" />
               </div>
               <div>
-                <p className="text-lg font-bold text-text-primary">807</p>
+                <p className="text-lg font-bold text-text-primary">{(overview?.totalSaves || 0).toLocaleString()}</p>
                 <p className="text-xs text-text-tertiary">Total Saves</p>
               </div>
             </div>
@@ -136,7 +178,7 @@ export function AgentDashboardPage() {
                 <MessageCircle className="w-5 h-5 text-status-info" />
               </div>
               <div>
-                <p className="text-lg font-bold text-text-primary">174</p>
+                <p className="text-lg font-bold text-text-primary">{overview?.totalInquiries || 0}</p>
                 <p className="text-xs text-text-tertiary">Inquiries</p>
               </div>
             </div>

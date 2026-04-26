@@ -1,21 +1,88 @@
-import { useState } from 'react';
-import { User, Mail, Phone, Building2, Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { mockAgent, mockNotificationSettings } from '../../data/mockData';
+import { userApi } from '../../api/user';
 
 export function AgentSettingsPage() {
-  const agent = mockAgent;
-  const [notifications, setNotifications] = useState(mockNotificationSettings);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [user, setUser] = useState<any>(null);
+  const [notifications, setNotifications] = useState({
+    newBooking: true,
+    listingInquiry: true,
+    paymentReceived: true,
+    listingView: true,
+    systemUpdates: true,
+  });
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    whatsapp: '',
+    bio: '',
+  });
 
-  const handleSave = async () => {
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
+    try {
+      const response = await userApi.getProfile();
+      if (response.success && response.data) {
+        setUser(response.data.user);
+        setFormData({
+          fullName: response.data.user.fullName || '',
+          phone: response.data.user.phone || '',
+          whatsapp: response.data.user.whatsapp || '',
+          bio: response.data.user.bio || '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch profile:', error);
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const handleSaveProfile = async () => {
+    setSaving(true);
+    try {
+      const response = await userApi.updateProfile(formData);
+      if (response.success) {
+        alert('Profile saved successfully!');
+      } else {
+        alert(response.error?.message || 'Failed to save profile');
+      }
+    } catch (error) {
+      console.error('Failed to save profile:', error);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleNotificationChange = async (key: string, value: boolean) => {
+    const newSettings = { ...notifications, [key]: value };
+    setNotifications(newSettings);
+    try {
+      await userApi.updateNotificationSettings(newSettings);
+    } catch (error) {
+      console.error('Failed to update notifications:', error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <AppLayout role="agent" title="Settings" subtitle="Manage your account">
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout role="agent" title="Settings" subtitle="Manage your account">
@@ -25,12 +92,12 @@ export function AgentSettingsPage() {
             <h2 className="font-bold text-text-primary mb-4">Profile Information</h2>
             <div className="flex items-center gap-4 mb-6">
               <div className="w-20 h-20 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-2xl font-bold">
-                {agent.fullName.charAt(0)}
+                {user?.fullName?.charAt(0) || 'U'}
               </div>
               <div>
-                <p className="font-semibold text-text-primary">{agent.fullName}</p>
-                <StatusBadge variant={agent.verificationStatus === 'verified' ? 'success' : 'warning'}>
-                  {agent.verificationStatus}
+                <p className="font-semibold text-text-primary">{user?.fullName}</p>
+                <StatusBadge variant={user?.verificationStatus === 'verified' ? 'success' : 'warning'}>
+                  {user?.verificationStatus || 'unverified'}
                 </StatusBadge>
               </div>
             </div>
@@ -39,34 +106,53 @@ export function AgentSettingsPage() {
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                   Full Name
                 </label>
-                <input type="text" defaultValue={agent.fullName} className="clay-input w-full" />
+                <input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                   Email
                 </label>
-                <input type="email" defaultValue={agent.email} className="clay-input w-full" />
+                <input type="email" defaultValue={user?.email} className="clay-input w-full" disabled />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                   Phone
                 </label>
-                <input type="tel" defaultValue={agent.phone} className="clay-input w-full" />
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                   WhatsApp
                 </label>
-                <input type="tel" defaultValue={agent.whatsapp} className="clay-input w-full" />
+                <input
+                  type="tel"
+                  value={formData.whatsapp}
+                  onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                   Bio
                 </label>
-                <textarea defaultValue={agent.bio} className="clay-input w-full h-24 resize-none" />
+                <textarea
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  className="clay-input w-full h-24 resize-none"
+                />
               </div>
             </div>
-            <Button variant="primary" className="mt-4" loading={loading} onClick={handleSave}>
+            <Button variant="primary" className="mt-4" loading={saving} onClick={handleSaveProfile}>
               <Save className="w-4 h-4 mr-2" /> Save Changes
             </Button>
           </ClayCard>
@@ -86,15 +172,12 @@ export function AgentSettingsPage() {
                   <input
                     type="checkbox"
                     checked={notifications[item.key as keyof typeof notifications]}
-                    onChange={(e) => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                    onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
                     className="w-5 h-5 rounded border-clay-border accent-mustard"
                   />
                 </label>
               ))}
             </div>
-            <Button variant="primary" className="mt-4" loading={loading} onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" /> Save Preferences
-            </Button>
           </ClayCard>
         </div>
 
@@ -102,17 +185,17 @@ export function AgentSettingsPage() {
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
             <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-              <p className="text-lg font-bold text-text-primary">{agent.tier.name}</p>
-              <p className="text-sm text-text-tertiary capitalize">{agent.tier.billingCycle}</p>
+              <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
+              <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-text-tertiary">Max Listings:</span>
-                <span className="font-medium">{agent.tier.limits.maxListings}</span>
+                <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-tertiary">Featured:</span>
-                <span className="font-medium">{agent.tier.limits.featuredListings}</span>
+                <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
               </div>
             </div>
             <a href="/tiers" className="block btn-secondary text-center mt-4">
@@ -122,11 +205,11 @@ export function AgentSettingsPage() {
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Company</h2>
-            {agent.company ? (
+            {user?.company ? (
               <div>
-                <p className="font-medium text-text-primary">{agent.company.name}</p>
-                <StatusBadge variant={agent.company.verified ? 'success' : 'default'} className="mt-2">
-                  {agent.company.verified ? 'Verified' : 'Unverified'}
+                <p className="font-medium text-text-primary">{user.company.name}</p>
+                <StatusBadge variant={user.company.verified ? 'success' : 'default'} className="mt-2">
+                  {user.company.verified ? 'Verified' : 'Unverified'}
                 </StatusBadge>
               </div>
             ) : (

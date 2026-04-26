@@ -1,26 +1,41 @@
-import { useState } from 'react';
-import { Plus, Search, Edit, Trash2, Star, UserPlus, X, Mail, Phone, Building, Eye, Loader, CheckCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, Edit, Trash2, Star, UserPlus, Eye, Loader, Mail, Phone } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { mockCompanyAgents, mockInviteLinks } from '../../data/mockData';
+import { companyApi } from '../../api/company';
 
 export function CompanyAgentsPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<typeof mockCompanyAgents[0] | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [email, setEmail] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [agents, setAgents] = useState<any[]>([]);
 
-  const agents = mockCompanyAgents.filter(a => 
-    a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    a.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  useEffect(() => {
+    fetchAgents();
+  }, [searchQuery]);
+
+  const fetchAgents = async () => {
+    setLoading(true);
+    try {
+      const response = await companyApi.getAgents({ search: searchQuery });
+      if (response.success && response.data) {
+        setAgents(response.data.agents || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch agents:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const showToast = (message: string, type: 'success' | 'error') => {
     setToast({ message, type });
@@ -29,30 +44,44 @@ export function CompanyAgentsPage() {
 
   const handleInvite = async () => {
     if (!email) return;
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
-    setShowInviteModal(false);
-    setEmail('');
-    showToast('Invitation sent successfully!', 'success');
+    setSubmitting(true);
+    try {
+      const response = await companyApi.inviteAgent(email);
+      if (response.success) {
+        showToast('Invitation sent successfully!', 'success');
+        setShowInviteModal(false);
+        setEmail('');
+      } else {
+        showToast(response.message || 'Failed to invite agent', 'error');
+      }
+    } catch (error) {
+      showToast('Failed to invite agent', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const handleView = (agent: typeof mockCompanyAgents[0]) => {
+  const handleView = (agent: any) => {
     setSelectedAgent(agent);
     setShowViewModal(true);
   };
 
-  const handleStatusToggle = async (agentId: string, currentStatus: string) => {
-    showToast(`Agent ${currentStatus === 'active' ? 'deactivated' : 'activated'}`, 'success');
-  };
-
-  const handleRemove = async (agentId: string) => {
-    showToast('Agent removed from company', 'success');
-  };
-
-  const handleEdit = (agent: typeof mockCompanyAgents[0]) => {
+  const handleEdit = (agent: any) => {
     setSelectedAgent(agent);
     setShowEditModal(true);
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm('Are you sure you want to remove this agent?')) return;
+    try {
+      const response = await companyApi.removeAgent(id);
+      if (response.success) {
+        showToast('Agent removed', 'success');
+        fetchAgents();
+      }
+    } catch {
+      showToast('Failed to remove agent', 'error');
+    }
   };
 
   return (
@@ -81,42 +110,51 @@ export function CompanyAgentsPage() {
         </Button>
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {agents.map(agent => (
-          <ClayCard key={agent.id} hover className="p-5">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-xl font-bold">
-                {agent.fullName.charAt(0)}
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      ) : agents.length > 0 ? (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {agents.map(agent => (
+            <ClayCard key={agent.id} hover className="p-5">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-xl font-bold">
+                  {agent.fullName?.charAt(0)}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-text-primary">{agent.fullName}</h3>
+                  <p className="text-xs text-text-tertiary">{agent.email}</p>
+                </div>
+                <StatusBadge variant={agent.status === 'active' ? 'success' : 'default'}>
+                  {agent.status}
+                </StatusBadge>
               </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-text-primary">{agent.fullName}</h3>
-                <p className="text-xs text-text-tertiary">{agent.email}</p>
+              <div className="flex items-center gap-4 text-sm text-text-secondary mb-4">
+                <span>{agent.listingsCount} listings</span>
+                <span className="flex items-center gap-1">
+                  <Star className="w-4 h-4 text-mustard" /> {agent.rating || 0}
+                </span>
               </div>
-              <StatusBadge variant={agent.status === 'active' ? 'success' : 'default'}>
-                {agent.status}
-              </StatusBadge>
-            </div>
-            <div className="flex items-center gap-4 text-sm text-text-secondary mb-4">
-              <span>{agent.listingsCount} listings</span>
-              <span className="flex items-center gap-1">
-                <Star className="w-4 h-4 text-mustard" /> {agent.rating}
-              </span>
-              <span>({agent.reviewCount} reviews)</span>
-            </div>
-            <div className="flex gap-2 pt-4 border-t border-clay-border-light">
-              <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(agent)}>
-                <Eye className="w-3 h-3 mr-1" /> View
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => handleEdit(agent)}>
-                <Edit className="w-3 h-3" />
-              </Button>
-              <Button variant="secondary" size="sm" onClick={() => handleRemove(agent.id)}>
-                <Trash2 className="w-3 h-3" />
-              </Button>
-            </div>
-          </ClayCard>
-        ))}
-      </div>
+              <div className="flex gap-2 pt-4 border-t border-clay-border-light">
+                <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(agent)}>
+                  <Eye className="w-3 h-3 mr-1" /> View
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => handleEdit(agent)}>
+                  <Edit className="w-3 h-3" />
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => handleRemove(agent.id)}>
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            </ClayCard>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12">
+          <p className="text-text-tertiary">No agents found</p>
+        </div>
+      )}
 
       <Modal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Invite Agent">
         <div className="space-y-4">
@@ -145,8 +183,8 @@ export function CompanyAgentsPage() {
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={() => setShowInviteModal(false)}>Cancel</Button>
-            <Button variant="primary" className="flex-1" onClick={handleInvite} loading={loading}>
-              {loading ? <Loader className="w-4 h-4 animate-spin" /> : 'Send Invite'}
+            <Button variant="primary" className="flex-1" onClick={handleInvite} loading={submitting}>
+              {submitting ? <Loader className="w-4 h-4 animate-spin" /> : 'Send Invite'}
             </Button>
           </div>
         </div>
@@ -157,7 +195,7 @@ export function CompanyAgentsPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-4">
               <div className="w-16 h-16 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-2xl font-bold">
-                {selectedAgent.fullName.charAt(0)}
+                {selectedAgent.fullName?.charAt(0)}
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-text-primary">{selectedAgent.fullName}</h3>
@@ -173,24 +211,24 @@ export function CompanyAgentsPage() {
               </div>
               <div className="flex items-center gap-2 text-text-secondary">
                 <Phone className="w-4 h-4" />
-                <span>{selectedAgent.phone}</span>
+                <span>{selectedAgent.phone || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-2 text-text-secondary">
                 <Star className="w-4 h-4 text-mustard" />
-                <span>{selectedAgent.rating} ({selectedAgent.reviewCount} reviews)</span>
+                <span>{selectedAgent.rating || 0} ({selectedAgent.reviewCount || 0} reviews)</span>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 pt-4 border-t border-clay-border">
               <div className="text-center p-3 bg-clay-border-light rounded-clay-sm">
-                <p className="text-xl font-bold text-text-primary">{selectedAgent.listingsCount}</p>
+                <p className="text-xl font-bold text-text-primary">{selectedAgent.listingsCount || 0}</p>
                 <p className="text-xs text-text-tertiary">Listings</p>
               </div>
               <div className="text-center p-3 bg-clay-border-light rounded-clay-sm">
-                <p className="text-xl font-bold text-text-primary">{selectedAgent.reviewCount}</p>
+                <p className="text-xl font-bold text-text-primary">{selectedAgent.reviewCount || 0}</p>
                 <p className="text-xs text-text-tertiary">Reviews</p>
               </div>
             </div>
-            <Button variant="primary" className="w-full" onClick={() => handleEdit(selectedAgent)}>
+            <Button variant="primary" className="w-full" onClick={() => { setShowViewModal(false); handleEdit(selectedAgent); }}>
               <Edit className="w-4 h-4 mr-2" /> Edit Agent
             </Button>
           </div>
@@ -210,7 +248,7 @@ export function CompanyAgentsPage() {
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Phone</label>
-              <input type="tel" defaultValue={selectedAgent.phone} className="clay-input w-full" />
+              <input type="tel" defaultValue={selectedAgent.phone || ''} className="clay-input w-full" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Status</label>

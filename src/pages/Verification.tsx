@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileText, Upload, CheckCircle, ArrowRight, Loader } from 'lucide-react';
+import { FileText, Upload, CheckCircle, ArrowRight, Loader2, XCircle, Clock } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { useAuth } from '../api/authContext';
 import type { UserRole } from '../types';
 
 interface VerificationProps {
@@ -10,9 +11,11 @@ interface VerificationProps {
 
 export function VerificationPage({ role }: VerificationProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [idType, setIdType] = useState<'nin' | 'drivers_license' | 'passport' | 'voters_card'>('nin');
+  const [skipping, setSkipping] = useState(false);
   
   const isCompany = role === 'company';
 
@@ -29,6 +32,13 @@ export function VerificationPage({ role }: VerificationProps) {
     setLoading(false);
     navigate('/verification/pending');
   };
+
+  const handleSkip = () => {
+    setSkipping(true);
+    navigate('/agent');
+  };
+
+  const currentUser = user;
 
   if (step === 1) {
     return (
@@ -141,6 +151,15 @@ export function VerificationPage({ role }: VerificationProps) {
             >
               Continue <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
+
+            <Button
+              onClick={handleSkip}
+              variant="secondary"
+              className="w-full mt-3"
+              disabled={skipping}
+            >
+              Skip for now
+            </Button>
           </div>
         </div>
       </div>
@@ -167,25 +186,21 @@ export function VerificationPage({ role }: VerificationProps) {
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-tertiary">Name:</span>
-                <span className="font-medium">John Doe</span>
+                <span className="font-medium">{currentUser?.fullName || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-tertiary">Email:</span>
-                <span className="font-medium">john@example.com</span>
+                <span className="font-medium">{currentUser?.email || 'N/A'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-tertiary">Phone:</span>
-                <span className="font-medium">08012345678</span>
+                <span className="font-medium">{currentUser?.phone || 'N/A'}</span>
               </div>
-              {isCompany && (
+              {isCompany && currentUser?.company && (
                 <>
                   <div className="flex justify-between">
                     <span className="text-text-tertiary">Company:</span>
-                    <span className="font-medium">Property Masters Ltd</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-text-tertiary">CAC:</span>
-                    <span className="font-medium">RC-1234567</span>
+                    <span className="font-medium">{currentUser.company.name}</span>
                   </div>
                 </>
               )}
@@ -216,7 +231,7 @@ export function VerificationPage({ role }: VerificationProps) {
             className="w-full mt-6"
             loading={loading}
           >
-            {loading ? <Loader className="w-4 h-4 animate-spin" /> : 'Submit for Verification'}
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Submit for Verification'}
           </Button>
         </div>
       </div>

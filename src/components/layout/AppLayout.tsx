@@ -9,9 +9,10 @@ interface AppLayoutProps {
   role: UserRole;
   title: string;
   subtitle?: string;
+  onReload?: () => void;
 }
 
-export function AppLayout({ children, role, title, subtitle }: AppLayoutProps) {
+export function AppLayout({ children, role, title, subtitle, onReload }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
@@ -27,6 +28,7 @@ export function AppLayout({ children, role, title, subtitle }: AppLayoutProps) {
           onMenuClick={() => setSidebarOpen(true)}
           title={title}
           subtitle={subtitle}
+          onReload={onReload}
         />
         <main className="flex-1 p-4 pt-20 md:px-6 md:pt-[4.5rem] overflow-x-hidden">
           {children}

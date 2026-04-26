@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
-import { AuthProvider, useAuth } from './api/auth';
+import { AuthProvider, useAuth } from './api/authContext';
 import { LoginPage } from './pages/Login';
 import { SignupPage } from './pages/Signup';
 import { CreateOTPPage } from './pages/CreateOTP';

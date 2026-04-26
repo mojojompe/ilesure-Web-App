@@ -1,88 +1,52 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight } from 'lucide-react';
+import { Check, ArrowRight, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
-
-interface Tier {
-  id: string;
-  name: string;
-  price: number;
-  slots: number;
-  features: string[];
-  isPopular?: boolean;
-}
-
-const tiers: Tier[] = [
-  {
-    id: 'free',
-    name: 'Free',
-    price: 0,
-    slots: 5,
-    features: [
-      'Up to 5 listing slots',
-      'Basic support',
-      'Standard listings',
-      'Email notifications',
-    ],
-  },
-  {
-    id: 'basic',
-    name: 'Basic',
-    price: 10000,
-    slots: 15,
-    features: [
-      'Up to 15 listing slots',
-      'Priority support',
-      'Featured listings',
-      'SMS notifications',
-    ],
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 35000,
-    slots: 30,
-    features: [
-      'Up to 30 listing slots',
-      '24/7 priority support',
-      'Top placement',
-      'Analytics dashboard',
-    ],
-    isPopular: true,
-  },
-  {
-    id: 'enterprise',
-    name: 'Enterprise',
-    price: 70000,
-    slots: 50,
-    features: [
-      'Up to 50 listing slots',
-      'Dedicated account manager',
-      'White-label solution',
-      'Custom integrations',
-    ],
-  },
-];
+import tiersApi from '../api/tiers';
+import type { Tier } from '../types';
 
 export function TierSelectionPage() {
   const navigate = useNavigate();
-  const [billingCycle, setBillingCycle] = useState<'yearly' | 'monthly'>('yearly');
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
+  const [selecting, setSelecting] = useState(false);
+
+  useEffect(() => {
+    loadTiers();
+  }, []);
+
+  const loadTiers = async () => {
+    setLoading(true);
+    const response = await tiersApi.getTiers();
+    if (response.success && response.data) {
+      setTiers(response.data);
+    }
+    setLoading(false);
+  };
 
   const formatPrice = (price: number) => {
     if (price === 0) return 'Free';
-    if (billingCycle === 'yearly') {
+    if (billingCycle === 'annually') {
       return `₦${price.toLocaleString()}/yr`;
     }
-    return `₦${Math.round(price / 12).toLocaleString()}/mo`;
+    return `₦${Math.round(price).toLocaleString()}/mo`;
   };
 
-  const handleContinue = () => {
-    if (selectedTier) {
-      navigate('/signup');
-    }
+  const handleContinue = async () => {
+    if (!selectedTier) return;
+    navigate(`/payment?tier=${selectedTier}&billing=${billingCycle}`);
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-off-white py-8 px-4 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-mustard" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-off-white py-8 px-4">
@@ -95,10 +59,10 @@ export function TierSelectionPage() {
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-pill p-1 border border-clay-border flex">
             <button
-              onClick={() => setBillingCycle('yearly')}
+              onClick={() => setBillingCycle('annually')}
               className={clsx(
                 'px-6 py-2 rounded-pill text-sm font-medium transition-all',
-                billingCycle === 'yearly'
+                billingCycle === 'annually'
                   ? 'bg-burnt-brown text-white'
                   : 'text-text-secondary hover:text-text-primary'
               )}
@@ -125,6 +89,7 @@ export function TierSelectionPage() {
               key={tier.id}
               type="button"
               onClick={() => setSelectedTier(tier.id)}
+              disabled={selecting}
               className={clsx(
                 'clay-card p-5 text-left transition-all relative',
                 selectedTier === tier.id
@@ -144,7 +109,7 @@ export function TierSelectionPage() {
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-text-primary">{tier.name}</h3>
                 <p className="text-2xl font-bold text-text-primary mt-1">{formatPrice(tier.price)}</p>
-                <p className="text-xs text-text-tertiary mt-1">{tier.slots} listing slots</p>
+                <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
               </div>
 
               <div className="space-y-2">
@@ -162,7 +127,7 @@ export function TierSelectionPage() {
         <Button
           variant="primary"
           className="w-full max-w-md mx-auto"
-          disabled={!selectedTier}
+          disabled={!selectedTier || selecting}
           onClick={handleContinue}
         >
           Continue <ArrowRight className="w-4 h-4 ml-2" />

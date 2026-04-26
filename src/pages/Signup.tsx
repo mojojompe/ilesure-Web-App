@@ -4,6 +4,7 @@ import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Upload, Ca
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
+import authApi from '../api/authApi';
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -65,6 +66,8 @@ export function SignupPage() {
     role: 'agent',
   });
 
+  const [companyName, setCompanyName] = useState('');
+
   const [documents, setDocuments] = useState({
     idCard: '',
     nin: '',
@@ -86,25 +89,68 @@ export function SignupPage() {
     setDocuments(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step === 1) {
       if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) return;
       if (formData.password !== formData.confirmPassword) return;
+      setStep(2);
+      return;
     }
     if (step === 2) {
       if (!formData.phone) return;
+      await handleSubmit();
     }
-    setStep(prev => prev + 1);
+  };
+
+  const handleSkipDocuments = async () => {
+    await handleSubmit();
   };
 
   const handleBack = () => {
-    setStep(prev => prev - 1);
+    if (step === 3) {
+      setStep(2);
+    } else {
+      setStep(prev => prev - 1);
+    }
   };
+
+  const [error, setError] = useState('');
 
   const handleSubmit = async () => {
     setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    navigate(isCompany ? '/verification/company' : '/verification/agent');
+    setError('');
+    
+    try {
+      const registerData = {
+        fullName: formData.fullName,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+        role: formData.role as UserRole,
+        ...(isCompany && companyName ? { companyName } : {}),
+      };
+      
+      const response = await authApi.register(registerData);
+
+      if (response.success && response.user && response.accessToken) {
+        const role = response.user.role === 'company' ? 'company' : 'agent';
+        
+        localStorage.setItem('ilesure_web_auth', JSON.stringify({
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+          user: response.user,
+          role: role,
+        }));
+        
+        navigate('/create-otp');
+      } else {
+        setError(response.error?.message || 'Registration failed. Please try again.');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const renderStep1 = () => (
@@ -144,6 +190,25 @@ export function SignupPage() {
           />
         </div>
       </div>
+
+      {isCompany && (
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+            Company Name
+          </label>
+          <div className="relative">
+            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+            <input
+              type="text"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              placeholder="Your Company Name"
+              className="clay-input w-full pl-11"
+              required
+            />
+          </div>
+        </div>
+      )}
 
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
@@ -364,7 +429,7 @@ export function SignupPage() {
           </div>
         </div>
 
-        <StepIndicator currentStep={step} totalSteps={3} />
+        <StepIndicator currentStep={step} totalSteps={2} />
 
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
@@ -374,6 +439,11 @@ export function SignupPage() {
         <div className="clay-card p-6">
           {step === 1 && (
             <div className="mb-6">
+              {error && (
+                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
+                  {error}
+                </div>
+              )}
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
                 I want to register as
               </label>
@@ -406,7 +476,6 @@ export function SignupPage() {
 
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
 
           <div className="flex gap-3 mt-6">
             {step > 1 && (
@@ -414,7 +483,7 @@ export function SignupPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
-            {step < 3 ? (
+            {step === 1 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
