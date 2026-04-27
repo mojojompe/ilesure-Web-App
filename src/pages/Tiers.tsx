@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Check, ArrowRight, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
-import { tiers, companyTiers } from '../data/mockData';
-import type { UserRole } from '../types';
+import tiersApi from '../api/tiers';
+import type { Tier, UserRole } from '../types';
 
 interface TierPageProps {
   role: UserRole;
@@ -12,8 +12,23 @@ interface TierPageProps {
 
 export function TierPage({ role }: TierPageProps) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const [tiers, setTiers] = useState<Tier[]>([]);
+  const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
-  const selectedTiers = role === 'company' ? companyTiers : tiers;
+
+  useEffect(() => {
+    loadTiers();
+  }, []);
+
+  const loadTiers = async () => {
+    setLoading(true);
+    const response = await tiersApi.getTiers();
+    if (response.success && response.data) {
+      setTiers(response.data);
+    }
+    setLoading(false);
+  };
 
   const handleSelectTier = (tierId: string) => {
     navigate(`/payment?tier=${tierId}&billing=${billingCycle}`);
@@ -23,6 +38,14 @@ export function TierPage({ role }: TierPageProps) {
     if (price === 0) return 'Free';
     return `₦${price.toLocaleString()}`;
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-off-white py-8 px-4 flex items-center justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-mustard" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-off-white py-8 px-4">
@@ -64,7 +87,7 @@ export function TierPage({ role }: TierPageProps) {
         </div>
 
         <div className="grid md:grid-cols-3 gap-6">
-          {selectedTiers.map(tier => {
+          {tiers.map(tier => {
             const price = billingCycle === 'annually' && tier.price > 0
               ? Math.round(tier.price * 12 * 0.8)
               : tier.price;
@@ -88,7 +111,9 @@ export function TierPage({ role }: TierPageProps) {
 
                 <div className="text-center mb-4">
                   <h3 className="text-lg font-bold text-text-primary">{tier.name}</h3>
-                  <p className="text-xs text-text-tertiary mt-1">{tier.description}</p>
+                  {tier.description && (
+                    <p className="text-xs text-text-tertiary mt-1">{tier.description}</p>
+                  )}
                 </div>
 
                 <div className="text-center mb-6">

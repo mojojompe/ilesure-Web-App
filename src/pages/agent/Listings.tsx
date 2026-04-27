@@ -1,26 +1,30 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, Edit, Archive, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { mockListings } from '../../data/mockData';
+import { agentApi } from '../../api/agent';
 import type { Listing } from '../../types';
+
+const amenityOptions = ['WiFi', 'Security', 'Water', 'Electricity', 'Parking', 'AC', 'Laundry', 'Generator', 'Balcony', 'Common Room'];
 
 export function AgentListingsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'occupied'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
-  const [selectedListing, setSelectedListing] = useState<Listing | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedListing, setSelectedListing] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [listings, setListings] = useState<any[]>([]);
   
   const [newListing, setNewListing] = useState({
     title: '',
     description: '',
-    type: 'hostel' as const,
+    type: 'hostel',
     price: '',
     address: '',
     city: '',
@@ -29,9 +33,27 @@ export function AgentListingsPage() {
     amenities: [] as string[],
   });
 
-  const listings = mockListings
-    .filter(l => filter === 'all' || l.status === filter)
-    .filter(l => l.title.toLowerCase().includes(searchQuery.toLowerCase()));
+  useEffect(() => {
+    fetchListings();
+  }, [filter, searchQuery]);
+
+  const fetchListings = async () => {
+    setLoading(true);
+    try {
+      const params: { status?: string; search?: string } = {};
+      if (filter !== 'all') params.status = filter;
+      if (searchQuery) params.search = searchQuery;
+
+      const response = await agentApi.getListings(params);
+      if (response.success && response.data) {
+        setListings(response.data.listings || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch listings:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
@@ -41,29 +63,58 @@ export function AgentListingsPage() {
   };
 
   const handleAddListing = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLoading(false);
-    setShowAddModal(false);
-    setNewListing({
-      title: '',
-      description: '',
-      type: 'hostel',
-      price: '',
-      address: '',
-      city: '',
-      state: '',
-      landmark: '',
-      amenities: [],
-    });
-    showToast('Listing created successfully!', 'success');
+    setSubmitting(true);
+    try {
+      const response = await agentApi.createListing({
+        title: newListing.title,
+        description: newListing.description,
+        type: newListing.type,
+        price: Number(newListing.price),
+        address: newListing.address,
+        city: newListing.city,
+        state: newListing.state,
+        landmark: newListing.landmark,
+        amenities: newListing.amenities,
+      });
+
+      if (response.success) {
+        showToast('Listing created successfully!', 'success');
+        setShowAddModal(false);
+        setNewListing({
+          title: '',
+          description: '',
+          type: 'hostel',
+          price: '',
+          address: '',
+          city: '',
+          state: '',
+          landmark: '',
+          amenities: [],
+        });
+        fetchListings();
+      } else {
+        showToast(response.error?.message || 'Failed to create listing', 'error');
+      }
+    } catch (error) {
+      showToast('Failed to create listing', 'error');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleArchive = async (id: string) => {
-    showToast('Listing archived', 'success');
+    try {
+      const response = await agentApi.archiveListing(id);
+      if (response.success) {
+        showToast('Listing archived', 'success');
+        fetchListings();
+      }
+    } catch {
+      showToast('Failed to archive listing', 'error');
+    }
   };
 
-  const handleView = (listing: Listing) => {
+  const handleView = (listing: any) => {
     setSelectedListing(listing);
     setShowViewModal(true);
   };
@@ -76,8 +127,6 @@ export function AgentListingsPage() {
         : [...prev.amenities, amenity],
     }));
   };
-
-  const amenityOptions = ['WiFi', 'Security', 'Water', 'Electricity', 'Parking', 'AC', 'Laundry', 'Generator', 'Balcony', 'Common Room'];
 
   return (
     <AppLayout role="agent" title="My Listings" subtitle="Manage your properties">
@@ -130,42 +179,60 @@ export function AgentListingsPage() {
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {listings.map(listing => (
-          <ClayCard key={listing.id} hover className="overflow-hidden">
-            <div className="relative h-40">
-              <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
-              <div className="absolute top-3 right-3">
-                <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
-                  {listing.status}
-                </StatusBadge>
-              </div>
-            </div>
-            <div className="p-4">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
-                  <p className="text-xs text-text-tertiary">{listing.location.city}, {listing.location.state}</p>
+      {loading ? (
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      ) : (
+        <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {listings.length > 0 ? (
+            listings.map(listing => (
+              <ClayCard key={listing.id} hover className="overflow-hidden">
+                <div className="relative h-40">
+                  {listing.images?.[0] ? (
+                    <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-clay-border-light flex items-center justify-center">
+                      <Home className="w-8 h-8 text-text-tertiary" />
+                    </div>
+                  )}
+                  <div className="absolute top-3 right-3">
+                    <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
+                      {listing.status}
+                    </StatusBadge>
+                  </div>
                 </div>
-                <p className="text-lg font-bold text-mustard">{formatCurrency(listing.price)}</p>
-              </div>
-              <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
-              <div className="flex items-center gap-4 text-xs text-text-tertiary">
-                <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views}</span>
-                <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves}</span>
-              </div>
-              <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
-                <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
-                  <Eye className="w-3 h-3 mr-1" /> View
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => handleArchive(listing.id)}>
-                  <Archive className="w-3 h-3" />
-                </Button>
-              </div>
+                <div className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
+                      <p className="text-xs text-text-tertiary">{listing.city}, {listing.state}</p>
+                    </div>
+                    <p className="text-lg font-bold text-mustard">{formatCurrency(listing.price)}</p>
+                  </div>
+                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
+                  <div className="flex items-center gap-4 text-xs text-text-tertiary">
+                    <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || 0}</span>
+                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
+                  </div>
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
+                    <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
+                      <Eye className="w-3 h-3 mr-1" /> View
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => handleArchive(listing.id)}>
+                      <Archive className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+              </ClayCard>
+            ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-text-tertiary">No listings found</p>
             </div>
-          </ClayCard>
-        ))}
-      </div>
+          )}
+        </div>
+      )}
 
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Listing" size="lg">
         <div className="space-y-4">
@@ -193,7 +260,7 @@ export function AgentListingsPage() {
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Type</label>
               <select
                 value={newListing.type}
-                onChange={(e) => setNewListing({ ...newListing, type: e.target.value as any })}
+                onChange={(e) => setNewListing({ ...newListing, type: e.target.value })}
                 className="clay-input w-full"
               >
                 <option value="hostel">Hostel</option>
@@ -266,8 +333,8 @@ export function AgentListingsPage() {
           </div>
           <div className="flex gap-2 pt-4">
             <Button variant="secondary" className="flex-1" onClick={() => setShowAddModal(false)}>Cancel</Button>
-            <Button variant="primary" className="flex-1" onClick={handleAddListing} loading={loading}>
-              {loading ? <Loader className="w-4 h-4 animate-spin" /> : 'Create Listing'}
+            <Button variant="primary" className="flex-1" onClick={handleAddListing} loading={submitting}>
+              {submitting ? <Loader className="w-4 h-4 animate-spin" /> : 'Create Listing'}
             </Button>
           </div>
         </div>
@@ -276,49 +343,48 @@ export function AgentListingsPage() {
       <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={selectedListing?.title || 'Listing Details'} size="lg">
         {selectedListing && (
           <div className="space-y-4">
-            <img src={selectedListing.images[0]} alt={selectedListing.title} className="w-full h-48 object-cover rounded-clay-sm" />
+            {selectedListing.images?.[0] && (
+              <img src={selectedListing.images[0]} alt={selectedListing.title} className="w-full h-48 object-cover rounded-clay-sm" />
+            )}
             <StatusBadge variant={selectedListing.status === 'active' ? 'success' : 'warning'}>
               {selectedListing.status}
             </StatusBadge>
             <div>
               <p className="text-2xl font-bold text-mustard">{formatCurrency(selectedListing.price)}</p>
-              <p className="text-sm text-text-tertiary capitalize">/ {selectedListing.type.replace('_', ' ')}</p>
+              <p className="text-sm text-text-tertiary capitalize">/ {selectedListing.type}</p>
             </div>
             <p className="text-text-secondary">{selectedListing.description}</p>
             <div className="flex items-center gap-2 text-text-tertiary">
               <MapPin className="w-4 h-4" />
-              <span>{selectedListing.location.address}, {selectedListing.location.city}, {selectedListing.location.state}</span>
+              <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
             </div>
-            {selectedListing.location.landmark && (
+            {selectedListing.landmark && (
               <div className="text-sm text-text-tertiary">
-                Landmark: {selectedListing.location.landmark}
+                Landmark: {selectedListing.landmark}
               </div>
             )}
             <div>
               <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Amenities</p>
               <div className="flex flex-wrap gap-2">
-                {selectedListing.amenities.map(a => (
+                {(selectedListing.amenities || []).map((a: string) => (
                   <span key={a} className="px-2 py-1 bg-clay-border-light text-xs rounded-pill">{a}</span>
                 ))}
               </div>
             </div>
             <div className="grid grid-cols-3 gap-4 pt-4 border-t border-clay-border">
               <div className="text-center">
-                <p className="text-lg font-bold text-text-primary">{selectedListing.views}</p>
+                <p className="text-lg font-bold text-text-primary">{selectedListing.views || 0}</p>
                 <p className="text-xs text-text-tertiary">Views</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-text-primary">{selectedListing.saves}</p>
+                <p className="text-lg font-bold text-text-primary">{selectedListing.saves || 0}</p>
                 <p className="text-xs text-text-tertiary">Saves</p>
               </div>
               <div className="text-center">
-                <p className="text-lg font-bold text-text-primary">{selectedListing.inquiries}</p>
+                <p className="text-lg font-bold text-text-primary">{selectedListing.inquiries || 0}</p>
                 <p className="text-xs text-text-tertiary">Inquiries</p>
               </div>
             </div>
-            <Button variant="primary" className="w-full" onClick={() => window.location.href = '/agent/create-listing'}>
-              <Edit className="w-4 h-4 mr-2" /> Edit Listing
-            </Button>
           </div>
         )}
       </Modal>

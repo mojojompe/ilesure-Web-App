@@ -1,21 +1,89 @@
-import { useState } from 'react';
-import { Save } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Save, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { mockCompany, mockNotificationSettings, mockCompanyPlan } from '../../data/mockData';
+import { companyApi } from '../../api/company';
+import { userApi } from '../../api/user';
 
 export function CompanySettingsPage() {
-  const company = mockCompany;
-  const [notifications, setNotifications] = useState(mockNotificationSettings);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [company, setCompany] = useState<any>(null);
+  const [notifications, setNotifications] = useState({
+    newBooking: true,
+    listingInquiry: true,
+    paymentReceived: true,
+    listingView: true,
+    systemUpdates: true,
+  });
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    address: '',
+    description: '',
+  });
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [companyRes, subRes] = await Promise.all([
+        companyApi.getProfile(),
+        companyApi.getSubscription(),
+      ]);
+
+      if (companyRes.success && companyRes.company) {
+        setCompany(companyRes.company);
+        setFormData({
+          name: companyRes.company.name || '',
+          phone: companyRes.company.phone || '',
+          address: companyRes.company.address || '',
+          description: companyRes.company.description || '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSave = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
+    setSaving(true);
+    try {
+      const response = await companyApi.updateProfile(formData);
+      if (response.success) {
+        alert('Company saved successfully!');
+      } else {
+        alert(response.message || 'Failed to save');
+      }
+    } catch (error) {
+      console.error('Failed to save:', error);
+    } finally {
+      setSaving(false);
+    }
   };
+
+  const handleNotificationChange = async (key: string, value: boolean) => {
+    const newSettings = { ...notifications, [key]: value };
+    setNotifications(newSettings);
+    await userApi.updateNotificationSettings(newSettings);
+  };
+
+  if (loading) {
+    return (
+      <AppLayout role="company" title="Settings" subtitle="Manage your company">
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout role="company" title="Settings" subtitle="Manage your company">
@@ -26,30 +94,45 @@ export function CompanySettingsPage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Company Name</label>
-                <input type="text" defaultValue={company.name} className="clay-input w-full" />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Trading Name</label>
-                <input type="text" defaultValue={company.tradingName} className="clay-input w-full" />
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Email</label>
-                <input type="email" defaultValue={company.email} className="clay-input w-full" />
+                <input type="email" defaultValue={company?.email} className="clay-input w-full" disabled />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Phone</label>
-                <input type="tel" defaultValue={company.phone} className="clay-input w-full" />
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
-              <div className="md:col-span-2">
+              <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Address</label>
-                <input type="text" defaultValue={company.address} className="clay-input w-full" />
+                <input
+                  type="text"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
               <div className="md:col-span-2">
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Description</label>
-                <textarea defaultValue={company.description} className="clay-input w-full h-24 resize-none" />
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="clay-input w-full h-24 resize-none"
+                />
               </div>
             </div>
-            <Button variant="primary" className="mt-4" loading={loading} onClick={handleSave}>
+            <Button variant="primary" className="mt-4" loading={saving} onClick={handleSave}>
               <Save className="w-4 h-4 mr-2" /> Save Changes
             </Button>
           </ClayCard>
@@ -61,6 +144,7 @@ export function CompanySettingsPage() {
                 { key: 'newBooking', label: 'New Booking' },
                 { key: 'listingInquiry', label: 'Listing Inquiry' },
                 { key: 'paymentReceived', label: 'Payment Received' },
+                { key: 'listingView', label: 'Listing Views' },
                 { key: 'systemUpdates', label: 'System Updates' },
               ].map(item => (
                 <label key={item.key} className="flex items-center justify-between p-3 rounded-clay-sm bg-clay-border-light cursor-pointer">
@@ -68,40 +152,35 @@ export function CompanySettingsPage() {
                   <input
                     type="checkbox"
                     checked={notifications[item.key as keyof typeof notifications]}
-                    onChange={(e) => setNotifications({ ...notifications, [item.key]: e.target.checked })}
+                    onChange={(e) => handleNotificationChange(item.key, e.target.checked)}
                     className="w-5 h-5 rounded border-clay-border accent-mustard"
                   />
                 </label>
               ))}
             </div>
-            <Button variant="primary" className="mt-4" loading={loading} onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" /> Save Preferences
-            </Button>
           </ClayCard>
         </div>
 
         <div className="space-y-6">
           <ClayCard className="p-5">
-            <h2 className="font-bold text-text-primary mb-4">Verification Status</h2>
-            <StatusBadge variant={company.status === 'verified' ? 'success' : company.status === 'pending' ? 'warning' : 'error'}>
-              {company.status}
-            </StatusBadge>
-            <p className="text-sm text-text-tertiary mt-2">CAC: {company.cacNumber}</p>
-          </ClayCard>
-
-          <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
-            <div className="p-4 rounded-clay-sm bg-mustard-pale text-center">
-              <p className="text-lg font-bold text-text-primary">{mockCompanyPlan.name}</p>
-              <p className="text-sm text-text-tertiary capitalize">{mockCompanyPlan.billingCycle}</p>
+            <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
+              <p className="text-lg font-bold text-text-primary">Premium</p>
+              <p className="text-sm text-text-tertiary capitalize">monthly</p>
             </div>
-            <div className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between">
+            <div className="mt-4 space-y-2">
+              <div className="flex justify-between text-sm">
                 <span className="text-text-tertiary">Agent Slots:</span>
-                <span className="font-medium">{mockCompanyPlan.slotUsage.used} / {mockCompanyPlan.slotUsage.total}</span>
+                <span className="font-medium">50</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-text-tertiary">Listings:</span>
+                <span className="font-medium">Unlimited</span>
               </div>
             </div>
-            <a href="/tiers" className="block btn-secondary text-center mt-4">Upgrade Plan</a>
+            <a href="/tiers" className="block btn-secondary text-center mt-4">
+              Upgrade Plan
+            </a>
           </ClayCard>
         </div>
       </div>

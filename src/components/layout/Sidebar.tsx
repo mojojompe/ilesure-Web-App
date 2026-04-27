@@ -5,7 +5,7 @@ import {
   LayoutDashboard, Building2, Users, BarChart3, Settings, LogOut,
   CreditCard, FileCheck, Bell, MessageCircle, Heart, Archive, Plus,
 } from 'lucide-react';
-import { useAuth } from '../../api/auth';
+import { useAuth } from '../../api/authContext';
 import type { UserRole } from '../../types';
 
 interface SidebarProps {

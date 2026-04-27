@@ -1,33 +1,62 @@
-import { Eye, Heart, MessageCircle, TrendingUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Eye, Heart, MessageCircle, TrendingUp, DollarSign, Loader } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
-import { mockCompanyAnalytics, mockListings } from '../../data/mockData';
+import { companyApi } from '../../api/company';
 
 export function CompanyAnalyticsPage() {
-  const analytics = mockCompanyAnalytics;
+  const [loading, setLoading] = useState(true);
+  const [analytics, setAnalytics] = useState<any>(null);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    setLoading(true);
+    try {
+      const response = await companyApi.getDashboard();
+      if (response.success && response.data) {
+        setAnalytics(response.data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (amount: number) => `₦${(amount || 0).toLocaleString()}`;
+
+  if (loading) {
+    return (
+      <AppLayout role="company" title="Analytics" subtitle="Company performance">
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout role="company" title="Analytics" subtitle="Company performance">
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard title="Total Views" value={analytics.totalViews.toLocaleString()} change={analytics.changes.views} icon={Eye} variant={1} />
-        <KpiCard title="Total Saves" value={analytics.totalSaves.toLocaleString()} change={analytics.changes.saves} icon={Heart} variant={2} />
-        <KpiCard title="Inquiries" value={analytics.totalInquiries} change="+23%" icon={MessageCircle} variant={2} />
-        <KpiCard title="Bookings" value={analytics.totalBookings} change="+15%" icon={TrendingUp} variant={1} />
+        <KpiCard title="Total Views" value={analytics?.overview?.totalViews?.toLocaleString() || '0'} icon={Eye} variant={1} />
+        <KpiCard title="Total Saves" value={analytics?.overview?.totalSaves?.toLocaleString() || '0'} icon={Heart} variant={2} />
+        <KpiCard title="Inquiries" value={analytics?.overview?.totalInquiries || '0'} icon={MessageCircle} variant={2} />
+        <KpiCard title="Revenue" value={formatCurrency(analytics?.overview?.monthlyRevenue || 0)} icon={DollarSign} variant={1} />
       </div>
 
       <ClayCard className="p-5 mb-6">
-        <h2 className="font-bold text-text-primary mb-4">Views Trend</h2>
+        <h2 className="font-bold text-text-primary mb-4">Revenue Trend</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={[
-              { date: '02/19', value: 450 }, { date: '02/20', value: 520 }, { date: '02/21', value: 480 },
-              { date: '02/22', value: 610 }, { date: '02/23', value: 720 }, { date: '02/24', value: 680 }, { date: '02/25', value: 850 },
-            ]}>
+            <LineChart data={analytics?.revenueTrend || []}>
               <XAxis dataKey="date" tick={{ fontSize: 12 }} stroke="#A07860" />
               <YAxis tick={{ fontSize: 12 }} stroke="#A07860" />
-              <Tooltip />
+              <Tooltip formatter={(value) => formatCurrency(Number(value))} />
               <Line type="monotone" dataKey="value" stroke="#D4821A" strokeWidth={2} dot={false} />
             </LineChart>
           </ResponsiveContainer>
@@ -35,12 +64,12 @@ export function CompanyAnalyticsPage() {
       </ClayCard>
 
       <ClayCard className="p-5">
-        <h2 className="font-bold text-text-primary mb-4">Top Listings</h2>
+        <h2 className="font-bold text-text-primary mb-4">Top Performing Listings</h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={mockListings.slice(0, 5)} layout="vertical">
+            <BarChart data={analytics?.topListings || []} layout="vertical">
               <XAxis type="number" tick={{ fontSize: 12 }} stroke="#A07860" />
-              <YAxis type="category" dataKey="title" width={150} tick={{ fontSize: 11 }} stroke="#A07860" />
+              <YAxis dataKey="title" type="category" tick={{ fontSize: 12 }} stroke="#A07860" width={150} />
               <Tooltip />
               <Bar dataKey="views" fill="#D4821A" radius={[0, 4, 4, 0]} />
             </BarChart>

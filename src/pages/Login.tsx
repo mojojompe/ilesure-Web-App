@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react';
 import { Button } from '../components/ui/Button';
-import { useAuth } from '../api/auth';
+import { useAuth } from '../api/authContext';
 
 export function LoginPage() {
   const navigate = useNavigate();

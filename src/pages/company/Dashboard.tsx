@@ -1,42 +1,82 @@
-import { Building2, Users, Calendar, DollarSign, TrendingUp, Eye, Heart, MessageCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Building2, Users, Calendar, DollarSign, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { mockCompanyDashboard, mockListings, mockBookings, mockCompanyAgents } from '../../data/mockData';
+import { companyApi } from '../../api/company';
 
 export function CompanyDashboardPage() {
-  const overview = mockCompanyDashboard;
-  const listings = mockListings.slice(0, 3);
-  const agents = mockCompanyAgents.slice(0, 3);
+  const [loading, setLoading] = useState(true);
+  const [overview, setOverview] = useState<any>(null);
+  const [listings, setListings] = useState<any[]>([]);
+  const [agents, setAgents] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchDashboard();
+  }, []);
+
+  const fetchDashboard = async () => {
+    setLoading(true);
+    try {
+      const response = await companyApi.getDashboard();
+      if (response.success && response.data) {
+        setOverview(response.data.overview);
+      }
+
+      const listingsRes = await companyApi.getListings({ limit: 3 });
+      if (listingsRes.success && listingsRes.data) {
+        setListings(listingsRes.data.listings || []);
+      }
+
+      const agentsRes = await companyApi.getAgents({ limit: 3 });
+      if (agentsRes.success && agentsRes.data) {
+        setAgents(agentsRes.data.agents || []);
+      }
+    } catch (error) {
+      console.error('Failed to fetch dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
+  if (loading) {
+    return (
+      <AppLayout role="company" title="Dashboard" subtitle="Welcome back">
+        <div className="flex items-center justify-center h-64">
+          <Loader className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
-    <AppLayout role="company" title="Dashboard" subtitle="Welcome back, Property Masters Ltd">
+    <AppLayout role="company" title="Dashboard" subtitle="Welcome back">
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <KpiCard
           title="Total Listings"
-          value={overview.totalListings}
+          value={overview?.totalListings || 0}
           icon={Building2}
           variant={1}
         />
         <KpiCard
           title="Total Agents"
-          value={overview.totalAgents}
+          value={overview?.totalAgents || 0}
           icon={Users}
           variant={2}
         />
         <KpiCard
           title="Active Bookings"
-          value={overview.activeBookings}
+          value={overview?.activeBookings || 0}
           icon={Calendar}
           variant={2}
         />
         <KpiCard
           title="Monthly Revenue"
-          value={formatCurrency(overview.monthlyRevenue)}
-          change="+15%"
+          value={formatCurrency(overview?.monthlyRevenue || 0)}
+          change={overview?.trends?.revenue ? `${overview.trends.revenue}%` : undefined}
           icon={DollarSign}
           variant={1}
         />
@@ -51,20 +91,26 @@ export function CompanyDashboardPage() {
             </a>
           </div>
           <div className="space-y-3 overflow-x-auto">
-            {listings.map(listing => (
-              <div key={listing.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
-                <div className="w-12 h-12 rounded-clay-sm bg-burnt-brown-pale overflow-hidden flex-shrink-0">
-                  <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+            {listings.length > 0 ? (
+              listings.map(listing => (
+                <div key={listing.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
+                  <div className="w-12 h-12 rounded-clay-sm bg-burnt-brown-pale overflow-hidden flex-shrink-0">
+                    {listing.images?.[0] && (
+                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-text-primary truncate">{listing.title}</p>
+                    <p className="text-xs text-text-tertiary">{listing.city}</p>
+                  </div>
+                  <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
+                    {listing.status}
+                  </StatusBadge>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-text-primary truncate">{listing.title}</p>
-                  <p className="text-xs text-text-tertiary">{listing.location.city}</p>
-                </div>
-                <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
-                  {listing.status}
-                </StatusBadge>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-text-tertiary text-sm">No listings yet</p>
+            )}
           </div>
         </ClayCard>
 
@@ -76,20 +122,24 @@ export function CompanyDashboardPage() {
             </a>
           </div>
           <div className="space-y-3 overflow-x-auto">
-            {agents.map(agent => (
-              <div key={agent.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
-                <div className="w-10 h-10 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark font-bold">
-                  {agent.fullName.charAt(0)}
+            {agents.length > 0 ? (
+              agents.map(agent => (
+                <div key={agent.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
+                  <div className="w-10 h-10 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark font-bold">
+                    {agent.fullName?.charAt(0)}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-text-primary">{agent.fullName}</p>
+                    <p className="text-xs text-text-tertiary">{agent.listingsCount} listings</p>
+                  </div>
+                  <StatusBadge variant={agent.status === 'active' ? 'success' : 'default'}>
+                    {agent.status}
+                  </StatusBadge>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-text-primary">{agent.fullName}</p>
-                  <p className="text-xs text-text-tertiary">{agent.listingsCount} listings</p>
-                </div>
-                <StatusBadge variant={agent.status === 'active' ? 'success' : 'default'}>
-                  {agent.status}
-                </StatusBadge>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-text-tertiary text-sm">No agents yet</p>
+            )}
           </div>
         </ClayCard>
       </div>
@@ -100,20 +150,24 @@ export function CompanyDashboardPage() {
           <div className="grid sm:grid-cols-3 gap-4">
             <div>
               <p className="text-xs text-text-tertiary">Plan</p>
-              <p className="font-semibold text-text-primary capitalize">{overview.plan.name}</p>
+              <p className="font-semibold text-text-primary capitalize">{overview?.plan?.name || 'Free'}</p>
             </div>
             <div>
               <p className="text-xs text-text-tertiary">Billing</p>
-              <p className="font-semibold text-text-primary capitalize">{overview.plan.billingCycle}</p>
+              <p className="font-semibold text-text-primary capitalize">{overview?.plan?.billingCycle || 'monthly'}</p>
             </div>
             <div>
               <p className="text-xs text-text-tertiary">Slots Used</p>
-              <p className="font-semibold text-text-primary">{overview.plan.slotUsage.used} / {overview.plan.slotUsage.total}</p>
+              <p className="font-semibold text-text-primary">
+                {overview?.plan?.slotUsage?.used || 0} / {overview?.plan?.slotUsage?.total || 0}
+              </p>
             </div>
           </div>
-          <div className="mt-4 h-2 bg-clay-border-light rounded-full overflow-hidden">
-            <div className="h-full bg-mustard rounded-full" style={{ width: `${overview.plan.slotUsage.percentage}%` }} />
-          </div>
+          {overview?.plan?.slotUsage && (
+            <div className="mt-4 h-2 bg-clay-border-light rounded-full overflow-hidden">
+              <div className="h-full bg-mustard rounded-full" style={{ width: `${overview.plan.slotUsage.percentage}%` }} />
+            </div>
+          )}
         </ClayCard>
       </div>
     </AppLayout>

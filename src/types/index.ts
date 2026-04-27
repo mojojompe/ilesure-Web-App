@@ -5,7 +5,27 @@ export interface User {
   email: string;
   role: UserRole;
   fullName: string;
+  phone?: string;
+  whatsapp?: string;
+  bio?: string;
   avatar?: string;
+  status?: 'active' | 'pending' | 'inactive';
+  verificationStatus?: 'verified' | 'pending' | 'unverified';
+  companyId?: string;
+  gender?: 'male' | 'female';
+  tier?: {
+    name: string;
+    billingCycle: string;
+    limits: {
+      maxListings: number;
+      featuredListings: number;
+    };
+  };
+  company?: {
+    id: string;
+    name: string;
+    verified: boolean;
+  };
 }
 
 export interface AuthState {
@@ -192,6 +212,29 @@ export interface Booking {
   moveInDate: string;
   createdAt: string;
   price: number;
+}
+
+export interface Chat {
+  id: string;
+  participant: {
+    id: string;
+    fullName: string;
+    avatar?: string;
+  };
+  listing?: {
+    id: string;
+    title: string;
+  };
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+}
+
+export interface Message {
+  id: string;
+  senderId: string;
+  text: string;
+  createdAt: string;
 }
 
 export interface Transaction {
