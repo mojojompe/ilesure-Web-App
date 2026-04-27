@@ -387,7 +387,7 @@ export function SignupPage() {
                   )}
                 >
                   <User className="w-6 h-6 text-burnt-brown" />
-                  <span className="text-sm font-medium text-text-primary">Individual</span>
+                  <span className="text-sm font-medium text-text-primary">Agent / Landlord</span>
                 </button>
                 <button
                   type="button"

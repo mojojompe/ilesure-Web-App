@@ -68,9 +68,9 @@ function AppRoutes() {
   
   useEffect(() => {
     if (role === 'agent') {
-      document.title = 'iléSure | Agent — Your Sure Home Near Campus';
+      document.title = 'iléSure Agent — Manage your Listings';
     } else if (role === 'company') {
-      document.title = 'iléSure | Company — Your Sure Home Near Campus';
+      document.title = 'iléSure Company — Oversee your Agents and Listings';
     } else {
       document.title = 'iléSure — Your Sure Home Near Campus';
     }
