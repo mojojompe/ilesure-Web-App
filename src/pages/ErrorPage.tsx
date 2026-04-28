@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 
 interface ErrorPageProps {
   error?: Error | null;
@@ -10,10 +9,9 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
     <div className="min-h-screen bg-off-white flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         {/* Broken gear/cog illustration */}
-        <motion.div
+        <div
           className="mx-auto mb-8 w-64 h-64"
-          animate={{ rotate: [0, 5, -5, 0] }}
-          transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ animation: 'gear-wobble 3s ease-in-out infinite' }}
         >
           <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Outer broken gear */}
@@ -27,22 +25,20 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
             <path d="M112 105 L108 125 L118 125 L116 155" stroke="#C62828" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
             {/* Stars / sparks */}
             {[
-              { x: 60, y: 60 }, { x: 180, y: 65 }, { x: 55, y: 175 }, { x: 185, y: 180 },
-            ].map((p, i) => (
-              <motion.circle
-                key={i} cx={p.x} cy={p.y} r="5" fill="#F5C842"
-                animate={{ opacity: [0.2, 1, 0.2], scale: [1, 1.5, 1] }}
-                transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.4, ease: 'easeInOut' }}
+              { x: 60, y: 60, d: '0s' }, { x: 180, y: 65, d: '0.4s' },
+              { x: 55, y: 175, d: '0.8s' }, { x: 185, y: 180, d: '1.2s' },
+            ].map((p) => (
+              <circle
+                key={p.x}
+                cx={p.x} cy={p.y} r="5" fill="#F5C842"
+                style={{ animation: `spark-pulse 1.5s ease-in-out infinite`, animationDelay: p.d }}
               />
             ))}
-          </svg>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+          </svg>
+        </div>
+
+        <div>
           <h1 className="text-2xl font-bold text-text-primary mb-3">Something Went Wrong</h1>
           <p className="text-text-tertiary mb-4">
             An unexpected error occurred. Our team has been notified.
@@ -68,8 +64,9 @@ export function ErrorPage({ error, reset }: ErrorPageProps) {
               Go Home
             </button>
           </div>
-        </motion.div>
+        </div>
       </div>
+      <style>{`@keyframes gear-wobble { 0%,100% { transform: rotate(0deg); } 33% { transform: rotate(5deg); } 66% { transform: rotate(-5deg); } } @keyframes spark-pulse { 0%,100% { opacity: 0.2; } 50% { opacity: 1; } }`}</style>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 
 export function NotFound() {
@@ -6,10 +5,9 @@ export function NotFound() {
     <div className="min-h-screen bg-off-white flex items-center justify-center px-4">
       <div className="text-center max-w-md">
         {/* SVG illustration */}
-        <motion.div
+        <div
           className="mx-auto mb-8 w-64 h-64"
-          animate={{ y: [0, -16, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+          style={{ animation: 'notfound-float 4s ease-in-out infinite' }}
         >
           <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg">
             {/* Ground shadow */}
@@ -35,13 +33,9 @@ export function NotFound() {
             <text x="185" y="80" fontSize="18" fill="#8B4513" opacity="0.5">?</text>
             <text x="170" y="50" fontSize="14" fill="#C9962A" opacity="0.6">?</text>
           </svg>
-        </motion.div>
+        </div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
+        <div>
           <p className="text-8xl font-black text-burnt-brown mb-2">404</p>
           <h1 className="text-2xl font-bold text-text-primary mb-3">Page Not Found</h1>
           <p className="text-text-tertiary mb-8">
@@ -53,8 +47,9 @@ export function NotFound() {
           >
             ← Back to Dashboard
           </Link>
-        </motion.div>
+        </div>
       </div>
+      <style>{`@keyframes notfound-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }`}</style>
     </div>
   );
 }
