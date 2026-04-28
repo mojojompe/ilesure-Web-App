@@ -34,6 +34,7 @@ import { CompanySettingsPage } from './pages/company/Settings';
 
 import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
+import { NotFound } from './pages/NotFound';
 
 function ProtectedRoute({ children, role }: { children: React.ReactNode; role: 'agent' | 'company' }) {
   const { isAuthenticated, role: userRole } = useAuth();
@@ -203,7 +204,7 @@ function AppRoutes() {
       } />
       
       <Route path="/" element={<Navigate to="/login" replace />} />
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
