@@ -85,7 +85,7 @@ export function AgentDashboardPage() {
           <div className="space-y-3 overflow-x-auto">
             {listings.length > 0 ? (
               listings.map((listing: any) => (
-                <div key={listing.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
+                <div key={listing._id || listing.id} className="flex items-center gap-3 p-3 rounded-clay-sm bg-clay-border-light">
                   <div className="w-12 h-12 rounded-clay-sm bg-burnt-brown-pale overflow-hidden flex-shrink-0">
                     {listing.images?.[0] && (
                       <img
@@ -100,7 +100,7 @@ export function AgentDashboardPage() {
                       {listing.title}
                     </p>
                     <p className="text-xs text-text-tertiary">
-                      {listing.location?.city || listing.city}
+                      {listing.areaCluster || listing.location?.city || listing.city || '—'}
                     </p>
                   </div>
                   <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
@@ -123,27 +123,31 @@ export function AgentDashboardPage() {
           </div>
           <div className="space-y-3 overflow-x-auto">
             {bookings.length > 0 ? (
-              bookings.map((booking: any) => (
-                <div key={booking.id} className="p-3 rounded-clay-sm bg-clay-border-light">
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm font-medium text-text-primary truncate">
-                      {booking.listingTitle || booking.listing?.title}
+              bookings.map((booking: any) => {
+                const bookingId = booking._id || booking.id;
+                const listingTitle = booking.listingId?.title || booking.listingTitle || booking.listing?.title || '—';
+                const tenantName = booking.userId?.fullName || booking.userName || '—';
+                const rent = booking.listingId?.rentAnnual || booking.price || 0;
+                return (
+                  <div key={bookingId} className="p-3 rounded-clay-sm bg-clay-border-light">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-medium text-text-primary truncate">{listingTitle}</p>
+                      <StatusBadge
+                        variant={
+                          booking.status === 'confirmed' ? 'success' :
+                          booking.status === 'pending' ? 'warning' :
+                          booking.status === 'cancelled' ? 'error' : 'default'
+                        }
+                      >
+                        {booking.status}
+                      </StatusBadge>
+                    </div>
+                    <p className="text-xs text-text-tertiary mt-1">
+                      {tenantName} • ₦{rent.toLocaleString()}/yr
                     </p>
-                    <StatusBadge
-                      variant={
-                        booking.status === 'confirmed' ? 'success' :
-                        booking.status === 'pending' ? 'warning' :
-                        booking.status === 'cancelled' ? 'error' : 'default'
-                      }
-                    >
-                      {booking.status}
-                    </StatusBadge>
                   </div>
-                  <p className="text-xs text-text-tertiary mt-1">
-                    {booking.userName} • {formatCurrency(booking.price)}
-                  </p>
-                </div>
-              ))
+                );
+              })
             ) : (
               <p className="text-text-tertiary text-sm">No bookings yet</p>
             )}

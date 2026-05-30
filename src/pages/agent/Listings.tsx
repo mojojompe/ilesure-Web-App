@@ -186,46 +186,52 @@ export function AgentListingsPage() {
       ) : (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {listings.length > 0 ? (
-            listings.map(listing => (
-              <ClayCard key={listing.id} hover className="overflow-hidden">
-                <div className="relative h-40">
-                  {listing.images?.[0] ? (
-                    <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-clay-border-light flex items-center justify-center">
-                      <Home className="w-8 h-8 text-text-tertiary" />
+            listings.map(listing => {
+              const listingId = listing.id || listing._id;
+              const price = listing.price || listing.rentAnnual || 0;
+              const city = listing.location?.city || listing.areaCluster || listing.city || '';
+              const state = listing.location?.state || listing.state || '';
+              return (
+                <ClayCard key={listingId} hover className="overflow-hidden">
+                  <div className="relative h-40">
+                    {listing.images?.[0] ? (
+                      <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full bg-clay-border-light flex items-center justify-center">
+                        <Home className="w-8 h-8 text-text-tertiary" />
+                      </div>
+                    )}
+                    <div className="absolute top-3 right-3">
+                      <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
+                        {listing.status}
+                      </StatusBadge>
                     </div>
-                  )}
-                  <div className="absolute top-3 right-3">
-                    <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
-                      {listing.status}
-                    </StatusBadge>
                   </div>
-                </div>
-                <div className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
-                      <p className="text-xs text-text-tertiary">{listing.city}, {listing.state}</p>
+                  <div className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <div>
+                        <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
+                        <p className="text-xs text-text-tertiary">{[city, state].filter(Boolean).join(', ') || '—'}</p>
+                      </div>
+                      <p className="text-lg font-bold text-mustard">{formatCurrency(price)}</p>
                     </div>
-                    <p className="text-lg font-bold text-mustard">{formatCurrency(listing.price)}</p>
+                    <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
+                    <div className="flex items-center gap-4 text-xs text-text-tertiary">
+                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
+                      <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
+                    </div>
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
+                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
+                        <Eye className="w-3 h-3 mr-1" /> View
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))}>
+                        <Archive className="w-3 h-3" />
+                      </Button>
+                    </div>
                   </div>
-                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
-                  <div className="flex items-center gap-4 text-xs text-text-tertiary">
-                    <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || 0}</span>
-                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
-                  </div>
-                  <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
-                    <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
-                      <Eye className="w-3 h-3 mr-1" /> View
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => handleArchive(listing.id)}>
-                      <Archive className="w-3 h-3" />
-                    </Button>
-                  </div>
-                </div>
-              </ClayCard>
-            ))
+                </ClayCard>
+              );
+            })
           ) : (
             <div className="col-span-full text-center py-12">
               <p className="text-text-tertiary">No listings found</p>
