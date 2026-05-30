@@ -2,12 +2,13 @@ import axios from 'axios';
 import apiClient from './client';
 
 export interface Notification {
-  id: string;
-  type: 'booking' | 'inquiry' | 'payment' | 'system' | 'verification';
+  _id: string;
+  type: 'match' | 'listing' | 'waitlist' | 'interest' | 'booking' | 'verification' | 'message' | 'system';
   title: string;
-  message: string;
+  body: string;
+  read: boolean;
+  readAt?: string;
   data?: Record<string, unknown>;
-  isRead: boolean;
   createdAt: string;
 }
 
@@ -51,9 +52,9 @@ export const notificationsApi = {
     }
   },
 
-  async getUnreadCount(): Promise<{ success: boolean; unreadCount?: number; error?: { message: string } }> {
+  async getUnreadCount(): Promise<{ success: boolean; count?: number; error?: { message: string } }> {
     try {
-      const response = await apiClient.get<{ success: boolean; unreadCount: number }>('/notifications/unread-count');
+      const response = await apiClient.get<{ success: boolean; count: number }>('/notifications/unread-count');
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {

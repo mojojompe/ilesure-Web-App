@@ -1,4 +1,57 @@
-export type UserRole = 'agent' | 'company';
+export type UserRole = 'student' | 'landlord' | 'agent' | 'company' | 'company_admin' | 'sub_agent';
+
+// ── AI Roommate Matching Types ──────────────────────────────────────
+
+export interface RoommateProfile {
+  // Lifestyle preferences (categorical)
+  sleepSchedule?:    'early_bird' | 'night_owl' | 'flexible';
+  noiseTolerance?:  'very_quiet' | 'moderate' | 'noisy_ok';
+  cleanliness?:      'neat_freak' | 'organized' | 'casual' | 'messy';
+  cookingFrequency?: 'daily' | 'few_times_week' | 'rarely' | 'never';
+  studySchedule?:   'morning' | 'afternoon' | 'evening' | 'late_night' | 'distributed';
+  socialActivity?:  'very_social' | 'moderate' | 'private' | 'hermit';
+  guestComfort?:   'love_guests' | 'ok_with_notice' | 'rare_guests' | 'no_guests';
+  smokingAlcohol?:  'no' | 'socially' | 'yes';
+  powerUsage?:      'low' | 'medium' | 'high';
+
+  // Numeric preferences
+  openness?:         number;  // 1-5 scale
+  religionImportance?: number;  // 1-5 scale
+  budgetMin?:        number;
+  budgetMax?:        number;
+  age?:             number;
+  preferredGender?:  'male' | 'female' | 'any';
+  preferredZone?:    string;  // Campus area preference
+
+  // Meta
+  bio?:             string;
+  courseOfStudy?:   string;
+  yearOfStudy?:     string;
+  updatedAt?:        string;
+}
+
+export interface CategoryScores {
+  lifestyle:  number;  // 0-100
+  numeric:    number;  // 0-100
+  preference: number;  // 0-100
+}
+
+export interface MatchResult {
+  userId:           string;
+  fullName?:       string;
+  avatar?:          string;
+  overallScore:     number;  // 0-100
+  confidence:        number;  // 0-1 (how reliable is this match)
+  categoryScores:   CategoryScores;
+  strengths:        string[];
+  concerns:         string[];
+  recommendation:    'excellent' | 'good' | 'fair' | 'poor';
+  aInterested?:    boolean;
+  bInterested?:    boolean;
+  contactReleasedAt?: string;
+  createdAt:        string;
+  aiPowered?:       boolean;
+}
 
 export interface User {
   id: string;
@@ -176,42 +229,47 @@ export interface LoginCredentials {
 }
 
 export interface Listing {
-  id: string;
+  _id: string;
+  landlordId: string;
   title: string;
   description: string;
-  type: 'hostel' | 'apartment' | 'single_room' | 'bedsitter';
-  price: number;
-  currency: string;
+  rentAnnual: number;
+  areaCluster: string;
+  distanceBucket: string;
+  address?: string;
+  city?: string;
+  landmark?: string;
+  propertyType: 'self_con' | '1_bed' | '2_bed' | '3_bed' | 'mini_flat' | 'hostel_room' | 'shared_apartment' | 'shortlet';
+  furnishing: 'fully_furnished' | 'semi-furnished' | 'unfurnished';
+  power: 'constant' | 'gen-dependent' | 'solar-backed';
+  water: 'borehole' | 'public' | 'tank';
+  maxOccupants: number;
+  genderRestriction: 'any' | 'male_only' | 'female_only' | 'mixed';
+  status: 'pending_approval' | 'active' | 'needs_roommate' | 'fully_booked' | 'archived' | 'rejected';
   images: string[];
-  location: {
-    address: string;
-    city: string;
-    state: string;
-    landmark?: string;
-  };
-  amenities: string[];
-  status: 'active' | 'occupied' | 'archived' | 'pending';
-  views: number;
-  saves: number;
-  inquiries: number;
+  agentId?: string;
+  companyId?: string;
+  interestCount?: number;
+  cautionFee?: number;
+  agencyFee?: number;
+  totalMoveinCost?: number;
+  hasWifi?: boolean;
+  securityType?: string;
+  distanceFromLCU?: string;
   createdAt: string;
-  occupiedBy?: {
-    name: string;
-    moveInDate: string;
-  };
+  updatedAt: string;
 }
 
 export interface Booking {
-  id: string;
-  listingId: string;
-  listingTitle: string;
-  userId: string;
-  userName: string;
-  userPhone: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  _id: string;
+  listingId: { _id: string; title: string; images: string[]; rentAnnual: number; areaCluster: string };
+  userId: { _id: string; fullName: string; email: string; phone: string };
+  status: 'pending' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
   moveInDate: string;
+  duration?: string;
+  message?: string;
   createdAt: string;
-  price: number;
+  updatedAt: string;
 }
 
 export interface Chat {
@@ -233,6 +291,7 @@ export interface Chat {
 export interface Message {
   id: string;
   senderId: string;
+  sender?: { _id: string; fullName: string };
   text: string;
   createdAt: string;
 }

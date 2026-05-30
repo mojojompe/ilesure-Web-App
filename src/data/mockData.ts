@@ -199,7 +199,7 @@ export const companyTiers: Tier[] = [
   },
 ];
 
-export const mockListings: Listing[] = [
+export const mockListings = [
   {
     id: 'l_001',
     title: 'Modern Student Hostel - Gbagada',
@@ -299,14 +299,14 @@ export const mockListings: Listing[] = [
   },
 ];
 
-export const mockArchivedListings: Listing[] = mockListings.map(l => ({
+export const mockArchivedListings = mockListings.map(l => ({
   ...l,
   id: `archived_${l.id}`,
   title: `${l.title} (Archived)`,
   status: 'archived' as const,
 }));
 
-export const mockBookings: Booking[] = [
+export const mockBookings = [
   {
     id: 'b_001',
     listingId: 'l_001',
@@ -369,7 +369,7 @@ export const mockBookings: Booking[] = [
   },
 ];
 
-export const mockTransactions: Transaction[] = [
+export const mockTransactions = [
   {
     id: 't_001',
     type: 'payment',

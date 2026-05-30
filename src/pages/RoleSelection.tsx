@@ -32,7 +32,7 @@ const roles: Role[] = [
 
 export function RoleSelectionPage() {
   const navigate = useNavigate();
-  const [selectedRole, setSelectedRole] = useState<'agent' | 'company' | null>(null);
+  const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
 
   const handleContinue = () => {
     if (selectedRole) {

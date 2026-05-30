@@ -4,18 +4,20 @@ import type { Tier } from '../types';
 
 interface TiersResponse {
   success: boolean;
-  data?: Tier[];
+  data?: {
+    tiers: Tier[];
+  };
   error?: { message: string };
 }
 
 interface MyTierResponse {
   success: boolean;
   data?: {
-    tier: Tier;
-    subscription?: {
-      status: 'active' | 'cancelled' | 'expired';
-      currentPeriodEnd: string;
-    };
+    tierId: string;
+    name: string;
+    expiresAt: string | null;
+    listingsUsed: number;
+    listingsLimit: number;
   };
   error?: { message: string };
 }

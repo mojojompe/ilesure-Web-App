@@ -33,12 +33,12 @@ export function AgentSettingsPage() {
     try {
       const response = await userApi.getProfile();
       if (response.success && response.data) {
-        setUser(response.data.user);
+        setUser(response.data);
         setFormData({
-          fullName: response.data.user.fullName || '',
-          phone: response.data.user.phone || '',
-          whatsapp: response.data.user.whatsapp || '',
-          bio: response.data.user.bio || '',
+          fullName: response.data.fullName || '',
+          phone: response.data.phone || '',
+          whatsapp: response.data.whatsapp || '',
+          bio: response.data.bio || '',
         });
       }
     } catch (error) {

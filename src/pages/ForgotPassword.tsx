@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import authApi from '../api/authApi';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -12,10 +13,18 @@ export function ForgotPasswordPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email) return;
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setLoading(false);
-    setSent(true);
+    try {
+      setLoading(true);
+      const response = await authApi.forgotPassword(email);
+      if (response.success) {
+        setSent(true);
+      }
+    } catch (error: any) {
+      console.error('Forgot password error:', error);
+      alert(error.response?.data?.error?.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (sent) {

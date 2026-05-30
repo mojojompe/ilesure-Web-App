@@ -125,8 +125,15 @@ export const authApi = {
       const response = await apiClient.post<AuthResponse>('/auth/verify-otp', { email, otp });
       const data = response.data;
       
-      if (data.success) {
-        return { success: true };
+      if (data.success && data.user && data.accessToken) {
+        return {
+          success: true,
+          user: data.user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+          onboardingRequired: data.onboardingRequired,
+          nextStep: data.nextStep,
+        };
       }
       
       return {
@@ -161,9 +168,9 @@ export const authApi = {
     }
   },
 
-  async resetPassword(token: string, newPassword: string): Promise<ForgotPasswordResponse> {
+  async resetPassword(email: string, token: string, newPassword: string): Promise<ForgotPasswordResponse> {
     try {
-      const response = await apiClient.post<ForgotPasswordResponse>('/auth/reset-password', { token, newPassword });
+      const response = await apiClient.post<ForgotPasswordResponse>('/auth/reset-password', { email, token, newPassword });
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {

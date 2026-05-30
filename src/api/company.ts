@@ -91,8 +91,8 @@ export const companyApi = {
     state: string;
   }): Promise<{ success: boolean; listing?: Listing; message?: string }> {
     try {
-      const response = await apiClient.post<{ success: boolean; data: { listing: Listing } }>('/company/listings', data);
-      return { success: true, listing: response.data.data.listing };
+      const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);
+      return { success: true, listing: response.data.data };
     } catch {
       return { success: false, message: 'Failed to create listing' };
     }
@@ -176,8 +176,9 @@ export const companyApi = {
 
   async getProfile(): Promise<{ success: boolean; company?: Partial<Company>; message?: string }> {
     try {
-      const response = await apiClient.get<{ success: boolean; data: { company: Partial<Company> } }>('/company/profile');
-      return { success: true, company: response.data.data.company };
+      const response = await apiClient.get<{ success: boolean; data: any }>('/company/profile');
+      const company = response.data.data?.company || response.data.data;
+      return { success: true, company };
     } catch {
       return { success: false, message: 'Failed to fetch company profile' };
     }
@@ -194,8 +195,9 @@ export const companyApi = {
 
   async getSubscription(): Promise<{ success: boolean; subscription?: { name: string; billingCycle: string; expiresAt?: string }; message?: string }> {
     try {
-      const response = await apiClient.get<{ success: boolean; data: { subscription: { name: string; billingCycle: string; expiresAt?: string } } }>('/company/subscription');
-      return { success: true, subscription: response.data.data.subscription };
+      const response = await apiClient.get<{ success: boolean; data: any }>('/company/subscription');
+      const subscription = response.data.data?.subscription || response.data.data?.plan;
+      return { success: true, subscription };
     } catch {
       return { success: false, message: 'Failed to fetch subscription' };
     }

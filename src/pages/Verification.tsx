@@ -4,6 +4,7 @@ import { FileText, Upload, CheckCircle, ArrowRight, Loader2, XCircle, Clock } fr
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 import type { UserRole } from '../types';
+import userApi from '../api/user';
 
 interface VerificationProps {
   role: UserRole;
@@ -27,10 +28,16 @@ export function VerificationPage({ role }: VerificationProps) {
   ] as const;
 
   const handleSubmit = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    setLoading(false);
-    navigate('/verification/pending');
+    try {
+      setLoading(true);
+      // TODO: Implement verification flow with file upload
+      navigate('/verification/pending');
+    } catch (error: any) {
+      console.error('Verification submit error:', error);
+      alert(error.response?.data?.error?.message || 'Failed to submit verification');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleSkip = () => {

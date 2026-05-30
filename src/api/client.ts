@@ -47,6 +47,16 @@ class ApiClient {
             return Promise.reject(refreshError);
           }
         }
+
+        if (error.response?.status === 403) {
+          const message = error.response?.data?.error?.message || 'Access denied';
+          if (message.toLowerCase().includes('suspend')) {
+            this.clearTokens();
+            window.location.href = '/suspended';
+            return Promise.reject(error);
+          }
+        }
+
         return Promise.reject(error);
       }
     );

@@ -4,6 +4,7 @@ import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, Ar
 import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { AppLayout } from '../../components/layout/AppLayout';
+import agentApi from '../../api/agent';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -122,9 +123,29 @@ export function AgentCreateListingPage() {
   };
 
   const handleSubmit = async () => {
-    setLoading(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    navigate('/agent/listings');
+    try {
+      setLoading(true);
+      const apiData = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.propertyType,
+        price: Number(formData.annualRent),
+        address: formData.address,
+        city: formData.area,
+        state: 'Lagos',
+        amenities: [],
+        images: formData.photos,
+      };
+      const response = await agentApi.createListing(apiData);
+      if (response.success) {
+        navigate('/agent/listings');
+      }
+    } catch (error: any) {
+      console.error('Create listing error:', error);
+      alert(error.response?.data?.error?.message || 'Failed to create listing');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getStepTitle = () => {

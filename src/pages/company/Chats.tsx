@@ -25,6 +25,7 @@ interface Chat {
 interface Message {
   id: string;
   senderId: string;
+  sender?: { _id: string; fullName: string };
   text: string;
   createdAt: string;
 }
@@ -291,19 +292,19 @@ export function CompanyChatsPage() {
                     key={msg.id}
                     className={clsx(
                       'flex',
-                      msg.senderId === user?.id ? 'justify-end' : 'justify-start'
+                      (msg.senderId === user?.id || msg.sender?._id === user?.id) ? 'justify-end' : 'justify-start'
                     )}
                   >
                     <div
                       className={clsx(
                         'max-w-[70%] rounded-clay-sm px-4 py-2',
-                        msg.senderId === user?.id
+                        (msg.senderId === user?.id || msg.sender?._id === user?.id)
                           ? 'bg-mustard text-white'
                           : 'bg-clay-border-light text-text-primary'
                       )}
                     >
                       <p className="text-sm">{msg.text}</p>
-                      <p className={clsx('text-xs mt-1', msg.senderId === user?.id ? 'text-white/70' : 'text-text-tertiary')}>
+                      <p className={clsx('text-xs mt-1', (msg.senderId === user?.id || msg.sender?._id === user?.id) ? 'text-white/70' : 'text-text-tertiary')}>
                         {formatTime(msg.createdAt)}
                       </p>
                     </div>

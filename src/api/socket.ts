@@ -35,8 +35,8 @@ class SocketService {
       this.reconnectAttempts++;
     });
 
-    this.socket.on('new_message', (data: { chatId: string; message: unknown }) => {
-      this.emit('message', data);
+    this.socket.on('new_message', (data: { id: string; chatId: string; senderId: string; sender: { _id: string; fullName: string }; text: string; type: string; createdAt: string }) => {
+      this.emit('message', { chatId: data.chatId, message: data });
     });
 
     this.socket.on('user_typing', (data: { chatId: string; userId: string; isTyping: boolean }) => {

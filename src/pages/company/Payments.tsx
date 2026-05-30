@@ -1,16 +1,35 @@
-import { useState } from 'react';
-import { DollarSign, TrendingUp, CreditCard, Download } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { DollarSign, TrendingUp, CreditCard } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
-import { mockTransactions, mockSubscriptionPayments } from '../../data/mockData';
+import paymentsApi, { Transaction } from '../../api/payments';
 
 export function CompanyPaymentsPage() {
   const [tab, setTab] = useState<'transactions' | 'subscriptions'>('transactions');
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [totalPaid, setTotalPaid] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadPayments();
+  }, []);
+
+  const loadPayments = async () => {
+    try {
+      const data = await paymentsApi.getHistory(1, 50);
+      setTransactions(data.transactions);
+      setTotalPaid(data.totalPaid);
+    } catch (err) {
+      console.error('Failed to load payments:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
-  const totalPaid = mockTransactions.filter(t => t.status === 'success').reduce((sum, t) => sum + t.amount, 0);
+  const subscriptions = transactions.filter(t => t.type === 'tier_subscription');
 
   return (
     <AppLayout role="company" title="Payments" subtitle="Track earnings and subscriptions">
@@ -31,7 +50,7 @@ export function CompanyPaymentsPage() {
             </div>
             <span className="text-sm text-text-tertiary">This Month</span>
           </div>
-          <p className="text-2xl font-bold text-text-primary">{formatCurrency(450000)}</p>
+          <p className="text-2xl font-bold text-text-primary">{formatCurrency(totalPaid)}</p>
         </ClayCard>
         <ClayCard className="p-5">
           <div className="flex items-center gap-3 mb-2">
@@ -55,33 +74,43 @@ export function CompanyPaymentsPage() {
 
       <ClayCard className="overflow-hidden">
         <div className="overflow-x-auto">
-          {tab === 'transactions' ? (
+          {loading ? (
+            <div className="p-8 text-center text-text-tertiary">Loading...</div>
+          ) : tab === 'transactions' ? (
           <table className="clay-table">
-            <thead><tr><th>Description</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
+            <thead><tr><th>Description</th><th>Tier</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
-              {mockTransactions.map(transaction => (
-                <tr key={transaction.id}>
-                  <td className="font-medium text-text-primary">{transaction.description}</td>
-                  <td className="font-semibold text-text-primary">{formatCurrency(transaction.amount)}</td>
-                  <td className="text-text-secondary">{new Date(transaction.createdAt).toLocaleDateString()}</td>
-                  <td><StatusBadge variant={transaction.status === 'success' ? 'success' : 'error'}>{transaction.status}</StatusBadge></td>
-                </tr>
-              ))}
+              {transactions.length === 0 ? (
+                <tr><td colSpan={5} className="text-center text-text-tertiary py-8">No transactions yet</td></tr>
+              ) : (
+                transactions.map(t => (
+                  <tr key={t.id}>
+                    <td className="font-medium text-text-primary capitalize">{t.type.replace('_', ' ')}</td>
+                    <td className="text-text-secondary">{t.tier || '-'}</td>
+                    <td className="font-semibold text-text-primary">{formatCurrency(t.amount)}</td>
+                    <td className="text-text-secondary">{new Date(t.createdAt).toLocaleDateString()}</td>
+                    <td><StatusBadge variant={t.status === 'completed' ? 'success' : t.status === 'pending' ? 'warning' : 'error'}>{t.status}</StatusBadge></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         ) : (
           <table className="clay-table">
-            <thead><tr><th>Plan</th><th>Amount</th><th>Billing</th><th>Date</th><th>Status</th></tr></thead>
+            <thead><tr><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
-              {mockSubscriptionPayments.map(payment => (
-                <tr key={payment.id}>
-                  <td className="font-medium text-text-primary">{payment.tierName}</td>
-                  <td className="font-semibold text-text-primary">{formatCurrency(payment.amount)}</td>
-                  <td className="text-text-secondary capitalize">{payment.billingCycle}</td>
-                  <td className="text-text-secondary">{new Date(payment.createdAt).toLocaleDateString()}</td>
-                  <td><StatusBadge variant={payment.status === 'success' ? 'success' : 'error'}>{payment.status}</StatusBadge></td>
-                </tr>
-              ))}
+              {subscriptions.length === 0 ? (
+                <tr><td colSpan={4} className="text-center text-text-tertiary py-8">No subscriptions yet</td></tr>
+              ) : (
+                subscriptions.map(s => (
+                  <tr key={s.id}>
+                    <td className="font-medium text-text-primary">{s.tier || 'Subscription'}</td>
+                    <td className="font-semibold text-text-primary">{formatCurrency(s.amount)}</td>
+                    <td className="text-text-secondary">{new Date(s.createdAt).toLocaleDateString()}</td>
+                    <td><StatusBadge variant={s.status === 'completed' ? 'success' : s.status === 'pending' ? 'warning' : 'error'}>{s.status}</StatusBadge></td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         )}

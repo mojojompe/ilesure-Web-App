@@ -3,7 +3,7 @@ import type { User, UserRole, AuthState } from '../types';
 import { authApi } from './authApi';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string, role: UserRole) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
   logout: () => void;
   updateRole: (role: UserRole) => void;
 }
@@ -36,28 +36,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }, [state]);
 
-  const login = async (email: string, password: string, requestedRole?: UserRole) => {
+  const login = async (email: string, password: string) => {
     try {
       const response = await authApi.login(email, password);
 
       if (response.success && response.user && response.accessToken) {
         const { user, accessToken, refreshToken } = response;
-        const userRole = user.role === 'company' ? 'company' : 'agent';
 
         setState({
           user: {
             ...user,
-            role: userRole,
+            role: user.role as UserRole,
           },
           isAuthenticated: true,
-          role: userRole,
+          role: user.role as UserRole,
         });
 
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           user: user,
           accessToken,
           refreshToken,
-          role: userRole,
+          role: user.role,
           isAuthenticated: true,
         }));
 

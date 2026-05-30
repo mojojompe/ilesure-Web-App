@@ -25,7 +25,7 @@ export function TierPage({ role }: TierPageProps) {
     setLoading(true);
     const response = await tiersApi.getTiers();
     if (response.success && response.data) {
-      setTiers(response.data);
+      setTiers(response.data.tiers);
     }
     setLoading(false);
   };

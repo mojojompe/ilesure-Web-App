@@ -45,7 +45,7 @@ export function CompanyArchivedPage() {
     const response = await companyApi.updateListing(id, { status: 'active' });
     
     if (response.success) {
-      setListings(prev => prev.filter(l => l.id !== id));
+      setListings(prev => prev.filter(l => l._id !== id));
       setToast({ message: 'Listing restored successfully', type: 'success' });
     } else {
       setToast({ message: 'Failed to restore listing', type: 'error' });
@@ -98,7 +98,7 @@ export function CompanyArchivedPage() {
       ) : (
         <div className="space-y-4">
           {filteredListings.map(listing => (
-            <ClayCard key={listing.id} className="p-4">
+            <ClayCard key={listing._id} className="p-4">
               <div className="flex items-center gap-4">
                 <div className="w-20 h-20 rounded-clay-sm bg-burnt-brown-pale overflow-hidden flex-shrink-0">
                   {listing.images && listing.images[0] ? (
@@ -111,8 +111,8 @@ export function CompanyArchivedPage() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
-                  <p className="text-sm text-text-tertiary">{listing.location?.city}, {listing.location?.state}</p>
-                  <p className="text-lg font-bold text-mustard mt-1">{formatCurrency(listing.price)}</p>
+                  <p className="text-sm text-text-tertiary">{listing.city}, {listing.address}</p>
+                  <p className="text-lg font-bold text-mustard mt-1">{formatCurrency(listing.rentAnnual)}</p>
                   {listing.createdAt && (
                     <p className="text-xs text-text-tertiary mt-1">Archived: {formatDate(listing.createdAt)}</p>
                   )}
@@ -121,12 +121,12 @@ export function CompanyArchivedPage() {
                   <Button 
                     variant="secondary" 
                     size="sm" 
-                    onClick={() => handleRestore(listing.id)}
-                    disabled={restoring === listing.id}
-                    loading={restoring === listing.id}
+                    onClick={() => handleRestore(listing._id)}
+                    disabled={restoring === listing._id}
+                    loading={restoring === listing._id}
                   >
                     <RotateCcw className="w-4 h-4 mr-1" /> 
-                    {restoring === listing.id ? 'Restoring...' : 'Restore'}
+                    {restoring === listing._id ? 'Restoring...' : 'Restore'}
                   </Button>
                 </div>
               </div>

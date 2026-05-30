@@ -74,10 +74,7 @@ interface BookingsResponse {
 
 interface BookingResponse {
   success: boolean;
-  data?: {
-    booking: Booking;
-    message?: string;
-  };
+  data?: Booking;
   error?: { message: string };
 }
 

@@ -11,6 +11,7 @@ import { VerificationPage } from './pages/Verification';
 import { VerificationPendingPage } from './pages/VerificationPending';
 import { TierPage } from './pages/Tiers';
 import { PaymentPage } from './pages/Payment';
+import { PaymentCallbackPage } from './pages/PaymentCallback';
 import { AgentDashboardPage } from './pages/agent/Dashboard';
 import { AgentListingsPage } from './pages/agent/Listings';
 import { AgentCreateListingPage } from './pages/agent/CreateListing';
@@ -31,7 +32,8 @@ import { CompanyPaymentsPage } from './pages/company/Payments';
 import { CompanyAnalyticsPage } from './pages/company/Analytics';
 import { CompanyNotificationsPage } from './pages/company/Notifications';
 import { CompanySettingsPage } from './pages/company/Settings';
-
+import { RoommateProfilePage } from './pages/roommate/Profile';
+import { RoommateMatchesPage } from './pages/roommate/Matches';
 import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
 import { NotFound } from './pages/NotFound';
@@ -90,6 +92,7 @@ function AppRoutes() {
       <Route path="/tiers/:role" element={<TierRoute />} />
       <Route path="/tiers" element={<GenericTierRoute />} />
       <Route path="/payment" element={<PaymentPage />} />
+      <Route path="/payment/callback" element={<PaymentCallbackPage />} />
       
       <Route path="/agent" element={
         <ProtectedRoute role="agent">
@@ -202,6 +205,10 @@ function AppRoutes() {
           <CompanySettingsPage />
         </ProtectedRoute>
       } />
+      
+      {/* Roommate Matching (Students) */}
+      <Route path="/roommate/profile" element={<RoommateProfilePage />} />
+      <Route path="/roommate/matches" element={<RoommateMatchesPage />} />
       
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFound />} />

@@ -26,9 +26,10 @@ interface ChatsResponse {
 interface MessagesResponse {
   success: boolean;
   data?: {
-    messages: Array<{
+      messages: Array<{
       id: string;
       senderId: string;
+      sender?: { _id: string; fullName: string };
       text: string;
       createdAt: string;
     }>;
@@ -66,22 +67,22 @@ export const chatApi = {
         resolve({ success: false, error: 'Timeout' });
       }, 10000);
 
-      const handleMessage = (data: any) => {
+      const handleMessage = (data: { chatId: string; message: any }) => {
         if (data.chatId === chatId && data.message) {
           clearTimeout(timeout);
-          socketService.off('new_message', handleMessage);
+          socketService.off('message', handleMessage);
           resolve({ success: true, message: data.message });
         }
       };
 
-      socketService.on('new_message', handleMessage);
+      socketService.on('message', handleMessage);
       socketService.sendMessage(chatId, recipientId || '', text);
     });
   },
 
   async markAsRead(chatId: string, messageId: string): Promise<{ success: boolean }> {
     try {
-      await apiClient.put(`/chats/${chatId}/read`, { messageId });
+      await apiClient.patch(`/chats/${chatId}/read`, { messageId });
       socketService.markAsRead(chatId, messageId);
       return { success: true };
     } catch {

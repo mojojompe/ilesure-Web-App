@@ -3,9 +3,7 @@ import type { User } from '../types';
 
 interface ProfileResponse {
   success: boolean;
-  data?: {
-    user: User;
-  };
+  data?: User;
   error?: { message: string };
 }
 
@@ -19,9 +17,7 @@ interface NotificationSettings {
 
 interface NotificationSettingsResponse {
   success: boolean;
-  data?: {
-    notifications: NotificationSettings;
-  };
+  data?: NotificationSettings;
 }
 
 interface UpdateProfileData {
