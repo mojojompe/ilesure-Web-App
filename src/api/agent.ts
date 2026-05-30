@@ -173,9 +173,12 @@ export const agentApi = {
     }
   },
 
-  async updateBookingStatus(id: string, status: string): Promise<BookingResponse> {
+  async updateBookingStatus(bookingId: string, status: string, listingId: string): Promise<BookingResponse> {
     try {
-      const response = await apiClient.put<BookingResponse>(`/agent/bookings/${id}`, { status });
+      const response = await apiClient.patch<BookingResponse>(
+        `/listings/${listingId}/bookings/${bookingId}/status`,
+        { status }
+      );
       return response.data;
     } catch {
       return { success: false, error: { message: 'Failed to update booking' } };

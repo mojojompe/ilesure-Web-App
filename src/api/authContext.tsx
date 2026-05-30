@@ -43,6 +43,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.user && response.accessToken) {
         const { user, accessToken, refreshToken } = response;
 
+        // ── Role gate: only agents and companies can use the web app ──
+        const allowedRoles = ['agent', 'landlord', 'company', 'company_admin'];
+        if (!allowedRoles.includes(user.role)) {
+          return {
+            success: false,
+            error: 'This portal is for agents and companies only. Please use the mobile app.',
+          };
+        }
+
         setState({
           user: {
             ...user,
@@ -60,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAuthenticated: true,
         }));
 
-        return { success: true };
+        return { success: true, user };
       }
 
       return { success: false, error: response.error?.message || 'Login failed' };

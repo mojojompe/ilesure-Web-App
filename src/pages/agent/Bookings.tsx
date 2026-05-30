@@ -38,13 +38,17 @@ export function AgentBookingsPage() {
 
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
-  const handleStatusChange = async (id: string, newStatus: string) => {
+  const handleStatusChange = async (booking: any, newStatus: string) => {
     setUpdating(true);
     try {
-      const response = await agentApi.updateBookingStatus(id, newStatus);
+      const bookingId = booking._id || booking.id;
+      const listingId = booking.listingId?._id || booking.listingId;
+      const response = await agentApi.updateBookingStatus(bookingId, newStatus, listingId);
       if (response.success) {
         fetchBookings();
         setShowDetailModal(false);
+      } else {
+        console.error('Failed to update booking:', response.error?.message);
       }
     } catch (error) {
       console.error('Failed to update booking:', error);
@@ -107,51 +111,61 @@ export function AgentBookingsPage() {
                 </tr>
               </thead>
               <tbody>
-                {bookings.map(booking => (
-                  <tr key={booking.id}>
-                    <td>
-                      <p className="font-medium text-text-primary">{booking.listingTitle || booking.listing?.title}</p>
-                    </td>
-                    <td>
-                      <div>
-                        <p className="text-sm text-text-primary">{booking.userName}</p>
-                        <p className="text-xs text-text-tertiary">{booking.userPhone}</p>
-                      </div>
-                    </td>
-                    <td>
-                      <p className="font-bold text-mustard">{formatCurrency(booking.price)}</p>
-                    </td>
-                    <td>
-                      <p className="text-sm text-text-secondary">{booking.moveInDate}</p>
-                    </td>
-                    <td>
-                      <StatusBadge
-                        variant={
-                          booking.status === 'confirmed' ? 'success' :
-                          booking.status === 'pending' ? 'warning' :
-                          booking.status === 'cancelled' ? 'error' : 'default'
-                        }
-                      >
-                        {booking.status}
-                      </StatusBadge>
-                    </td>
-                    <td>
-                      <StatusBadge
-                        variant={
-                          booking.paymentStatus === 'paid' ? 'success' :
-                          booking.paymentStatus === 'pending' ? 'warning' : 'error'
-                        }
-                      >
-                        {booking.paymentStatus || 'pending'}
-                      </StatusBadge>
-                    </td>
-                    <td>
-                      <Button variant="secondary" size="sm" onClick={() => handleView(booking)}>
-                        View
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {bookings.map(booking => {
+                  const bookingId = booking._id || booking.id;
+                  const listingTitle = booking.listingId?.title || booking.listingTitle || '—';
+                  const tenantName = booking.userId?.fullName || booking.userName || '—';
+                  const tenantPhone = booking.userId?.phone || booking.userPhone || '—';
+                  const rent = booking.listingId?.rentAnnual || booking.price || 0;
+                  const moveIn = booking.moveInDate
+                    ? new Date(booking.moveInDate).toLocaleDateString()
+                    : '—';
+                  return (
+                    <tr key={bookingId}>
+                      <td>
+                        <p className="font-medium text-text-primary">{listingTitle}</p>
+                      </td>
+                      <td>
+                        <div>
+                          <p className="text-sm text-text-primary">{tenantName}</p>
+                          <p className="text-xs text-text-tertiary">{tenantPhone}</p>
+                        </div>
+                      </td>
+                      <td>
+                        <p className="font-bold text-mustard">{formatCurrency(rent)}</p>
+                      </td>
+                      <td>
+                        <p className="text-sm text-text-secondary">{moveIn}</p>
+                      </td>
+                      <td>
+                        <StatusBadge
+                          variant={
+                            booking.status === 'confirmed' ? 'success' :
+                            booking.status === 'pending' ? 'warning' :
+                            booking.status === 'cancelled' ? 'error' : 'default'
+                          }
+                        >
+                          {booking.status}
+                        </StatusBadge>
+                      </td>
+                      <td>
+                        <StatusBadge
+                          variant={
+                            booking.paymentStatus === 'paid' ? 'success' :
+                            booking.paymentStatus === 'pending' ? 'warning' : 'error'
+                          }
+                        >
+                          {booking.paymentStatus || 'unpaid'}
+                        </StatusBadge>
+                      </td>
+                      <td>
+                        <Button variant="secondary" size="sm" onClick={() => handleView(booking)}>
+                          View
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -163,67 +177,81 @@ export function AgentBookingsPage() {
       </ClayCard>
 
       <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Booking Details" size="md">
-        {selectedBooking && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-semibold text-text-primary">{selectedBooking.listingTitle}</p>
-                <p className="text-sm text-text-tertiary">{selectedBooking.listing?.address}</p>
-              </div>
-              <StatusBadge
-                variant={
-                  selectedBooking.status === 'confirmed' ? 'success' :
-                  selectedBooking.status === 'pending' ? 'warning' : 'default'
-                }
-              >
-                {selectedBooking.status}
-              </StatusBadge>
-            </div>
+            {selectedBooking && (() => {
+              const listingTitle = selectedBooking.listingId?.title || selectedBooking.listingTitle || '—';
+              const listingArea = selectedBooking.listingId?.areaCluster || selectedBooking.listing?.address || '—';
+              const tenantName = selectedBooking.userId?.fullName || selectedBooking.userName || '—';
+              const tenantPhone = selectedBooking.userId?.phone || selectedBooking.userPhone || '—';
+              const rent = selectedBooking.listingId?.rentAnnual || selectedBooking.price || 0;
+              const moveIn = selectedBooking.moveInDate
+                ? new Date(selectedBooking.moveInDate).toLocaleDateString()
+                : '—';
+              return (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold text-text-primary">{listingTitle}</p>
+                      <p className="text-sm text-text-tertiary">{listingArea}</p>
+                    </div>
+                    <StatusBadge
+                      variant={
+                        selectedBooking.status === 'confirmed' ? 'success' :
+                        selectedBooking.status === 'pending' ? 'warning' : 'default'
+                      }
+                    >
+                      {selectedBooking.status}
+                    </StatusBadge>
+                  </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs text-text-tertiary">Tenant</p>
-                <p className="text-sm font-medium text-text-primary">{selectedBooking.userName}</p>
-                <p className="text-xs text-text-tertiary">{selectedBooking.userPhone}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-tertiary">Price</p>
-                <p className="text-lg font-bold text-mustard">{formatCurrency(selectedBooking.price)}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-tertiary">Move-in Date</p>
-                <p className="text-sm text-text-primary">{selectedBooking.moveInDate}</p>
-              </div>
-              <div>
-                <p className="text-xs text-text-tertiary">Payment</p>
-                <StatusBadge variant={selectedBooking.paymentStatus === 'paid' ? 'success' : 'warning'}>
-                  {selectedBooking.paymentStatus || 'pending'}
-                </StatusBadge>
-              </div>
-            </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-text-tertiary">Tenant</p>
+                      <p className="text-sm font-medium text-text-primary">{tenantName}</p>
+                      <p className="text-xs text-text-tertiary">{tenantPhone}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-tertiary">Annual Rent</p>
+                      <p className="text-lg font-bold text-mustard">{formatCurrency(rent)}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-tertiary">Move-in Date</p>
+                      <p className="text-sm text-text-primary">{moveIn}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-text-tertiary">Duration</p>
+                      <p className="text-sm text-text-primary">{selectedBooking.duration || '—'}</p>
+                    </div>
+                    {selectedBooking.message && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-text-tertiary">Message</p>
+                        <p className="text-sm text-text-primary">{selectedBooking.message}</p>
+                      </div>
+                    )}
+                  </div>
 
-            {selectedBooking.status === 'pending' && (
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="success"
-                  className="flex-1"
-                  onClick={() => handleStatusChange(selectedBooking.id, 'confirmed')}
-                  loading={updating}
-                >
-                  <Check className="w-4 h-4 mr-2" /> Confirm
-                </Button>
-                <Button
-                  variant="danger"
-                  className="flex-1"
-                  onClick={() => handleStatusChange(selectedBooking.id, 'cancelled')}
-                  loading={updating}
-                >
-                  <X className="w-4 h-4 mr-2" /> Cancel
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
+                  {selectedBooking.status === 'pending' && (
+                    <div className="flex gap-2 pt-4">
+                      <Button
+                        variant="success"
+                        className="flex-1"
+                        onClick={() => handleStatusChange(selectedBooking, 'confirmed')}
+                        loading={updating}
+                      >
+                        <Check className="w-4 h-4 mr-2" /> Confirm
+                      </Button>
+                      <Button
+                        variant="danger"
+                        className="flex-1"
+                        onClick={() => handleStatusChange(selectedBooking, 'rejected')}
+                        loading={updating}
+                      >
+                        <X className="w-4 h-4 mr-2" /> Reject
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
       </Modal>
     </AppLayout>
   );
