@@ -24,7 +24,10 @@ export function CompanyInquiriesPage() {
     setLoading(true);
     const response = await inquiriesApi.getInquiries();
     if (response.success && response.data) {
-      setInquiries(response.data.inquiries);
+      setInquiries(response.data.inquiries.map((inq: any) => ({
+        ...inq,
+        user: inq.user || inq.userId || { fullName: 'Unknown' },
+      })));
     } else {
       setInquiries([]);
     }
@@ -33,7 +36,7 @@ export function CompanyInquiriesPage() {
 
   const filteredInquiries = inquiries.filter(inquiry => {
     const matchesSearch = 
-      inquiry.user.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (inquiry.user?.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       inquiry.question.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filter === 'all' || inquiry.status === filter;
     return matchesSearch && matchesFilter;
@@ -144,12 +147,12 @@ export function CompanyInquiriesPage() {
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-burnt-brown-pale flex items-center justify-center flex-shrink-0">
                       <span className="text-sm font-semibold text-burnt-brown">
-                        {inquiry.user.fullName.charAt(0)}
+                        {inquiry.user?.fullName?.charAt(0) || '?'}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium text-text-primary">{inquiry.user.fullName}</p>
+                        <p className="text-sm font-medium text-text-primary">{inquiry.user?.fullName || 'Unknown'}</p>
                         <StatusBadge variant={getStatusVariant(inquiry.status)}>
                           {inquiry.status}
                         </StatusBadge>
@@ -183,12 +186,12 @@ export function CompanyInquiriesPage() {
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-12 h-12 rounded-full bg-burnt-brown-pale flex items-center justify-center">
                         <span className="text-lg font-semibold text-burnt-brown">
-                          {selectedInquiry.user.fullName.charAt(0)}
+                          {selectedInquiry.user?.fullName?.charAt(0) || '?'}
                         </span>
                       </div>
                       <div>
-                        <p className="font-semibold text-text-primary">{selectedInquiry.user.fullName}</p>
-                        <p className="text-sm text-text-tertiary">{selectedInquiry.user.phone}</p>
+                        <p className="font-semibold text-text-primary">{selectedInquiry.user?.fullName || 'Unknown'}</p>
+                        <p className="text-sm text-text-tertiary">{selectedInquiry.user?.phone || ''}</p>
                       </div>
                     </div>
                   </div>

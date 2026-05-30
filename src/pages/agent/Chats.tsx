@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, Loader } from 'lucide-react';
+import { Search, Send, MoreVertical, Phone, Video, Loader, MessageCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { chatApi } from '../../api/chat';
@@ -252,8 +252,9 @@ export function AgentChatsPage() {
                   </button>
                 ))
               ) : (
-                <div className="text-center py-8 text-text-tertiary">
-                  No conversations yet
+                <div className="p-12 text-center">
+                  <MessageCircle className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
+                  <p className="text-text-secondary">No conversations yet</p>
                 </div>
               )}
             </div>
@@ -353,7 +354,11 @@ export function AgentChatsPage() {
               </div>
             </div>
           ) : (
-            <div className="hidden md:flex flex-1 items-center justify-center">
+            <div className="hidden md:flex flex-1 flex-col items-center justify-center">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-clay-border-light flex items-center justify-center">
+                <MessageCircle className="w-8 h-8 text-text-tertiary" />
+              </div>
+              <h3 className="text-lg font-semibold text-text-primary mb-2">No conversation selected</h3>
               <p className="text-text-tertiary">Select a conversation to start chatting</p>
             </div>
           )}
