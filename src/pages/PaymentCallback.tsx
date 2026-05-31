@@ -12,6 +12,7 @@ export function PaymentCallbackPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<Status>('verifying');
   const [tierName, setTierName] = useState('');
+  const [paymentType, setPaymentType] = useState('');
   
   const { user } = useAuth();
   const returnUrl = localStorage.getItem('paymentReturnUrl');
@@ -39,6 +40,7 @@ export function PaymentCallbackPage() {
         if (result.status === 'success') {
           setStatus('success');
           setTierName(result.newTier || '');
+          setPaymentType(result.type || '');
         } else {
           setStatus('failed');
         }
@@ -75,7 +77,11 @@ export function PaymentCallbackPage() {
                 Payment Successful!
               </h1>
               <p className="text-text-tertiary mb-6">
-                {tierName ? `You are now on the ${tierName} plan` : 'Your plan has been activated'}
+                {paymentType === 'booking_fee'
+                  ? 'Your booking has been confirmed!'
+                  : tierName
+                    ? `You are now on the ${tierName} plan`
+                    : 'Your plan has been activated'}
               </p>
               <Button
                 onClick={handleReturn}

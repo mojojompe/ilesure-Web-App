@@ -15,6 +15,8 @@ export interface InitializePaymentResponse {
 export interface VerifyPaymentResponse {
   status: 'success' | 'failed' | 'pending';
   newTier?: string;
+  type?: string;
+  bookingId?: string;
   expiresAt?: string;
 }
 
