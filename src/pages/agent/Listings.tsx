@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Archive, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
@@ -11,6 +12,7 @@ import type { Listing } from '../../types';
 const amenityOptions = ['WiFi', 'Security', 'Water', 'Electricity', 'Parking', 'AC', 'Laundry', 'Generator', 'Balcony', 'Common Room'];
 
 export function AgentListingsPage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'active' | 'occupied'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -157,7 +159,7 @@ export function AgentListingsPage() {
             <option value="single_room">Single Room</option>
             <option value="bedsitter">Bedsitter</option>
           </select>
-          <Button variant="primary" onClick={() => setShowAddModal(true)}>
+          <Button variant="primary" onClick={() => navigate('/agent/create-listing')}>
             <Plus className="w-4 h-4 mr-2" /> Add Listing
           </Button>
         </div>
@@ -191,8 +193,9 @@ export function AgentListingsPage() {
               const price = listing.price || listing.rentAnnual || 0;
               const city = listing.location?.city || listing.areaCluster || listing.city || '';
               const state = listing.location?.state || listing.state || '';
+              const isFullyBooked = listing.status === 'fully_booked';
               return (
-                <ClayCard key={listingId} hover className="overflow-hidden">
+                <ClayCard key={listingId} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
                   <div className="relative h-40">
                     {listing.images?.[0] ? (
                       <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
@@ -221,10 +224,10 @@ export function AgentListingsPage() {
                       <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
                     </div>
                     <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
-                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
+                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
                         <Eye className="w-3 h-3 mr-1" /> View
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))}>
+                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))} disabled={isFullyBooked}>
                         <Archive className="w-3 h-3" />
                       </Button>
                     </div>
@@ -360,15 +363,26 @@ export function AgentListingsPage() {
               <p className="text-sm text-text-tertiary capitalize">/ {selectedListing.type}</p>
             </div>
             <p className="text-text-secondary">{selectedListing.description}</p>
-            <div className="flex items-center gap-2 text-text-tertiary">
-              <MapPin className="w-4 h-4" />
-              <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
-            </div>
-            {selectedListing.landmark && (
-              <div className="text-sm text-text-tertiary">
-                Landmark: {selectedListing.landmark}
+            <div className="flex flex-col gap-2 text-text-tertiary">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
               </div>
-            )}
+              {selectedListing.landmark && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium text-text-secondary">Landmarks:</span>
+                  <span>{selectedListing.landmark}</span>
+                </div>
+              )}
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedListing.address || ''} ${selectedListing.city || ''} ${selectedListing.landmark || ''}`.trim())}`}
+                target="_blank" 
+                rel="noreferrer"
+                className="text-mustard hover:underline text-sm inline-block mt-1"
+              >
+                View on Google Maps
+              </a>
+            </div>
             <div>
               <p className="text-xs font-semibold text-text-secondary uppercase mb-2">Amenities</p>
               <div className="flex flex-wrap gap-2">

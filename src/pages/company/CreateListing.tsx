@@ -4,7 +4,7 @@ import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, Ar
 import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { AppLayout } from '../../components/layout/AppLayout';
-import agentApi from '../../api/agent';
+import companyApi from '../../api/company';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -104,7 +104,7 @@ const initialFormData: ListingFormData = {
   photos: [],
 };
 
-export function AgentCreateListingPage() {
+export function CompanyCreateListingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ListingFormData>(initialFormData);
@@ -158,9 +158,9 @@ export function AgentCreateListingPage() {
         ],
         images: formData.photos,
       };
-      const response = await agentApi.createListing(apiData);
+      const response = await companyApi.createListing(apiData);
       if (response.success) {
-        navigate('/agent/listings');
+        navigate('/company/listings');
       }
     } catch (error: any) {
       console.error('Create listing error:', error);
@@ -557,7 +557,7 @@ export function AgentCreateListingPage() {
   );
 
   return (
-    <AppLayout role="agent" title="Create Listing" subtitle={`Step ${step} of 9`}>
+    <AppLayout role="company" title="Create Listing" subtitle={`Step ${step} of 9`}>
       <div className="max-w-lg mx-auto pb-12">
         <div className="clay-card p-6">
           <StepIndicator currentStep={step} totalSteps={9} />

@@ -5,6 +5,7 @@ import { LoginPage } from './pages/Login';
 import { SignupPage } from './pages/Signup';
 import { CreateOTPPage } from './pages/CreateOTP';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
+import { ResetPasswordPage } from './pages/ResetPassword';
 import { RoleSelectionPage } from './pages/RoleSelection';
 import { TierSelectionPage } from './pages/TierSelection';
 import { VerificationPage } from './pages/Verification';
@@ -24,6 +25,7 @@ import { AgentNotificationsPage } from './pages/agent/Notifications';
 import { AgentSettingsPage } from './pages/agent/Settings';
 import { CompanyDashboardPage } from './pages/company/Dashboard';
 import { CompanyListingsPage } from './pages/company/Listings';
+import { CompanyCreateListingPage } from './pages/company/CreateListing';
 import { CompanyAgentsPage } from './pages/company/Agents';
 import { CompanyBookingsPage } from './pages/company/Bookings';
 import { CompanyChatsPage } from './pages/company/Chats';
@@ -85,6 +87,7 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/create-otp" element={<CreateOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/role-selection" element={<RoleSelectionPage />} />
       <Route path="/tier-selection" element={<TierSelectionPage />} />
       <Route path="/verification/:role" element={<VerificationRoute />} />
@@ -158,6 +161,11 @@ function AppRoutes() {
       <Route path="/company/listings" element={
         <ProtectedRoute role="company">
           <CompanyListingsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/company/create-listing" element={
+        <ProtectedRoute role="company">
+          <CompanyCreateListingPage />
         </ProtectedRoute>
       } />
       <Route path="/company/archived" element={

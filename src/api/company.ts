@@ -81,15 +81,7 @@ export const companyApi = {
     }
   },
 
-  async createListing(data: {
-    title: string;
-    description: string;
-    type: string;
-    price: number;
-    address: string;
-    city: string;
-    state: string;
-  }): Promise<{ success: boolean; listing?: Listing; message?: string }> {
+  async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string }> {
     try {
       const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);
       return { success: true, listing: response.data.data };

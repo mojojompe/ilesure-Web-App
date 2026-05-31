@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Check, X, Loader } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import paymentsApi from '../api/payments';
+import { useAuthStore } from '../store/authStore';
 
 type Status = 'verifying' | 'success' | 'failed';
 
@@ -11,6 +12,19 @@ export function PaymentCallbackPage() {
   const navigate = useNavigate();
   const [status, setStatus] = useState<Status>('verifying');
   const [tierName, setTierName] = useState('');
+  
+  const { user } = useAuthStore();
+  const returnUrl = localStorage.getItem('paymentReturnUrl');
+
+  const handleReturn = () => {
+    if (returnUrl) {
+      localStorage.removeItem('paymentReturnUrl');
+      navigate(returnUrl);
+    } else {
+      const fallbackUrl = user?.role === 'company' ? '/company' : '/agent';
+      navigate(fallbackUrl);
+    }
+  };
 
   useEffect(() => {
     const reference = searchParams.get('reference');
@@ -64,7 +78,7 @@ export function PaymentCallbackPage() {
                 {tierName ? `You are now on the ${tierName} plan` : 'Your plan has been activated'}
               </p>
               <Button
-                onClick={() => navigate('/agent')}
+                onClick={handleReturn}
                 variant="primary"
                 className="w-full"
               >
@@ -85,7 +99,10 @@ export function PaymentCallbackPage() {
                 Something went wrong. Please try again.
               </p>
               <Button
-                onClick={() => navigate('/tiers')}
+                onClick={() => {
+                  const fallbackUrl = returnUrl || '/tiers';
+                  navigate(fallbackUrl);
+                }}
                 variant="primary"
                 className="w-full"
               >

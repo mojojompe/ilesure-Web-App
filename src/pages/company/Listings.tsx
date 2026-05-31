@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Edit, Eye, Heart, Archive, Loader, MapPin } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
@@ -8,6 +9,7 @@ import { Modal } from '../../components/ui/Modal';
 import { companyApi } from '../../api/company';
 
 export function CompanyListingsPage() {
+  const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [listings, setListings] = useState<any[]>([]);
@@ -57,7 +59,7 @@ export function CompanyListingsPage() {
             className="clay-input w-full pl-11"
           />
         </div>
-        <Button variant="primary">
+        <Button variant="primary" onClick={() => navigate('/company/create-listing')}>
           <Plus className="w-4 h-4 mr-2" /> Add Listing
         </Button>
       </div>
@@ -84,8 +86,10 @@ export function CompanyListingsPage() {
         </div>
       ) : listings.length > 0 ? (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {listings.map(listing => (
-            <ClayCard key={listing.id} hover className="overflow-hidden">
+          {listings.map(listing => {
+            const isFullyBooked = listing.status === 'fully_booked';
+            return (
+            <ClayCard key={listing.id} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
               <div className="relative h-40">
                 {listing.images?.[0] ? (
                   <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
@@ -109,16 +113,17 @@ export function CompanyListingsPage() {
                   <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
                 </div>
                 <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
-                  <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
+                  <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
                     <Eye className="w-3 h-3 mr-1" /> View
                   </Button>
-                  <Button variant="secondary" size="sm" onClick={() => handleView(listing)}>
+                  <Button variant="secondary" size="sm" onClick={() => handleView(listing)} disabled={isFullyBooked}>
                     <Edit className="w-3 h-3" />
                   </Button>
                 </div>
               </div>
             </ClayCard>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="text-center py-12">
@@ -140,9 +145,25 @@ export function CompanyListingsPage() {
               <p className="text-sm text-text-tertiary capitalize">/ {selectedListing.type}</p>
             </div>
             <p className="text-text-secondary">{selectedListing.description}</p>
-            <div className="flex items-center gap-2 text-text-tertiary">
-              <MapPin className="w-4 h-4" />
-              <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
+            <div className="flex flex-col gap-2 text-text-tertiary">
+              <div className="flex items-center gap-2">
+                <MapPin className="w-4 h-4" />
+                <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
+              </div>
+              {selectedListing.landmark && (
+                <div className="flex items-center gap-2 text-sm">
+                  <span className="font-medium text-text-secondary">Landmarks:</span>
+                  <span>{selectedListing.landmark}</span>
+                </div>
+              )}
+              <a 
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedListing.address || ''} ${selectedListing.city || ''} ${selectedListing.landmark || ''}`.trim())}`}
+                target="_blank" 
+                rel="noreferrer"
+                className="text-mustard hover:underline text-sm inline-block mt-1"
+              >
+                View on Google Maps
+              </a>
             </div>
           </div>
         )}

@@ -49,13 +49,23 @@ interface ListingResponse {
 interface CreateListingData {
   title: string;
   description: string;
-  type: string;
-  price: number;
+  propertyType: string;
+  rentAnnual: number;
+  cautionFee?: number;
+  agencyFee?: number;
   address: string;
   city: string;
-  state: string;
+  state?: string;
   landmark?: string;
+  areaCluster: string;
+  distanceBucket: string;
+  maxOccupants: number;
+  genderRestriction: string;
+  furnishing: string;
+  power: string;
+  water: string;
   amenities?: string[];
+  rules?: string[];
   images?: string[];
 }
 
