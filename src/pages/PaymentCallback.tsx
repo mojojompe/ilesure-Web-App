@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Check, X, Loader } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import paymentsApi from '../api/payments';
-import { useAuthStore } from '../store/authStore';
+import { useAuth } from '../api/authContext';
 
 type Status = 'verifying' | 'success' | 'failed';
 
@@ -13,7 +13,7 @@ export function PaymentCallbackPage() {
   const [status, setStatus] = useState<Status>('verifying');
   const [tierName, setTierName] = useState('');
   
-  const { user } = useAuthStore();
+  const { user } = useAuth();
   const returnUrl = localStorage.getItem('paymentReturnUrl');
 
   const handleReturn = () => {

@@ -67,17 +67,28 @@ export function AgentListingsPage() {
   const handleAddListing = async () => {
     setSubmitting(true);
     try {
+      // NOTE: This simplified modal captures basic fields only.
+      // The full 9-step CreateListing page (/agent/listings/create) is the
+      // recommended flow for complete listing data.
       const response = await agentApi.createListing({
         title: newListing.title,
         description: newListing.description,
-        type: newListing.type,
-        price: Number(newListing.price),
+        propertyType: newListing.type,
+        rentAnnual: Number(newListing.price),
         address: newListing.address,
         city: newListing.city,
         state: newListing.state,
         landmark: newListing.landmark,
         amenities: newListing.amenities,
-      });
+        areaCluster: newListing.city,
+        // Required fields with sensible defaults (user can edit later via full form)
+        distanceBucket: 'within_5km',
+        maxOccupants: 1,
+        genderRestriction: 'any',
+        furnishing: 'unfurnished',
+        power: 'irregular',
+        water: 'borehole',
+      } as any);
 
       if (response.success) {
         showToast('Listing created successfully!', 'success');

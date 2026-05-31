@@ -11,6 +11,12 @@ export function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [company, setCompany] = useState<any>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
   const [notifications, setNotifications] = useState({
     newBooking: true,
     listingInquiry: true,
@@ -58,9 +64,9 @@ export function CompanySettingsPage() {
     try {
       const response = await companyApi.updateProfile(formData);
       if (response.success) {
-        alert('Company saved successfully!');
+        showToast('Company saved successfully!');
       } else {
-        alert(response.message || 'Failed to save');
+        showToast(response.message || 'Failed to save', 'error');
       }
     } catch (error) {
       console.error('Failed to save:', error);
@@ -87,6 +93,14 @@ export function CompanySettingsPage() {
 
   return (
     <AppLayout role="company" title="Settings" subtitle="Manage your company">
+      {/* Toast notification overlay */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
+          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+        }`}>
+          {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+        </div>
+      )}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <ClayCard className="p-5">
@@ -165,17 +179,17 @@ export function CompanySettingsPage() {
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
             <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-              <p className="text-lg font-bold text-text-primary">Premium</p>
-              <p className="text-sm text-text-tertiary capitalize">monthly</p>
+              <p className="text-lg font-bold text-text-primary capitalize">{company?.tier || 'Free'}</p>
+              <p className="text-sm text-text-tertiary capitalize">{company?.billingCycle || 'monthly'}</p>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-text-tertiary">Agent Slots:</span>
-                <span className="font-medium">50</span>
+                <span className="font-medium">{company?.limits?.agentSlots ?? 50}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-text-tertiary">Listings:</span>
-                <span className="font-medium">Unlimited</span>
+                <span className="font-medium">{company?.limits?.maxListings === 9999 ? 'Unlimited' : company?.limits?.maxListings ?? '—'}</span>
               </div>
             </div>
             <a href="/tiers" className="block btn-secondary text-center mt-4">

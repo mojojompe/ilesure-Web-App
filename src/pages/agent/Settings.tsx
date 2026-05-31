@@ -9,7 +9,13 @@ import { userApi } from '../../api/user';
 export function AgentSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [user, setUser] = useState<any>(null);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
   const [notifications, setNotifications] = useState({
     newBooking: true,
     listingInquiry: true,
@@ -53,9 +59,9 @@ export function AgentSettingsPage() {
     try {
       const response = await userApi.updateProfile(formData);
       if (response.success) {
-        alert('Profile saved successfully!');
+        showToast('Profile saved successfully!');
       } else {
-        alert(response.error?.message || 'Failed to save profile');
+        showToast(response.error?.message || 'Failed to save profile', 'error');
       }
     } catch (error) {
       console.error('Failed to save profile:', error);
@@ -86,6 +92,14 @@ export function AgentSettingsPage() {
 
   return (
     <AppLayout role="agent" title="Settings" subtitle="Manage your account">
+      {/* Toast notification overlay */}
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
+          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+        }`}>
+          {toast.type === 'success' ? '✓' : '✕'} {toast.message}
+        </div>
+      )}
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <ClayCard className="p-5">
