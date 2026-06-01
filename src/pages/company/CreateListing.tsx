@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, ArrowRight, ArrowLeft, Check, Upload, X } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -109,6 +109,9 @@ export function CompanyCreateListingPage() {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ListingFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleChange = (field: keyof ListingFormData, value: ListingFormData[keyof ListingFormData]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -116,6 +119,17 @@ export function CompanyCreateListingPage() {
 
   const handleToggle = (field: keyof ListingFormData) => {
     setFormData(prev => ({ ...prev, [field]: !prev[field] }));
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = 6 - photoFiles.length;
+    setPhotoFiles(prev => [...prev, ...files.slice(0, remaining)].slice(0, 6));
+    e.target.value = '';
+  };
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotoFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleNext = () => {
@@ -156,10 +170,19 @@ export function CompanyCreateListingPage() {
           ...(formData.smokingAllowed ? ['smoking_allowed'] : []),
           ...(formData.studentsOnly ? ['students_only'] : []),
         ],
-        images: formData.photos,
+        images: [],
       };
       const response = await companyApi.createListing(apiData);
       if (response.success) {
+        const listingId = response.listing?._id;
+
+        if (listingId && photoFiles.length > 0) {
+          setUploading(true);
+          const fd = new FormData();
+          photoFiles.forEach(file => fd.append('images', file));
+          await companyApi.uploadImages(listingId, fd);
+        }
+
         navigate('/company/listings');
       }
     } catch (error: any) {
@@ -167,6 +190,7 @@ export function CompanyCreateListingPage() {
       alert(error.response?.data?.error?.message || 'Failed to create listing');
     } finally {
       setLoading(false);
+      setUploading(false);
     }
   };
 
@@ -519,18 +543,50 @@ export function CompanyCreateListingPage() {
   const renderStep8 = () => (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Property Photos (6 required)</label>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Property Photos ({photoFiles.length}/6)</label>
         <div className="grid grid-cols-3 gap-2">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <div
-              key={i}
-              className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border hover:border-mustard transition-colors flex items-center justify-center bg-clay-border-light cursor-pointer"
-            >
-              <Upload className="w-6 h-6 text-text-tertiary" />
-            </div>
-          ))}
+          {Array.from({ length: 6 }).map((_, i) => {
+            const file = photoFiles[i];
+            if (file) {
+              return (
+                <div key={i} className="aspect-square rounded-clay-sm border-2 border-clay-border overflow-hidden relative group">
+                  <img src={URL.createObjectURL(file)} alt={`Photo ${i + 1}`} className="w-full h-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePhoto(i)}
+                    className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-4 h-4 text-white" />
+                  </button>
+                </div>
+              );
+            }
+            if (i === photoFiles.length) {
+              return (
+                <button
+                  key={i}
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border hover:border-mustard transition-colors flex items-center justify-center bg-clay-border-light cursor-pointer"
+                >
+                  <Upload className="w-6 h-6 text-text-tertiary" />
+                </button>
+              );
+            }
+            return (
+              <div key={i} className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border bg-clay-border-light" />
+            );
+          })}
         </div>
-        <p className="text-xs text-text-tertiary mt-2">Click to upload photos. Include bedroom, bathroom, kitchen, living area, exterior.</p>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          onChange={handleFileSelect}
+          className="hidden"
+        />
+        <p className="text-xs text-text-tertiary mt-2">Include bedroom, bathroom, kitchen, living area, exterior.</p>
       </div>
     </div>
   );
@@ -550,7 +606,7 @@ export function CompanyCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Occupants:</span> <span className="font-medium">{formData.maxOccupants}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Gender:</span> <span className="font-medium capitalize">{formData.gender}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Power:</span> <span className="font-medium capitalize">{formData.power}</span></div>
-          <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{formData.photos.length} Added</span></div>
+          <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
         </div>
       </div>
     </div>
@@ -585,8 +641,8 @@ export function CompanyCreateListingPage() {
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
-              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading}>
-                Publish Listing
+              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading || uploading}>
+                {uploading ? 'Uploading Photos...' : 'Publish Listing'}
               </Button>
             )}
           </div>

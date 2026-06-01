@@ -90,6 +90,11 @@ export const companyApi = {
     }
   },
 
+  async uploadImages(listingId: string, formData: FormData): Promise<string[]> {
+    const response = await apiClient.upload<{ success: boolean; data: string[] }>(`/listings/${listingId}/images`, formData);
+    return response.data.data;
+  },
+
   async getAgents(params?: { search?: string; status?: string; limit?: number; page?: number }): Promise<CompanyAgentsResponse> {
     try {
       const searchParams = new URLSearchParams();

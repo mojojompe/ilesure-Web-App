@@ -132,6 +132,11 @@ export const agentApi = {
     }
   },
 
+  async uploadImages(listingId: string, formData: FormData): Promise<string[]> {
+    const response = await apiClient.upload<{ success: boolean; data: string[] }>(`/listings/${listingId}/images`, formData);
+    return response.data.data;
+  },
+
   async updateListing(id: string, data: Partial<CreateListingData & { status: string }>): Promise<ListingResponse> {
     try {
       const response = await apiClient.put<ListingResponse>(`/agent/listings/${id}`, data);
