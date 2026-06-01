@@ -70,7 +70,7 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
           <div>
             <div className="text-white font-bold text-lg leading-tight tracking-tight">iléSure</div>
             <div className="text-white/50 text-xs font-medium tracking-widest uppercase">
-              {role === 'company' ? 'Company' : 'Agent'}
+              {role === 'company' ? 'Company' : 'Agent / Landlord'}
             </div>
           </div>
         </div>

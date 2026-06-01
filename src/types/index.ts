@@ -241,7 +241,7 @@ export interface Listing {
   landmark?: string;
   propertyType: 'self_con' | '1_bed' | '2_bed' | '3_bed' | 'mini_flat' | 'hostel_room' | 'shared_apartment' | 'shortlet';
   furnishing: 'fully_furnished' | 'semi-furnished' | 'unfurnished';
-  power: 'constant' | 'gen-dependent' | 'solar-backed';
+  power: 'constant' | 'gen-dependent' | 'solar-backed' | 'phcn' | 'generator' | 'solar' | 'hybrid';
   water: 'borehole' | 'public' | 'tank';
   maxOccupants: number;
   genderRestriction: 'any' | 'male_only' | 'female_only' | 'mixed';

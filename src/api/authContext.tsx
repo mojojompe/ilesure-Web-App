@@ -44,7 +44,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!allowedRoles.includes(user.role)) {
           return {
             success: false,
-            error: 'This portal is for agents and companies only. Please use the mobile app.',
+            error: 'This portal is for agents, landlords, and companies only. Please use the mobile app.',
           };
         }
 

@@ -46,9 +46,11 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role: '
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
+
+  const effectiveRole = userRole === 'landlord' ? 'agent' : userRole;
   
-  if (userRole && userRole !== role) {
-    return <Navigate to={userRole === 'company' ? '/company' : '/agent'} replace />;
+  if (effectiveRole && effectiveRole !== role) {
+    return <Navigate to={effectiveRole === 'company' ? '/company' : '/agent'} replace />;
   }
   
   return <>{children}</>;
@@ -72,10 +74,10 @@ function AppRoutes() {
   const { role } = useAuth();
   
   useEffect(() => {
-    if (role === 'agent') {
-      document.title = 'iléSure Agent — Manage your Listings';
-    } else if (role === 'company') {
+    if (role === 'company') {
       document.title = 'iléSure Company — Oversee your Agents and Listings';
+    } else if (role === 'agent' || role === 'landlord') {
+      document.title = 'iléSure Agent — Manage your Listings';
     } else {
       document.title = 'iléSure — Your Sure Home Anywhere';
     }
