@@ -133,6 +133,26 @@ export const chatApi = {
   onDisconnect(callback: () => void): void {
     socketService.on('disconnect', callback);
   },
+
+  offMessage(callback: (data: { chatId: string; message: any }) => void): void {
+    socketService.off('message', callback);
+  },
+
+  offTyping(callback: (data: { chatId: string; userId: string; isTyping: boolean }) => void): void {
+    socketService.off('typing', callback);
+  },
+
+  offRead(callback: (data: { chatId: string; messageId: string; userId: string }) => void): void {
+    socketService.off('read', callback);
+  },
+
+  offConnect(callback: () => void): void {
+    socketService.off('connect', callback);
+  },
+
+  offDisconnect(callback: () => void): void {
+    socketService.off('disconnect', callback);
+  },
 };
 
 export default chatApi;

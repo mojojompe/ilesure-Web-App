@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Search, Send, MoreVertical, Phone, Video, Loader, MessageCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
@@ -43,43 +43,27 @@ export function CompanyChatsPage() {
   const [partnerTyping, setPartnerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedChatRef = useRef(selectedChat);
+
+  useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
   useEffect(() => {
     fetchChats();
-    connectSocket();
-    return () => {
-      if (selectedChat) {
-        chatApi.leaveChat(selectedChat.id);
-      }
-    };
-  }, []);
 
-  useEffect(() => {
-    if (selectedChat) {
-      fetchMessages(selectedChat.id);
-      chatApi.joinChat(selectedChat.id);
-    }
-  }, [selectedChat?.id]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const connectSocket = useCallback(() => {
     const authData = localStorage.getItem('ilesure_web_auth');
     if (authData) {
       const parsed = JSON.parse(authData);
       if (parsed.accessToken) {
         chatApi.connectToSocket(parsed.accessToken);
 
-        chatApi.onConnect(() => {
-          if (selectedChat) {
-            chatApi.joinChat(selectedChat.id);
+        const handleConnect = () => {
+          if (selectedChatRef.current) {
+            chatApi.joinChat(selectedChatRef.current.id);
           }
-        });
+        };
 
-        chatApi.onMessage((data) => {
-          if (selectedChat && data.chatId === selectedChat.id) {
+        const handleMessage = (data: { chatId: string; message: any }) => {
+          if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
             setMessages(prev => [...prev, data.message]);
           }
           setChats(prev => prev.map(chat => 
@@ -87,16 +71,42 @@ export function CompanyChatsPage() {
               ? { ...chat, lastMessage: data.message.text, lastMessageAt: data.message.createdAt }
               : chat
           ));
-        });
+        };
 
-        chatApi.onTyping((data) => {
-          if (selectedChat && data.chatId === selectedChat.id) {
+        const handleTyping = (data: { chatId: string; userId: string; isTyping: boolean }) => {
+          if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
             setPartnerTyping(data.isTyping);
           }
-        });
+        };
+
+        chatApi.onConnect(handleConnect);
+        chatApi.onMessage(handleMessage);
+        chatApi.onTyping(handleTyping);
+
+        return () => {
+          chatApi.offConnect(handleConnect);
+          chatApi.offMessage(handleMessage);
+          chatApi.offTyping(handleTyping);
+          if (selectedChatRef.current) {
+            chatApi.leaveChat(selectedChatRef.current.id);
+          }
+          chatApi.disconnectFromSocket();
+        };
       }
     }
-  }, [selectedChat]);
+  }, []);
+
+  useEffect(() => {
+    if (selectedChat) {
+      fetchMessages(selectedChat.id);
+      chatApi.joinChat(selectedChat.id);
+      setPartnerTyping(false);
+    }
+  }, [selectedChat?.id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   const fetchChats = async () => {
     setLoading(true);
