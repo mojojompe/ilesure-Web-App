@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import type { User, UserRole, AuthState } from '../types';
 import { authApi } from './authApi';
 
@@ -31,10 +31,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     return { user: null, isAuthenticated: false, role: null };
   });
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }, [state]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -85,7 +81,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const updateRole = (role: UserRole) => {
-    setState(prev => ({ ...prev, role }));
+    setState(prev => {
+      const newState = { ...prev, role };
+      const existing = localStorage.getItem(STORAGE_KEY);
+      if (existing) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...JSON.parse(existing), ...newState }));
+        } catch {}
+      }
+      return newState;
+    });
   };
 
   return (
