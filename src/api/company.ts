@@ -55,6 +55,14 @@ interface CompanyListingsResponse {
   error?: { message: string };
 }
 
+export interface CompanySubaccountInfo {
+  subaccountCode: string | null;
+  bankCode: string | null;
+  accountNumber: string | null;
+  accountName: string | null;
+  bankName?: string | null;
+}
+
 export const companyApi = {
   async getDashboard(): Promise<CompanyDashboardResponse> {
     try {
@@ -187,6 +195,24 @@ export const companyApi = {
       return response.data;
     } catch {
       return { success: false, message: 'Failed to update company profile' };
+    }
+  },
+
+  async getSubaccount(): Promise<{ success: boolean; data?: CompanySubaccountInfo; error?: { message: string } }> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: CompanySubaccountInfo }>('/company/subaccount');
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to fetch company subaccount' } };
+    }
+  },
+
+  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string }): Promise<{ success: boolean; data?: CompanySubaccountInfo; message?: string; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data: CompanySubaccountInfo; message?: string }>('/company/subaccount', data);
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to setup company subaccount' } };
     }
   },
 

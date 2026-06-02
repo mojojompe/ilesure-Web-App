@@ -88,6 +88,14 @@ interface BookingResponse {
   error?: { message: string };
 }
 
+export interface SubaccountInfo {
+  subaccountCode: string | null;
+  bankCode: string | null;
+  accountNumber: string | null;
+  accountName: string | null;
+  bankName?: string | null;
+}
+
 export const agentApi = {
   async getDashboard(): Promise<DashboardResponse> {
     try {
@@ -185,6 +193,24 @@ export const agentApi = {
       return response.data;
     } catch {
       return { success: false, error: { message: 'Failed to fetch bookings' } };
+    }
+  },
+
+  async getSubaccount(): Promise<{ success: boolean; data?: SubaccountInfo; error?: { message: string } }> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: SubaccountInfo }>('/agent/subaccount');
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to fetch subaccount' } };
+    }
+  },
+
+  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string }): Promise<{ success: boolean; data?: SubaccountInfo; message?: string; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data: SubaccountInfo; message?: string }>('/agent/subaccount', data);
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to setup subaccount' } };
     }
   },
 

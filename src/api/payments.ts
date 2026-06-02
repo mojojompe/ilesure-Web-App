@@ -43,7 +43,42 @@ export interface PaymentHistoryResponse {
   totalPaid: number;
 }
 
+export interface Bank {
+  name: string;
+  code: string;
+  slug: string;
+  longcode: string;
+}
+
+export interface ResolveAccountResult {
+  accountNumber: string;
+  accountName: string;
+}
+
 export const paymentsApi = {
+  async listBanks(): Promise<Bank[]> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data: Bank[] }>('/payments/banks');
+      return response.data.data;
+    } catch {
+      return [];
+    }
+  },
+
+  async resolveAccount(accountNumber: string, bankCode: string): Promise<ResolveAccountResult> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data: ResolveAccountResult }>(
+        '/payments/resolve-account',
+        { accountNumber, bankCode }
+      );
+      return response.data.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error?.message || 'Failed to resolve account');
+      }
+      throw new Error('Network error');
+    }
+  },
   async initialize(request: InitializePaymentRequest): Promise<InitializePaymentResponse> {
     try {
       const response = await apiClient.post<{ success: boolean; data: InitializePaymentResponse }>(

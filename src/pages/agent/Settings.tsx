@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader } from 'lucide-react';
+import { Save, Loader, Banknote, CheckCircle } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
+import { agentApi } from '../../api/agent';
+import { paymentsApi, Bank } from '../../api/payments';
 
 export function AgentSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -30,9 +32,80 @@ export function AgentSettingsPage() {
     bio: '',
   });
 
+  const [banks, setBanks] = useState<Bank[]>([]);
+  const [subaccount, setSubaccount] = useState<any>(null);
+  const [subaccountLoading, setSubaccountLoading] = useState(false);
+  const [bankForm, setBankForm] = useState({
+    businessName: '',
+    bankCode: '',
+    accountNumber: '',
+    accountName: '',
+  });
+  const [resolving, setResolving] = useState(false);
+  const [resolved, setResolved] = useState(false);
+  const [setupLoading, setSetupLoading] = useState(false);
+
   useEffect(() => {
     fetchProfile();
+    loadBanks();
+    loadSubaccount();
   }, []);
+
+  const loadBanks = async () => {
+    const bankList = await paymentsApi.listBanks();
+    setBanks(bankList);
+  };
+
+  const loadSubaccount = async () => {
+    const res = await agentApi.getSubaccount();
+    if (res.success && res.data) {
+      setSubaccount(res.data);
+      if (res.data.subaccountCode) {
+        setBankForm({
+          businessName: '',
+          bankCode: res.data.bankCode || '',
+          accountNumber: res.data.accountNumber || '',
+          accountName: res.data.accountName || '',
+        });
+        setResolved(true);
+      }
+    }
+  };
+
+  const handleResolveAccount = async () => {
+    if (!bankForm.bankCode || !bankForm.accountNumber || bankForm.accountNumber.length < 10) return;
+    setResolving(true);
+    try {
+      const result = await paymentsApi.resolveAccount(bankForm.accountNumber, bankForm.bankCode);
+      setBankForm(prev => ({ ...prev, accountName: result.accountName }));
+      setResolved(true);
+    } catch (err: any) {
+      showToast(err.message || 'Failed to resolve account', 'error');
+    } finally {
+      setResolving(false);
+    }
+  };
+
+  const handleSetupSubaccount = async () => {
+    if (!bankForm.businessName || !bankForm.bankCode || !bankForm.accountNumber || !bankForm.accountName) {
+      showToast('Please fill in all bank details and resolve your account', 'error');
+      return;
+    }
+    setSetupLoading(true);
+    try {
+      const res = await agentApi.setupSubaccount(bankForm);
+      if (res.success) {
+        setSubaccount(res.data || null);
+        showToast('Bank account and subaccount setup successfully!');
+      } else {
+        showToast(res.error?.message || 'Failed to setup subaccount', 'error');
+      }
+    } catch (err: any) {
+      showToast(err.message || 'Failed to setup subaccount', 'error');
+    } finally {
+      setSetupLoading(false);
+    }
+  };
 
   const fetchProfile = async () => {
     setLoading(true);
@@ -192,6 +265,101 @@ export function AgentSettingsPage() {
                 </label>
               ))}
             </div>
+          </ClayCard>
+
+          <ClayCard className="p-5">
+            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Banknote className="w-5 h-5 text-mustard" />
+              Bank Account for Payments
+            </h2>
+            {subaccount?.subaccountCode ? (
+              <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
+                <div className="flex items-center gap-2 text-status-success font-medium">
+                  <CheckCircle className="w-5 h-5" />
+                  Subaccount Active
+                </div>
+                <div className="text-sm text-text-secondary space-y-1">
+                  <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
+                  <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
+                  <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
+                  <p className="text-xs text-text-tertiary mt-2">
+                    Rent payments will be split automatically — 5% goes to IleSure, balance to your account.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-text-tertiary">
+                  Set up your bank account to receive rent payments directly. IleSure takes a 5% commission.
+                </p>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                    Business / Agency Name
+                  </label>
+                  <input
+                    type="text"
+                    value={bankForm.businessName}
+                    onChange={(e) => setBankForm({ ...bankForm, businessName: e.target.value })}
+                    className="clay-input w-full"
+                    placeholder="e.g. ABC Properties"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                    Bank
+                  </label>
+                  <select
+                    value={bankForm.bankCode}
+                    onChange={(e) => { setBankForm({ ...bankForm, bankCode: e.target.value }); setResolved(false); }}
+                    className="clay-input w-full"
+                  >
+                    <option value="">Select a bank</option>
+                    {banks.map(b => (
+                      <option key={b.code} value={b.code}>{b.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                    Account Number
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={bankForm.accountNumber}
+                      onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
+                      className="clay-input flex-1"
+                      placeholder="0123456789"
+                      maxLength={10}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleResolveAccount}
+                      loading={resolving}
+                      disabled={!bankForm.bankCode || bankForm.accountNumber.length < 10}
+                    >
+                      Verify
+                    </Button>
+                  </div>
+                </div>
+                {resolved && bankForm.accountName && (
+                  <div className="p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
+                    <p className="text-sm font-medium text-status-success">Account verified</p>
+                    <p className="text-sm text-text-primary font-semibold">{bankForm.accountName}</p>
+                  </div>
+                )}
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={handleSetupSubaccount}
+                  loading={setupLoading}
+                  disabled={!resolved || !bankForm.businessName}
+                >
+                  <Banknote className="w-4 h-4 mr-2" /> Setup Subaccount
+                </Button>
+              </div>
+            )}
           </ClayCard>
         </div>
 
