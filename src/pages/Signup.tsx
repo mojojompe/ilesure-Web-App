@@ -1,10 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Upload, Camera, Building2, GraduationCap, Briefcase, Home } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Upload, Camera, Building2, GraduationCap, Briefcase, Home, Building, Search } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
 import authApi from '../api/authApi';
+import paymentsApi from '../api/payments';
+import agentApi from '../api/agent';
+import companyApi from '../api/company';
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -79,6 +82,34 @@ export function SignupPage() {
 
   const [isCompany, setIsCompany] = useState(false);
 
+  const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
+  const [selectedBank, setSelectedBank] = useState<{ name: string; code: string } | null>(null);
+  const [accountNumber, setAccountNumber] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [bankLoading, setBankLoading] = useState(false);
+  const [showBankList, setShowBankList] = useState(false);
+  const [bankSearch, setBankSearch] = useState('');
+
+  useEffect(() => {
+    paymentsApi.listBanks().then(setBanks);
+  }, []);
+
+  const filteredBanks = banks.filter(b =>
+    b.name.toLowerCase().includes(bankSearch.toLowerCase())
+  );
+
+  const handleResolveAccount = async () => {
+    if (!selectedBank || accountNumber.length < 10) return;
+    setBankLoading(true);
+    try {
+      const res = await paymentsApi.resolveAccount(accountNumber, selectedBank.code);
+      setAccountName(res.accountName);
+    } catch {
+      setAccountName('');
+    }
+    setBankLoading(false);
+  };
+
   const passwordStrength = getPasswordStrength(formData.password);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -98,8 +129,20 @@ export function SignupPage() {
     }
     if (step === 2) {
       if (!formData.phone) return;
+      setStep(3);
+      return;
+    }
+    if (step === 3) {
+      setStep(4);
+      return;
+    }
+    if (step === 4) {
       await handleSubmit();
     }
+  };
+
+  const handleSkipBank = () => {
+    setStep(4);
   };
 
   const handleSkipDocuments = async () => {
@@ -107,11 +150,7 @@ export function SignupPage() {
   };
 
   const handleBack = () => {
-    if (step === 3) {
-      setStep(2);
-    } else {
-      setStep(prev => prev - 1);
-    }
+    setStep(prev => prev - 1);
   };
 
   const [error, setError] = useState('');
@@ -141,6 +180,25 @@ export function SignupPage() {
           user: response.user,
           role: role,
         }));
+
+        // Setup subaccount if bank details were provided
+        if (selectedBank && accountNumber && accountName) {
+          try {
+            const subaccountData = {
+              businessName: isCompany ? companyName : formData.fullName,
+              bankCode: selectedBank.code,
+              accountNumber,
+              accountName,
+            };
+            if (isCompany) {
+              await companyApi.setupSubaccount(subaccountData);
+            } else {
+              await agentApi.setupSubaccount(subaccountData);
+            }
+          } catch (subErr) {
+            console.warn('Subaccount setup failed, will be available in settings:', subErr);
+          }
+        }
         
         navigate('/create-otp');
       } else {
@@ -304,6 +362,91 @@ export function SignupPage() {
     </div>
   );
 
+  const renderBankStep = () => (
+    <div className="space-y-4">
+      <p className="text-sm text-text-secondary">
+        Set up your bank account to receive rent payments automatically with instant split settlements.
+      </p>
+      <div className="relative">
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          Select Bank
+        </label>
+        <button
+          type="button"
+          onClick={() => setShowBankList(!showBankList)}
+          className="clay-input w-full text-left flex items-center justify-between"
+        >
+          <span className={selectedBank ? '' : 'text-text-tertiary'}>
+            {selectedBank?.name || 'Choose your bank'}
+          </span>
+          <Search className="w-4 h-4 text-text-tertiary" />
+        </button>
+        {showBankList && (
+          <div className="absolute z-10 mt-1 w-full bg-white border border-clay-border rounded-clay-sm shadow-clay max-h-48 overflow-y-auto">
+            <div className="sticky top-0 bg-white p-2 border-b border-clay-border">
+              <input
+                type="text"
+                value={bankSearch}
+                onChange={(e) => setBankSearch(e.target.value)}
+                placeholder="Search banks..."
+                className="clay-input w-full text-sm py-1.5"
+                autoFocus
+              />
+            </div>
+            {filteredBanks.slice(0, 30).map((bank) => (
+              <button
+                key={bank.code}
+                type="button"
+                onClick={() => { setSelectedBank(bank); setShowBankList(false); setBankSearch(''); setAccountName(''); }}
+                className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${
+                  selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
+                }`}
+              >
+                {bank.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+          Account Number
+        </label>
+        <input
+          type="text"
+          value={accountNumber}
+          onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); }}
+          placeholder="Enter 10-digit account number"
+          className="clay-input w-full"
+          maxLength={10}
+        />
+      </div>
+      <button
+        type="button"
+        onClick={handleResolveAccount}
+        disabled={!selectedBank || accountNumber.length < 10 || bankLoading}
+        className="clay-input w-full text-center text-sm font-semibold py-2 bg-mustard-pale border-mustard disabled:opacity-50"
+      >
+        {bankLoading ? 'Verifying...' : 'Verify Account'}
+      </button>
+      {accountName && (
+        <div className="p-3 bg-green-50 border border-green-200 rounded-clay-sm">
+          <p className="text-xs text-text-tertiary font-semibold uppercase tracking-wider mb-1">Account Name</p>
+          <p className="text-sm font-bold text-green-700">{accountName}</p>
+        </div>
+      )}
+      <div className="flex gap-3">
+        <button
+          type="button"
+          onClick={handleSkipBank}
+          className="text-sm text-text-tertiary hover:text-text-secondary font-medium underline underline-offset-2"
+        >
+          Skip — I'll do this later
+        </button>
+      </div>
+    </div>
+  );
+
   const renderStep3 = () => (
     <div className="space-y-4">
       {!isCompany ? (
@@ -406,7 +549,8 @@ export function SignupPage() {
     switch (step) {
       case 1: return 'Create Account';
       case 2: return 'Phone Number';
-      case 3: return 'Verification Documents';
+      case 3: return 'Bank Account Setup';
+      case 4: return 'Verification Documents';
       default: return '';
     }
   };
@@ -415,7 +559,8 @@ export function SignupPage() {
     switch (step) {
       case 1: return 'Enter your basic information';
       case 2: return 'Enter your phone number';
-      case 3: return 'Upload required documents';
+      case 3: return 'Link your bank for automatic rent payouts';
+      case 4: return 'Upload required documents';
       default: return '';
     }
   };
@@ -429,7 +574,7 @@ export function SignupPage() {
           </div>
         </div>
 
-        <StepIndicator currentStep={step} totalSteps={2} />
+        <StepIndicator currentStep={step} totalSteps={4} />
 
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
@@ -476,6 +621,8 @@ export function SignupPage() {
 
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
+          {step === 3 && renderBankStep()}
+          {step === 4 && renderStep3()}
 
           <div className="flex gap-3 mt-6">
             {step > 1 && (
@@ -483,7 +630,7 @@ export function SignupPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
-            {step === 1 ? (
+            {step < 4 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
