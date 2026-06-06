@@ -252,7 +252,19 @@ export interface Listing {
   interestCount?: number;
   cautionFee?: number;
   agencyFee?: number;
+  additionalNotes?: string;
+  paymentFrequency?: 'annually' | 'bi-annually' | 'quarterly' | 'monthly';
   totalMoveinCost?: number;
+  shortletPricing?: {
+    hourly?: number;
+    daily?: number;
+    weekly?: number;
+    monthly?: number;
+  };
+  minStay?: number;
+  minStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  maxStay?: number;
+  maxStayUnit?: 'hour' | 'day' | 'week' | 'month';
   hasWifi?: boolean;
   securityType?: string;
   distanceFromLCU?: string;

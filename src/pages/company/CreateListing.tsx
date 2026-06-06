@@ -34,6 +34,7 @@ type Furnishing = 'furnished' | 'semifurnished' | 'unfurnished';
 type PowerSource = 'phcn' | 'generator' | 'solar' | 'hybrid';
 type WaterSource = 'borehole' | 'public' | 'tank';
 type DistanceFromSchool = 'veryclose' | 'close' | 'budget';
+type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'selfcon', label: 'Self-con' },
@@ -52,9 +53,17 @@ const distanceOptions: { value: DistanceFromSchool; label: string }[] = [
   { value: 'budget', label: 'Budget Stretch' },
 ];
 
+const paymentFrequencyOptions: { value: PaymentFrequency; label: string }[] = [
+  { value: 'annually', label: 'Yearly' },
+  { value: 'bi-annually', label: 'Bi-annually' },
+  { value: 'quarterly', label: 'Quarterly' },
+  { value: 'monthly', label: 'Monthly' },
+];
+
 interface ListingFormData {
   title: string;
   description: string;
+  additionalNotes: string;
   address: string;
   city: string;
   landmark: string;
@@ -63,7 +72,16 @@ interface ListingFormData {
   annualRent: string;
   cautionFee: string;
   agencyFee: string;
+  paymentFrequency: PaymentFrequency;
   propertyType: PropertyType;
+  shortletHourly: string;
+  shortletDaily: string;
+  shortletWeekly: string;
+  shortletMonthly: string;
+  minStay: string;
+  minStayUnit: 'hour' | 'day' | 'week' | 'month';
+  maxStay: string;
+  maxStayUnit: 'hour' | 'day' | 'week' | 'month';
   maxOccupants: string;
   gender: GenderPreference;
   furnishing: Furnishing;
@@ -81,6 +99,7 @@ interface ListingFormData {
 const initialFormData: ListingFormData = {
   title: '',
   description: '',
+  additionalNotes: '',
   address: '',
   city: '',
   landmark: '',
@@ -89,7 +108,16 @@ const initialFormData: ListingFormData = {
   annualRent: '',
   cautionFee: '',
   agencyFee: '',
+  paymentFrequency: 'annually',
   propertyType: 'selfcon',
+  shortletHourly: '',
+  shortletDaily: '',
+  shortletWeekly: '',
+  shortletMonthly: '',
+  minStay: '',
+  minStayUnit: 'day',
+  maxStay: '',
+  maxStayUnit: 'month',
   maxOccupants: '1',
   gender: 'any',
   furnishing: 'unfurnished',
@@ -150,6 +178,18 @@ export function CompanyCreateListingPage() {
         rentAnnual: Number(formData.annualRent),
         cautionFee: formData.cautionFee ? Number(formData.cautionFee) : undefined,
         agencyFee: formData.agencyFee ? Number(formData.agencyFee) : undefined,
+        paymentFrequency: formData.paymentFrequency,
+        additionalNotes: formData.additionalNotes || undefined,
+        shortletPricing: formData.propertyType === 'shortlet' ? {
+          ...(formData.shortletHourly ? { hourly: Number(formData.shortletHourly) } : {}),
+          ...(formData.shortletDaily ? { daily: Number(formData.shortletDaily) } : {}),
+          ...(formData.shortletWeekly ? { weekly: Number(formData.shortletWeekly) } : {}),
+          ...(formData.shortletMonthly ? { monthly: Number(formData.shortletMonthly) } : {}),
+        } : undefined,
+        minStay: formData.minStay ? Number(formData.minStay) : undefined,
+        minStayUnit: formData.minStay ? formData.minStayUnit : undefined,
+        maxStay: formData.maxStay ? Number(formData.maxStay) : undefined,
+        maxStayUnit: formData.maxStay ? formData.maxStayUnit : undefined,
         address: formData.address,
         city: formData.city,
         landmark: formData.landmark,
@@ -228,6 +268,16 @@ export function CompanyCreateListingPage() {
           onChange={e => handleChange('description', e.target.value)}
           placeholder="Describe your property..."
           rows={4}
+          className="clay-input w-full resize-none"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Additional Notes (Optional)</label>
+        <textarea
+          value={formData.additionalNotes}
+          onChange={e => handleChange('additionalNotes', e.target.value)}
+          placeholder="Special instructions, property rules, or any extra info..."
+          rows={3}
           className="clay-input w-full resize-none"
         />
       </div>
@@ -343,6 +393,75 @@ export function CompanyCreateListingPage() {
           />
         </div>
       </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
+        <div className="grid grid-cols-2 gap-2">
+          {paymentFrequencyOptions.map(option => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleChange('paymentFrequency', option.value)}
+              className={clsx(
+                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                formData.paymentFrequency === option.value
+                  ? 'border-mustard bg-mustard-pale text-mustard'
+                  : 'border-clay-border text-text-secondary hover:border-mustard'
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      {formData.propertyType === 'shortlet' && (
+        <div className="space-y-4 pt-2 border-t-2 border-clay-border-light">
+          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing (Optional)</p>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Hourly (₦)</label>
+              <input type="number" value={formData.shortletHourly} onChange={e => handleChange('shortletHourly', e.target.value)} placeholder="10000" className="clay-input w-full" />
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Daily (₦)</label>
+              <input type="number" value={formData.shortletDaily} onChange={e => handleChange('shortletDaily', e.target.value)} placeholder="150000" className="clay-input w-full" />
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Weekly (₦)</label>
+              <input type="number" value={formData.shortletWeekly} onChange={e => handleChange('shortletWeekly', e.target.value)} placeholder="700000" className="clay-input w-full" />
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Monthly (₦)</label>
+              <input type="number" value={formData.shortletMonthly} onChange={e => handleChange('shortletMonthly', e.target.value)} placeholder="2500000" className="clay-input w-full" />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Min Stay</label>
+              <div className="flex gap-2">
+                <input type="number" value={formData.minStay} onChange={e => handleChange('minStay', e.target.value)} placeholder="1" className="clay-input w-20 flex-shrink-0" />
+                <select value={formData.minStayUnit} onChange={e => handleChange('minStayUnit', e.target.value)} className="clay-input flex-1">
+                  <option value="hour">Hours</option>
+                  <option value="day">Days</option>
+                  <option value="week">Weeks</option>
+                  <option value="month">Months</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Max Stay</label>
+              <div className="flex gap-2">
+                <input type="number" value={formData.maxStay} onChange={e => handleChange('maxStay', e.target.value)} placeholder="12" className="clay-input w-20 flex-shrink-0" />
+                <select value={formData.maxStayUnit} onChange={e => handleChange('maxStayUnit', e.target.value)} className="clay-input flex-1">
+                  <option value="hour">Hours</option>
+                  <option value="day">Days</option>
+                  <option value="week">Weeks</option>
+                  <option value="month">Months</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -601,11 +720,23 @@ export function CompanyCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent/Year:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()}</span></div>
+          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Location:</span> <span className="font-medium text-right max-w-[60%]">{formData.address}, {formData.area}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Landmark:</span> <span className="font-medium text-right max-w-[60%]">{formData.landmark || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Occupants:</span> <span className="font-medium">{formData.maxOccupants}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Gender:</span> <span className="font-medium capitalize">{formData.gender}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Power:</span> <span className="font-medium capitalize">{formData.power}</span></div>
+          {formData.additionalNotes && (
+          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
+          )}
+          {formData.propertyType === 'shortlet' && (
+            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Pricing:</span> <span className="font-medium text-right">
+              {formData.shortletHourly && `₦${Number(formData.shortletHourly).toLocaleString()}/hr `}
+              {formData.shortletDaily && `₦${Number(formData.shortletDaily).toLocaleString()}/day `}
+              {formData.shortletWeekly && `₦${Number(formData.shortletWeekly).toLocaleString()}/wk `}
+              {formData.shortletMonthly && `₦${Number(formData.shortletMonthly).toLocaleString()}/mo`}
+            </span></div>
+          )}
           <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
         </div>
       </div>
