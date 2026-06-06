@@ -253,7 +253,12 @@ export interface Listing {
   cautionFee?: number;
   agencyFee?: number;
   additionalNotes?: string;
-  paymentFrequency?: 'annually' | 'bi-annually' | 'quarterly' | 'monthly';
+  paymentFrequency?: 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
+  customPaymentPlan?: {
+    installments: number;
+    interval: 'monthly' | 'bi-monthly';
+    amountPerInstallment: number;
+  };
   totalMoveinCost?: number;
   shortletPricing?: {
     hourly?: number;
@@ -274,7 +279,7 @@ export interface Listing {
 
 export interface Booking {
   _id: string;
-  listingId: { _id: string; title: string; images: string[]; rentAnnual: number; areaCluster: string };
+  listingId: { _id: string; title: string; images: string[]; rentAnnual: number; areaCluster: string; paymentFrequency?: string; customPaymentPlan?: { installments: number; interval: string; amountPerInstallment: number } };
   userId: { _id: string; fullName: string; email: string; phone: string };
   status: 'pending' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
   moveInDate: string;

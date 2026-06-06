@@ -34,7 +34,7 @@ type Furnishing = 'furnished' | 'semifurnished' | 'unfurnished';
 type PowerSource = 'phcn' | 'generator' | 'solar' | 'hybrid';
 type WaterSource = 'borehole' | 'public' | 'tank';
 type DistanceFromSchool = 'veryclose' | 'close' | 'budget';
-type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly';
+type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
 
 const propertyTypes: { value: PropertyType; label: string }[] = [
   { value: 'selfcon', label: 'Self-con' },
@@ -58,6 +58,7 @@ const paymentFrequencyOptions: { value: PaymentFrequency; label: string }[] = [
   { value: 'bi-annually', label: 'Bi-annually' },
   { value: 'quarterly', label: 'Quarterly' },
   { value: 'monthly', label: 'Monthly' },
+  { value: 'custom', label: 'Custom' },
 ];
 
 interface ListingFormData {
@@ -73,6 +74,9 @@ interface ListingFormData {
   cautionFee: string;
   agencyFee: string;
   paymentFrequency: PaymentFrequency;
+  customInstallments: string;
+  customInterval: 'monthly' | 'bi-monthly';
+  customAmountPerInstallment: string;
   propertyType: PropertyType;
   shortletHourly: string;
   shortletDaily: string;
@@ -109,6 +113,9 @@ const initialFormData: ListingFormData = {
   cautionFee: '',
   agencyFee: '',
   paymentFrequency: 'annually',
+  customInstallments: '',
+  customInterval: 'monthly',
+  customAmountPerInstallment: '',
   propertyType: 'selfcon',
   shortletHourly: '',
   shortletDaily: '',
@@ -179,6 +186,11 @@ export function CompanyCreateListingPage() {
         cautionFee: formData.cautionFee ? Number(formData.cautionFee) : undefined,
         agencyFee: formData.agencyFee ? Number(formData.agencyFee) : undefined,
         paymentFrequency: formData.paymentFrequency,
+        customPaymentPlan: formData.paymentFrequency === 'custom' ? {
+          installments: Number(formData.customInstallments),
+          interval: formData.customInterval,
+          amountPerInstallment: Number(formData.customAmountPerInstallment),
+        } : undefined,
         additionalNotes: formData.additionalNotes || undefined,
         shortletPricing: formData.propertyType === 'shortlet' ? {
           ...(formData.shortletHourly ? { hourly: Number(formData.shortletHourly) } : {}),
@@ -412,6 +424,28 @@ export function CompanyCreateListingPage() {
             </button>
           ))}
         </div>
+        {formData.paymentFrequency === 'custom' && (
+          <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
+                <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Interval</label>
+                <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
+                  <option value="monthly">Monthly</option>
+                  <option value="bi-monthly">Bi-monthly</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
+              <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
+            </div>
+          </div>
+        )}
       </div>
       {formData.propertyType === 'shortlet' && (
         <div className="space-y-4 pt-2 border-t-2 border-clay-border-light">
@@ -720,7 +754,7 @@ export function CompanyCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent/Year:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()}</span></div>
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency}</span></div>
+          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Location:</span> <span className="font-medium text-right max-w-[60%]">{formData.address}, {formData.area}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Landmark:</span> <span className="font-medium text-right max-w-[60%]">{formData.landmark || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Occupants:</span> <span className="font-medium">{formData.maxOccupants}</span></div>
