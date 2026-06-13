@@ -40,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { user, accessToken, refreshToken } = response;
 
         // ── Role gate: only agents and companies can use the web app ──
-        const allowedRoles = ['agent', 'landlord', 'company', 'company_admin'];
+        const allowedRoles = ['agent', 'landlord', 'company', 'company_admin', 'sub_agent'];
         if (!allowedRoles.includes(user.role)) {
           return {
             success: false,

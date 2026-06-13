@@ -42,7 +42,11 @@ const companyNavItems = [
 export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
   const location = useLocation();
   const { logout, user } = useAuth();
-  const navItems = role === 'company' ? companyNavItems : agentNavItems;
+  const navItems = role === 'company' 
+    ? companyNavItems 
+    : (role === 'sub_agent' 
+        ? agentNavItems.filter(item => item.label !== 'Payments') 
+        : agentNavItems);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   const handleLogout = () => {
@@ -68,7 +72,7 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
             <img src="/NoBG Logo.png" alt="iléSure" className="w-8 h-8 object-contain" />
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-tight tracking-tight">{user?.companyId?.name || user?.companyId?.tradingName || 'iléSure'}</div>
+            <div className="text-white font-bold text-lg leading-tight tracking-tight">{typeof user?.companyId === 'object' ? (user.companyId.name || user.companyId.tradingName) : 'iléSure'}</div>
             <div className="text-white/50 text-xs font-medium tracking-widest uppercase">
               {role === 'company' ? 'Company' : role === 'sub_agent' ? 'Sub-Agent' : 'Agent / Landlord'}
             </div>

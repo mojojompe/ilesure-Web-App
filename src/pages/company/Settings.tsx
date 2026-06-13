@@ -124,8 +124,8 @@ export function CompanySettingsPage() {
           description: companyRes.company.description || '',
         });
       }
-      if (subRes.success && subRes.data?.plan) {
-        setSubscription(subRes.data.plan);
+      if (subRes.success && subRes.subscription) {
+        setSubscription(subRes.subscription);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);

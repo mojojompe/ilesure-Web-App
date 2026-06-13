@@ -267,123 +267,127 @@ export function AgentSettingsPage() {
             </div>
           </ClayCard>
 
-          <ClayCard className="p-5">
-            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Banknote className="w-5 h-5 text-mustard" />
-              Bank Account for Payments
-            </h2>
-            {subaccount?.subaccountCode ? (
-              <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
-                <div className="flex items-center gap-2 text-status-success font-medium">
-                  <CheckCircle className="w-5 h-5" />
-                  Subaccount Active
+          {user?.role !== 'sub_agent' && (
+            <ClayCard className="p-5">
+              <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+                <Banknote className="w-5 h-5 text-mustard" />
+                Bank Account for Payments
+              </h2>
+              {subaccount?.subaccountCode ? (
+                <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
+                  <div className="flex items-center gap-2 text-status-success font-medium">
+                    <CheckCircle className="w-5 h-5" />
+                    Subaccount Active
+                  </div>
+                  <div className="text-sm text-text-secondary space-y-1">
+                    <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
+                    <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
+                    <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
+                    <p className="text-xs text-text-tertiary mt-2">
+                      Rent payments will be split automatically — 5% goes to IleSure, balance to your account.
+                    </p>
+                  </div>
                 </div>
-                <div className="text-sm text-text-secondary space-y-1">
-                  <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
-                  <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
-                  <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
-                  <p className="text-xs text-text-tertiary mt-2">
-                    Rent payments will be split automatically — 5% goes to IleSure, balance to your account.
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-text-tertiary">
+                    Set up your bank account to receive rent payments directly. IleSure takes a 5% commission.
                   </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-text-tertiary">
-                  Set up your bank account to receive rent payments directly. IleSure takes a 5% commission.
-                </p>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    Business / Agency Name
-                  </label>
-                  <input
-                    type="text"
-                    value={bankForm.businessName}
-                    onChange={(e) => setBankForm({ ...bankForm, businessName: e.target.value })}
-                    className="clay-input w-full"
-                    placeholder="e.g. ABC Properties"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    Bank
-                  </label>
-                  <select
-                    value={bankForm.bankCode}
-                    onChange={(e) => { setBankForm({ ...bankForm, bankCode: e.target.value }); setResolved(false); }}
-                    className="clay-input w-full"
-                  >
-                    <option value="">Select a bank</option>
-                    {banks.map(b => (
-                      <option key={b.code} value={b.code}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    Account Number
-                  </label>
-                  <div className="flex gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                      Business / Agency Name
+                    </label>
                     <input
                       type="text"
-                      value={bankForm.accountNumber}
-                      onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
-                      className="clay-input flex-1"
-                      placeholder="0123456789"
-                      maxLength={10}
+                      value={bankForm.businessName}
+                      onChange={(e) => setBankForm({ ...bankForm, businessName: e.target.value })}
+                      className="clay-input w-full"
+                      placeholder="e.g. ABC Properties"
                     />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleResolveAccount}
-                      loading={resolving}
-                      disabled={!bankForm.bankCode || bankForm.accountNumber.length < 10}
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                      Bank
+                    </label>
+                    <select
+                      value={bankForm.bankCode}
+                      onChange={(e) => { setBankForm({ ...bankForm, bankCode: e.target.value }); setResolved(false); }}
+                      className="clay-input w-full"
                     >
-                      Verify
-                    </Button>
+                      <option value="">Select a bank</option>
+                      {banks.map(b => (
+                        <option key={b.code} value={b.code}>{b.name}</option>
+                      ))}
+                    </select>
                   </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                      Account Number
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={bankForm.accountNumber}
+                        onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
+                        className="clay-input flex-1"
+                        placeholder="0123456789"
+                        maxLength={10}
+                      />
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleResolveAccount}
+                        loading={resolving}
+                        disabled={!bankForm.bankCode || bankForm.accountNumber.length < 10}
+                      >
+                        Verify
+                      </Button>
+                    </div>
+                  </div>
+                  {resolved && bankForm.accountName && (
+                    <div className="p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
+                      <p className="text-sm font-medium text-status-success">Account verified</p>
+                      <p className="text-sm text-text-primary font-semibold">{bankForm.accountName}</p>
+                    </div>
+                  )}
+                  <Button
+                    variant="primary"
+                    className="w-full"
+                    onClick={handleSetupSubaccount}
+                    loading={setupLoading}
+                    disabled={!resolved || !bankForm.businessName}
+                  >
+                    <Banknote className="w-4 h-4 mr-2" /> Setup Subaccount
+                  </Button>
                 </div>
-                {resolved && bankForm.accountName && (
-                  <div className="p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
-                    <p className="text-sm font-medium text-status-success">Account verified</p>
-                    <p className="text-sm text-text-primary font-semibold">{bankForm.accountName}</p>
-                  </div>
-                )}
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={handleSetupSubaccount}
-                  loading={setupLoading}
-                  disabled={!resolved || !bankForm.businessName}
-                >
-                  <Banknote className="w-4 h-4 mr-2" /> Setup Subaccount
-                </Button>
-              </div>
-            )}
-          </ClayCard>
+              )}
+            </ClayCard>
+          )}
         </div>
 
         <div className="space-y-6">
-          <ClayCard className="p-5">
-            <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
-            <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-              <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
-              <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-text-tertiary">Max Listings:</span>
-                <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+          {user?.role !== 'sub_agent' && (
+            <ClayCard className="p-5">
+              <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
+              <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
+                <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
+                <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text-tertiary">Featured:</span>
-                <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
+              <div className="mt-4 space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-text-tertiary">Max Listings:</span>
+                  <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-text-tertiary">Featured:</span>
+                  <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
+                </div>
               </div>
-            </div>
-            <a href="/tiers" className="block btn-secondary text-center mt-4">
-              Upgrade Plan
-            </a>
-          </ClayCard>
+              <a href="/tiers" className="block btn-secondary text-center mt-4">
+                Upgrade Plan
+              </a>
+            </ClayCard>
+          )}
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Company</h2>
