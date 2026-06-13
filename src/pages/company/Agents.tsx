@@ -16,6 +16,7 @@ export function CompanyAgentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
   const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
 
@@ -43,14 +44,15 @@ export function CompanyAgentsPage() {
   };
 
   const handleInvite = async () => {
-    if (!email) return;
+    if (!email || !fullName) return;
     setSubmitting(true);
     try {
-      const response = await companyApi.inviteAgent(email);
+      const response = await companyApi.inviteAgent(email, fullName);
       if (response.success) {
         showToast('Invitation sent successfully!', 'success');
         setShowInviteModal(false);
         setEmail('');
+        setFullName('');
       } else {
         showToast(response.message || 'Failed to invite agent', 'error');
       }
@@ -162,6 +164,18 @@ export function CompanyAgentsPage() {
             Enter the email address of the person you want to invite to join your company.
           </p>
           <div>
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+              Full Name
+            </label>
+            <div className="relative mb-4">
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="John Doe"
+                className="clay-input w-full"
+              />
+            </div>
             <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
               Email Address
             </label>

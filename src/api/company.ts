@@ -119,9 +119,9 @@ export const companyApi = {
     }
   },
 
-  async inviteAgent(email: string): Promise<{ success: boolean; message?: string }> {
+  async inviteAgent(email: string, fullName: string): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await apiClient.post<{ success: boolean; message?: string }>('/company/agents/invite', { email });
+      const response = await apiClient.post<{ success: boolean; message?: string }>('/company/agents/invite', { email, fullName });
       return response.data;
     } catch {
       return { success: false, message: 'Failed to invite agent' };

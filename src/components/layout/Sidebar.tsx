@@ -68,9 +68,9 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
             <img src="/NoBG Logo.png" alt="iléSure" className="w-8 h-8 object-contain" />
           </div>
           <div>
-            <div className="text-white font-bold text-lg leading-tight tracking-tight">iléSure</div>
+            <div className="text-white font-bold text-lg leading-tight tracking-tight">{user?.companyId?.name || user?.companyId?.tradingName || 'iléSure'}</div>
             <div className="text-white/50 text-xs font-medium tracking-widest uppercase">
-              {role === 'company' ? 'Company' : 'Agent / Landlord'}
+              {role === 'company' ? 'Company' : role === 'sub_agent' ? 'Sub-Agent' : 'Agent / Landlord'}
             </div>
           </div>
         </div>

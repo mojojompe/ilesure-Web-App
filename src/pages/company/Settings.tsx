@@ -12,6 +12,7 @@ export function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [company, setCompany] = useState<any>(null);
+  const [subscription, setSubscription] = useState<any>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -122,6 +123,9 @@ export function CompanySettingsPage() {
           address: companyRes.company.address || '',
           description: companyRes.company.description || '',
         });
+      }
+      if (subRes.success && subRes.data?.plan) {
+        setSubscription(subRes.data.plan);
       }
     } catch (error) {
       console.error('Failed to fetch data:', error);
@@ -345,17 +349,17 @@ export function CompanySettingsPage() {
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
             <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-              <p className="text-lg font-bold text-text-primary capitalize">{company?.tier || 'Free'}</p>
-              <p className="text-sm text-text-tertiary capitalize">{company?.billingCycle || 'monthly'}</p>
+              <p className="text-lg font-bold text-text-primary capitalize">{subscription?.name || company?.tier || 'Free'}</p>
+              <p className="text-sm text-text-tertiary capitalize">{subscription?.billingCycle || 'monthly'}</p>
             </div>
             <div className="mt-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-text-tertiary">Agent Slots:</span>
-                <span className="font-medium">{company?.limits?.agentSlots ?? 50}</span>
+                <span className="font-medium">{subscription?.slotUsage?.total ?? 50}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-text-tertiary">Listings:</span>
-                <span className="font-medium">{company?.limits?.maxListings === 9999 ? 'Unlimited' : company?.limits?.maxListings ?? '—'}</span>
+                <span className="text-text-tertiary">Listings Used:</span>
+                <span className="font-medium">{subscription?.slotUsage?.used ?? 0}</span>
               </div>
             </div>
             <a href="/tiers" className="block btn-secondary text-center mt-4">

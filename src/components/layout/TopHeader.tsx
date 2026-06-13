@@ -1,5 +1,5 @@
 import { Menu, Search, Bell, ChevronDown, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 
 interface TopHeaderProps {
@@ -11,11 +11,33 @@ interface TopHeaderProps {
 
 export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderProps) {
   const [showNotifications, setShowNotifications] = useState(false);
-  const notifications = [
-    { id: 1, message: 'New booking for Modern Student Hostel', time: '2 min ago' },
-    { id: 2, message: 'Payment received - ₦180,000', time: '1 hour ago' },
-    { id: 3, message: 'New inquiry for Single Room - Yaba', time: '3 hours ago' },
-  ];
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        const { default: notificationsApi } = await import('../../api/notifications');
+        const [notifsRes, countRes] = await Promise.all([
+          notificationsApi.getNotifications(1, 5),
+          notificationsApi.getUnreadCount()
+        ]);
+        
+        if (notifsRes.success && notifsRes.data) {
+          setNotifications(notifsRes.data.notifications);
+        }
+        if (countRes.success && countRes.count !== undefined) {
+          setUnreadCount(countRes.count);
+        }
+      } catch (err) {
+        console.error('Failed to load notifications', err);
+      }
+    };
+    
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 60000); // Poll every minute
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <header className="fixed top-3 left-3 md:left-[276px] right-3 z-20 bg-white rounded-[9999px] shadow-clay-sm h-14 flex items-center px-4 md:px-5 gap-3 md:gap-4">
@@ -61,7 +83,9 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
               className="relative p-2 rounded-pill hover:bg-clay-border-light transition-colors"
             >
               <Bell className="w-5 h-5 text-text-secondary" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-status-error rounded-full" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 w-2 h-2 bg-status-error rounded-full" />
+              )}
             </button>
             {showNotifications && (
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-clay shadow-clay border border-clay-border overflow-hidden">
@@ -69,12 +93,17 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
                   <h3 className="font-semibold text-sm">Notifications</h3>
                 </div>
                 <div className="max-h-64 overflow-y-auto">
-                  {notifications.map(n => (
-                    <div key={n.id} className="px-4 py-3 border-b border-clay-border-light hover:bg-mustard-pale cursor-pointer">
-                      <p className="text-sm text-text-primary">{n.message}</p>
-                      <p className="text-xs text-text-tertiary mt-1">{n.time}</p>
-                    </div>
-                  ))}
+                  {notifications.length > 0 ? (
+                    notifications.map((n: any) => (
+                      <div key={n._id} className={clsx("px-4 py-3 border-b border-clay-border-light hover:bg-mustard-pale cursor-pointer", !n.read && "bg-mustard-pale/30")}>
+                        <p className="text-sm text-text-primary font-medium">{n.title}</p>
+                        <p className="text-sm text-text-secondary mt-0.5">{n.body || n.message}</p>
+                        <p className="text-xs text-text-tertiary mt-1">{new Date(n.createdAt).toLocaleDateString()}</p>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="px-4 py-6 text-center text-text-tertiary text-sm">No new notifications</div>
+                  )}
                 </div>
               </div>
             )}
