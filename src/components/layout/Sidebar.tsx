@@ -1,5 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { agentApi } from '../../api/agent';
+import { companyApi } from '../../api/company';
+import { chatApi } from '../../api/chat';
 import { clsx } from 'clsx';
 import {
   LayoutDashboard, Building2, Users, BarChart3, Settings, LogOut,
@@ -54,6 +57,35 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
     logout();
   };
 
+  const [pendingBookings, setPendingBookings] = useState(0);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    const fetchCounts = async () => {
+      try {
+        const bookingsRes = role === 'company'
+          ? await companyApi.getBookings({ status: 'pending' })
+          : await agentApi.getBookings({ status: 'pending' });
+        
+        if (bookingsRes.success) {
+          const total = (bookingsRes as any).pagination?.totalItems 
+            || (bookingsRes as any).data?.pagination?.totalItems 
+            || ((bookingsRes as any).bookings || (bookingsRes as any).data?.bookings || []).length;
+          setPendingBookings(total);
+        }
+
+        const chatsRes = await chatApi.getChats();
+        if (chatsRes.success && chatsRes.data?.chats) {
+          const totalUnread = chatsRes.data.chats.reduce((acc, chat) => acc + (chat.unreadCount || 0), 0);
+          setUnreadMessages(totalUnread);
+        }
+      } catch (err) {
+        console.error('Error fetching sidebar counts', err);
+      }
+    };
+    fetchCounts();
+  }, [role]);
+
   return (
     <>
       {isOpen && (
@@ -97,11 +129,11 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
               >
                 <Icon className={clsx('w-5 h-5 flex-shrink-0 transition-transform duration-150', isActive ? 'text-mustard-light' : 'group-hover:scale-110')} />
                 <span className="truncate">{label}</span>
-                {label === 'Bookings' && (
-                  <span className="ml-auto bg-mustard-light text-burnt-brown-dark text-[10px] font-bold rounded-pill px-2 py-0.5 min-w-[20px] text-center">3</span>
+                {label === 'Bookings' && pendingBookings > 0 && (
+                  <span className="ml-auto bg-mustard-light text-burnt-brown-dark text-[10px] font-bold rounded-pill px-2 py-0.5 min-w-[20px] text-center">{pendingBookings}</span>
                 )}
-                {label === 'Messages' && (
-                  <span className="ml-auto bg-status-error text-white text-[10px] font-bold rounded-pill px-2 py-0.5 min-w-[20px] text-center">5</span>
+                {label === 'Messages' && unreadMessages > 0 && (
+                  <span className="ml-auto bg-status-error text-white text-[10px] font-bold rounded-pill px-2 py-0.5 min-w-[20px] text-center">{unreadMessages}</span>
                 )}
               </NavLink>
             );

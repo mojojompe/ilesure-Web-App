@@ -155,7 +155,7 @@ export const companyApi = {
     }
   },
 
-  async getBookings(params?: { status?: string; limit?: number; page?: number }): Promise<{ success: boolean; bookings?: Booking[]; message?: string }> {
+  async getBookings(params?: { status?: string; limit?: number; page?: number }): Promise<{ success: boolean; bookings?: Booking[]; pagination?: any; message?: string }> {
     try {
       const searchParams = new URLSearchParams();
       if (params?.status) searchParams.set('status', params.status);
@@ -163,8 +163,8 @@ export const companyApi = {
       if (params?.page) searchParams.set('page', String(params.page));
 
       const queryString = searchParams.toString();
-      const response = await apiClient.get<{ success: boolean; data: { bookings: Booking[] } }>(`/company/bookings${queryString ? `?${queryString}` : ''}`);
-      return { success: true, bookings: response.data.data.bookings };
+      const response = await apiClient.get<{ success: boolean; data: { bookings: Booking[], pagination?: any } }>(`/company/bookings${queryString ? `?${queryString}` : ''}`);
+      return { success: true, bookings: response.data.data.bookings, pagination: response.data.data.pagination };
     } catch {
       return { success: false, message: 'Failed to fetch bookings' };
     }
@@ -191,7 +191,10 @@ export const companyApi = {
 
   async updateProfile(data: { name?: string; phone?: string; address?: string; description?: string }): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await apiClient.put<{ success: boolean; message?: string }>('/company/profile', data);
+      const payload: any = { ...data };
+      if (data.address) payload.officeAddress = data.address;
+      if (data.name) payload.tradingName = data.name;
+      const response = await apiClient.put<{ success: boolean; message?: string }>('/company/profile', payload);
       return response.data;
     } catch {
       return { success: false, message: 'Failed to update company profile' };

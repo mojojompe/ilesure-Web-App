@@ -6,6 +6,7 @@ import { SignupPage } from './pages/Signup';
 import { CreateOTPPage } from './pages/CreateOTP';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
 import { ResetPasswordPage } from './pages/ResetPassword';
+import { UpdatePasswordPage } from './pages/UpdatePassword';
 import { RoleSelectionPage } from './pages/RoleSelection';
 import { TierSelectionPage } from './pages/TierSelection';
 import { VerificationPage } from './pages/Verification';
@@ -47,7 +48,7 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role: '
     return <Navigate to="/login" replace />;
   }
 
-  const effectiveRole = userRole === 'landlord' ? 'agent' : userRole;
+  const effectiveRole = (userRole === 'landlord' || userRole === 'sub_agent') ? 'agent' : userRole;
   
   if (effectiveRole && effectiveRole !== role) {
     return <Navigate to={effectiveRole === 'company' ? '/company' : '/agent'} replace />;
@@ -90,6 +91,7 @@ function AppRoutes() {
       <Route path="/create-otp" element={<CreateOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/role-selection" element={<RoleSelectionPage />} />
       <Route path="/tier-selection" element={<TierSelectionPage />} />
       <Route path="/verification/:role" element={<VerificationRoute />} />

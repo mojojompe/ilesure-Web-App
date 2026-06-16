@@ -98,6 +98,8 @@ interface ListingFormData {
   smokingAllowed: boolean;
   studentsOnly: boolean;
   photos: string[];
+  duration: string;
+  isRecurring: boolean;
 }
 
 const initialFormData: ListingFormData = {
@@ -137,6 +139,8 @@ const initialFormData: ListingFormData = {
   smokingAllowed: false,
   studentsOnly: false,
   photos: [],
+  duration: 'yearly',
+  isRecurring: false,
 };
 
 export function AgentCreateListingPage() {
@@ -191,6 +195,8 @@ export function AgentCreateListingPage() {
           interval: formData.customInterval,
           amountPerInstallment: Number(formData.customAmountPerInstallment),
         } : undefined,
+        duration: formData.duration,
+        isRecurring: formData.isRecurring,
         additionalNotes: formData.additionalNotes || undefined,
         shortletPricing: formData.propertyType === 'shortlet' ? {
           ...(formData.shortletHourly ? { hourly: Number(formData.shortletHourly) } : {}),
@@ -369,6 +375,119 @@ export function AgentCreateListingPage() {
     const isShortlet = formData.propertyType === 'shortlet';
     return (
     <div className="space-y-4">
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Duration</label>
+        <select
+          value={formData.duration}
+          onChange={e => handleChange('duration', e.target.value)}
+          className="clay-input w-full"
+        >
+          <option value="yearly">Yearly</option>
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Is this continuous/recurring?</label>
+        <button
+          type="button"
+          onClick={() => handleToggle('isRecurring')}
+          className={clsx(
+            'w-full flex items-center justify-between p-3 rounded-clay-sm border-2 transition-all',
+            formData.isRecurring ? 'border-mustard bg-mustard-pale' : 'border-clay-border'
+          )}
+        >
+          <span className="text-sm font-medium text-text-primary">Yes, tenant can retain/renew</span>
+          <div className={clsx('w-5 h-5 rounded-full flex items-center justify-center', formData.isRecurring ? 'bg-mustard' : 'bg-clay-border')}>
+            {formData.isRecurring && <Check className="w-3 h-3 text-white" />}
+          </div>
+        </button>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Price (₦)</label>
+        <div className="relative">
+          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <input
+            type="number"
+            value={formData.annualRent}
+            onChange={e => handleChange('annualRent', e.target.value)}
+            placeholder="250000"
+            className="clay-input w-full pl-11"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Caution Fee (Optional)</label>
+        <div className="relative">
+          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <input
+            type="number"
+            value={formData.cautionFee}
+            onChange={e => handleChange('cautionFee', e.target.value)}
+            placeholder="50000"
+            className="clay-input w-full pl-11"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Agency Fee (Optional)</label>
+        <div className="relative">
+          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <input
+            type="number"
+            value={formData.agencyFee}
+            onChange={e => handleChange('agencyFee', e.target.value)}
+            placeholder="25000"
+            className="clay-input w-full pl-11"
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
+        <div className="grid grid-cols-2 gap-2">
+          {paymentFrequencyOptions.map(option => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleChange('paymentFrequency', option.value)}
+              className={clsx(
+                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                formData.paymentFrequency === option.value
+                  ? 'border-mustard bg-mustard-pale text-mustard'
+                  : 'border-clay-border text-text-secondary hover:border-mustard'
+              )}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        {formData.paymentFrequency === 'custom' && (
+          <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
+                <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Interval</label>
+                <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
+                  <option value="monthly">Monthly</option>
+                  <option value="bi-monthly">Bi-monthly</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
+              <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
+            </div>
+          </div>
+        )}
+      </div>
+      {formData.propertyType === 'shortlet' && (
+        <div className="space-y-4 pt-2 border-t-2 border-clay-border-light">
+          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing (Optional)</p>
       {isShortlet ? (
         <>
           <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing</p>
@@ -765,6 +884,8 @@ export function AgentCreateListingPage() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
+          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent Price:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()} / {formData.duration} {formData.isRecurring ? '(Recurring)' : ''}</span></div>
+          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
           {formData.propertyType === 'shortlet' ? (
             <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Pricing:</span> <span className="font-medium text-right">
               {formData.shortletHourly && `₦${Number(formData.shortletHourly).toLocaleString()}/hr `}
