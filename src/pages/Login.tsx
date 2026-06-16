@@ -29,10 +29,15 @@ export function LoginPage() {
     try {
       const result = await login(email, password);
       if (result.success) {
+        if (result.nextStep === 'update_password') {
+          navigate('/update-password');
+          return;
+        }
+
         const userRole = result.user?.role;
         if (userRole === 'company_admin' || userRole === 'company') {
           navigate('/company');
-        } else if (userRole === 'agent' || userRole === 'landlord') {
+        } else if (userRole === 'agent' || userRole === 'landlord' || userRole === 'sub_agent') {
           navigate('/agent');
         } else {
           navigate('/');

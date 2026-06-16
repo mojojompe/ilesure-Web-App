@@ -3,7 +3,7 @@ import type { User, UserRole, AuthState } from '../types';
 import { authApi } from './authApi';
 
 interface AuthContextType extends AuthState {
-  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string; nextStep?: string }>;
   logout: () => void;
   updateRole: (role: UserRole) => void;
 }
@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           isAuthenticated: true,
         }));
 
-        return { success: true, user };
+        return { success: true, user, nextStep: response.nextStep };
       }
 
       return { success: false, error: response.error?.message || 'Login failed' };

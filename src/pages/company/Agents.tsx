@@ -9,6 +9,7 @@ import { companyApi } from '../../api/company';
 
 export function CompanyAgentsPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
@@ -49,8 +50,8 @@ export function CompanyAgentsPage() {
     try {
       const response = await companyApi.inviteAgent(email, fullName);
       if (response.success) {
-        showToast('Invitation sent successfully!', 'success');
         setShowInviteModal(false);
+        setShowSuccessModal(true);
         setEmail('');
         setFullName('');
       } else {
@@ -279,6 +280,19 @@ export function CompanyAgentsPage() {
             </div>
           </div>
         )}
+      <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="Invitation Sent!">
+        <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
+          <div className="w-16 h-16 bg-status-success/20 rounded-full flex items-center justify-center mb-2">
+            <Mail className="w-8 h-8 text-status-success" />
+          </div>
+          <h3 className="text-xl font-bold text-text-primary">Invitation Sent Successfully</h3>
+          <p className="text-sm text-text-secondary">
+            An email with an invitation link has been sent to the agent. They can use this link to sign up and automatically join your company's team.
+          </p>
+          <Button variant="primary" className="w-full mt-6" onClick={() => setShowSuccessModal(false)}>
+            Close
+          </Button>
+        </div>
       </Modal>
     </AppLayout>
   );

@@ -30,7 +30,7 @@ export function AppLayout({ children, role, title, subtitle, onReload }: AppLayo
           subtitle={subtitle}
           onReload={onReload}
         />
-        <main className="flex-1 p-4 pt-20 md:px-6 md:pt-[4.5rem] overflow-x-hidden">
+        <main className="flex-1 p-4 pt-24 md:px-6 md:pt-[6rem] overflow-x-hidden">
           {children}
         </main>
       </div>

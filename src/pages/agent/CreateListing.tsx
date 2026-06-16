@@ -98,6 +98,8 @@ interface ListingFormData {
   smokingAllowed: boolean;
   studentsOnly: boolean;
   photos: string[];
+  duration: string;
+  isRecurring: boolean;
 }
 
 const initialFormData: ListingFormData = {
@@ -137,6 +139,8 @@ const initialFormData: ListingFormData = {
   smokingAllowed: false,
   studentsOnly: false,
   photos: [],
+  duration: 'yearly',
+  isRecurring: false,
 };
 
 export function AgentCreateListingPage() {
@@ -191,6 +195,8 @@ export function AgentCreateListingPage() {
           interval: formData.customInterval,
           amountPerInstallment: Number(formData.customAmountPerInstallment),
         } : undefined,
+        duration: formData.duration,
+        isRecurring: formData.isRecurring,
         additionalNotes: formData.additionalNotes || undefined,
         shortletPricing: formData.propertyType === 'shortlet' ? {
           ...(formData.shortletHourly ? { hourly: Number(formData.shortletHourly) } : {}),
@@ -368,7 +374,36 @@ export function AgentCreateListingPage() {
   const renderStep3 = () => (
     <div className="space-y-4">
       <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Duration</label>
+        <select
+          value={formData.duration}
+          onChange={e => handleChange('duration', e.target.value)}
+          className="clay-input w-full"
+        >
+          <option value="yearly">Yearly</option>
+          <option value="monthly">Monthly</option>
+          <option value="weekly">Weekly</option>
+          <option value="daily">Daily</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Is this continuous/recurring?</label>
+        <button
+          type="button"
+          onClick={() => handleToggle('isRecurring')}
+          className={clsx(
+            'w-full flex items-center justify-between p-3 rounded-clay-sm border-2 transition-all',
+            formData.isRecurring ? 'border-mustard bg-mustard-pale' : 'border-clay-border'
+          )}
+        >
+          <span className="text-sm font-medium text-text-primary">Yes, tenant can retain/renew</span>
+          <div className={clsx('w-5 h-5 rounded-full flex items-center justify-center', formData.isRecurring ? 'bg-mustard' : 'bg-clay-border')}>
+            {formData.isRecurring && <Check className="w-3 h-3 text-white" />}
+          </div>
+        </button>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Price (₦)</label>
         <div className="relative">
           <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
@@ -754,7 +789,7 @@ export function AgentCreateListingPage() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent/Year:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()}</span></div>
+          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent Price:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()} / {formData.duration} {formData.isRecurring ? '(Recurring)' : ''}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Location:</span> <span className="font-medium text-right max-w-[60%]">{formData.address}, {formData.area}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Landmark:</span> <span className="font-medium text-right max-w-[60%]">{formData.landmark || '-'}</span></div>

@@ -363,8 +363,21 @@ export function AgentListingsPage() {
       <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={selectedListing?.title || 'Listing Details'} size="lg">
         {selectedListing && (
           <div className="space-y-4">
-            {selectedListing.images?.[0] && (
-              <img src={selectedListing.images[0]} alt={selectedListing.title} className="w-full h-48 object-cover rounded-clay-sm" />
+            {selectedListing.images?.length > 0 && (
+              <div className="relative w-full h-48 flex overflow-x-auto snap-x snap-mandatory rounded-clay-sm scrollbar-hide">
+                {selectedListing.images.map((url: string, index: number) => {
+                  const isVideo = url.match(/\.(mp4|mov|webm)$/i);
+                  return (
+                    <div key={index} className="w-full flex-none snap-center h-full">
+                      {isVideo ? (
+                        <video src={url} controls className="w-full h-full object-cover" />
+                      ) : (
+                        <img src={url} alt={`${selectedListing.title} ${index + 1}`} className="w-full h-full object-cover" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             )}
             <StatusBadge variant={selectedListing.status === 'active' ? 'success' : 'warning'}>
               {selectedListing.status}
