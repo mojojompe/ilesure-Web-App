@@ -374,260 +374,147 @@ export function AgentCreateListingPage() {
   const renderStep3 = () => {
     const isShortlet = formData.propertyType === 'shortlet';
     return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Duration</label>
-        <select
-          value={formData.duration}
-          onChange={e => handleChange('duration', e.target.value)}
-          className="clay-input w-full"
-        >
-          <option value="yearly">Yearly</option>
-          <option value="monthly">Monthly</option>
-          <option value="weekly">Weekly</option>
-          <option value="daily">Daily</option>
-        </select>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Is this continuous/recurring?</label>
-        <button
-          type="button"
-          onClick={() => handleToggle('isRecurring')}
-          className={clsx(
-            'w-full flex items-center justify-between p-3 rounded-clay-sm border-2 transition-all',
-            formData.isRecurring ? 'border-mustard bg-mustard-pale' : 'border-clay-border'
-          )}
-        >
-          <span className="text-sm font-medium text-text-primary">Yes, tenant can retain/renew</span>
-          <div className={clsx('w-5 h-5 rounded-full flex items-center justify-center', formData.isRecurring ? 'bg-mustard' : 'bg-clay-border')}>
-            {formData.isRecurring && <Check className="w-3 h-3 text-white" />}
-          </div>
-        </button>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Price (₦)</label>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="number"
-            value={formData.annualRent}
-            onChange={e => handleChange('annualRent', e.target.value)}
-            placeholder="250000"
-            className="clay-input w-full pl-11"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Caution Fee (Optional)</label>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="number"
-            value={formData.cautionFee}
-            onChange={e => handleChange('cautionFee', e.target.value)}
-            placeholder="50000"
-            className="clay-input w-full pl-11"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Agency Fee (Optional)</label>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="number"
-            value={formData.agencyFee}
-            onChange={e => handleChange('agencyFee', e.target.value)}
-            placeholder="25000"
-            className="clay-input w-full pl-11"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
-        <div className="grid grid-cols-2 gap-2">
-          {paymentFrequencyOptions.map(option => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleChange('paymentFrequency', option.value)}
-              className={clsx(
-                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
-                formData.paymentFrequency === option.value
-                  ? 'border-mustard bg-mustard-pale text-mustard'
-                  : 'border-clay-border text-text-secondary hover:border-mustard'
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        {formData.paymentFrequency === 'custom' && (
-          <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
+      <div className="space-y-4">
+        {isShortlet ? (
+          <>
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing</p>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
-                <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
+                <label className="block text-xs text-text-secondary mb-1">Hourly (₦)</label>
+                <input type="number" value={formData.shortletHourly} onChange={e => handleChange('shortletHourly', e.target.value)} placeholder="10000" className="clay-input w-full" />
               </div>
               <div>
-                <label className="block text-xs text-text-secondary mb-1">Interval</label>
-                <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
-                  <option value="monthly">Monthly</option>
-                  <option value="bi-monthly">Bi-monthly</option>
-                </select>
+                <label className="block text-xs text-text-secondary mb-1">Daily (₦)</label>
+                <input type="number" value={formData.shortletDaily} onChange={e => handleChange('shortletDaily', e.target.value)} placeholder="150000" className="clay-input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Weekly (₦)</label>
+                <input type="number" value={formData.shortletWeekly} onChange={e => handleChange('shortletWeekly', e.target.value)} placeholder="700000" className="clay-input w-full" />
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Monthly (₦)</label>
+                <input type="number" value={formData.shortletMonthly} onChange={e => handleChange('shortletMonthly', e.target.value)} placeholder="2500000" className="clay-input w-full" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Min Stay</label>
+                <div className="flex gap-2">
+                  <input type="number" value={formData.minStay} onChange={e => handleChange('minStay', e.target.value)} placeholder="1" className="clay-input w-20 flex-shrink-0" />
+                  <select value={formData.minStayUnit} onChange={e => handleChange('minStayUnit', e.target.value)} className="clay-input flex-1">
+                    <option value="hour">Hours</option>
+                    <option value="day">Days</option>
+                    <option value="week">Weeks</option>
+                    <option value="month">Months</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Max Stay</label>
+                <div className="flex gap-2">
+                  <input type="number" value={formData.maxStay} onChange={e => handleChange('maxStay', e.target.value)} placeholder="12" className="clay-input w-20 flex-shrink-0" />
+                  <select value={formData.maxStayUnit} onChange={e => handleChange('maxStayUnit', e.target.value)} className="clay-input flex-1">
+                    <option value="hour">Hours</option>
+                    <option value="day">Days</option>
+                    <option value="week">Weeks</option>
+                    <option value="month">Months</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <input
+                  type="number"
+                  value={formData.annualRent}
+                  onChange={e => handleChange('annualRent', e.target.value)}
+                  placeholder="250000"
+                  className="clay-input w-full pl-11"
+                />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
-              <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
+              <div className="grid grid-cols-2 gap-2">
+                {paymentFrequencyOptions.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleChange('paymentFrequency', option.value)}
+                    className={clsx(
+                      'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                      formData.paymentFrequency === option.value
+                        ? 'border-mustard bg-mustard-pale text-mustard'
+                        : 'border-clay-border text-text-secondary hover:border-mustard'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {formData.paymentFrequency === 'custom' && (
+                <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
+                      <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Interval</label>
+                      <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
+                        <option value="monthly">Monthly</option>
+                        <option value="bi-monthly">Bi-monthly</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
+                    <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
+          </>
         )}
-      </div>
-      {formData.propertyType === 'shortlet' && (
-        <div className="space-y-4 pt-2 border-t-2 border-clay-border-light">
-          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing (Optional)</p>
-      {isShortlet ? (
-        <>
-          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing</p>
-          <div className="grid grid-cols-2 gap-3">
+        <div className="border-t border-clay-border-light pt-4">
+          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
+          <div className="space-y-3">
             <div>
-              <label className="block text-xs text-text-secondary mb-1">Hourly (₦)</label>
-              <input type="number" value={formData.shortletHourly} onChange={e => handleChange('shortletHourly', e.target.value)} placeholder="10000" className="clay-input w-full" />
-            </div>
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Daily (₦)</label>
-              <input type="number" value={formData.shortletDaily} onChange={e => handleChange('shortletDaily', e.target.value)} placeholder="150000" className="clay-input w-full" />
-            </div>
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Weekly (₦)</label>
-              <input type="number" value={formData.shortletWeekly} onChange={e => handleChange('shortletWeekly', e.target.value)} placeholder="700000" className="clay-input w-full" />
-            </div>
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Monthly (₦)</label>
-              <input type="number" value={formData.shortletMonthly} onChange={e => handleChange('shortletMonthly', e.target.value)} placeholder="2500000" className="clay-input w-full" />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Min Stay</label>
-              <div className="flex gap-2">
-                <input type="number" value={formData.minStay} onChange={e => handleChange('minStay', e.target.value)} placeholder="1" className="clay-input w-20 flex-shrink-0" />
-                <select value={formData.minStayUnit} onChange={e => handleChange('minStayUnit', e.target.value)} className="clay-input flex-1">
-                  <option value="hour">Hours</option>
-                  <option value="day">Days</option>
-                  <option value="week">Weeks</option>
-                  <option value="month">Months</option>
-                </select>
+              <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <input
+                  type="number"
+                  value={formData.cautionFee}
+                  onChange={e => handleChange('cautionFee', e.target.value)}
+                  placeholder="50000"
+                  className="clay-input w-full pl-11"
+                />
               </div>
             </div>
             <div>
-              <label className="block text-xs text-text-secondary mb-1">Max Stay</label>
-              <div className="flex gap-2">
-                <input type="number" value={formData.maxStay} onChange={e => handleChange('maxStay', e.target.value)} placeholder="12" className="clay-input w-20 flex-shrink-0" />
-                <select value={formData.maxStayUnit} onChange={e => handleChange('maxStayUnit', e.target.value)} className="clay-input flex-1">
-                  <option value="hour">Hours</option>
-                  <option value="day">Days</option>
-                  <option value="week">Weeks</option>
-                  <option value="month">Months</option>
-                </select>
+              <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <input
+                  type="number"
+                  value={formData.agencyFee}
+                  onChange={e => handleChange('agencyFee', e.target.value)}
+                  placeholder="25000"
+                  className="clay-input w-full pl-11"
+                />
               </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-              <input
-                type="number"
-                value={formData.annualRent}
-                onChange={e => handleChange('annualRent', e.target.value)}
-                placeholder="250000"
-                className="clay-input w-full pl-11"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
-            <div className="grid grid-cols-2 gap-2">
-              {paymentFrequencyOptions.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleChange('paymentFrequency', option.value)}
-                  className={clsx(
-                    'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
-                    formData.paymentFrequency === option.value
-                      ? 'border-mustard bg-mustard-pale text-mustard'
-                      : 'border-clay-border text-text-secondary hover:border-mustard'
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {formData.paymentFrequency === 'custom' && (
-              <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
-                    <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Interval</label>
-                    <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
-                      <option value="monthly">Monthly</option>
-                      <option value="bi-monthly">Bi-monthly</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
-                  <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
-                </div>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-      <div className="border-t border-clay-border-light pt-4">
-        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-              <input
-                type="number"
-                value={formData.cautionFee}
-                onChange={e => handleChange('cautionFee', e.target.value)}
-                placeholder="50000"
-                className="clay-input w-full pl-11"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
-            <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-              <input
-                type="number"
-                value={formData.agencyFee}
-                onChange={e => handleChange('agencyFee', e.target.value)}
-                placeholder="25000"
-                className="clay-input w-full pl-11"
-              />
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
   };
 
   const renderStep4 = () => (
