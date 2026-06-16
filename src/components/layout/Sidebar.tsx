@@ -70,7 +70,7 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
         if (bookingsRes.success) {
           const total = (bookingsRes as any).pagination?.totalItems 
             || (bookingsRes as any).data?.pagination?.totalItems 
-            || (bookingsRes.bookings || (bookingsRes as any).data?.bookings || []).length;
+            || ((bookingsRes as any).bookings || (bookingsRes as any).data?.bookings || []).length;
           setPendingBookings(total);
         }
 

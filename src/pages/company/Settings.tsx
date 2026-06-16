@@ -120,7 +120,7 @@ export function CompanySettingsPage() {
         setFormData({
           name: companyRes.company.name || '',
           phone: companyRes.company.phone || '',
-          address: companyRes.company.officeAddress || companyRes.company.address || '',
+          address: (companyRes.company as any).officeAddress || companyRes.company.address || '',
           description: companyRes.company.description || '',
         });
       }

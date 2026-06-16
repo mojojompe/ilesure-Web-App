@@ -280,6 +280,8 @@ export function CompanyAgentsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
       <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="Invitation Sent!">
         <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
           <div className="w-16 h-16 bg-status-success/20 rounded-full flex items-center justify-center mb-2">

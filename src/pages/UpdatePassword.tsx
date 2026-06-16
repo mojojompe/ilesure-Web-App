@@ -31,7 +31,7 @@ export function UpdatePasswordPage() {
     setError('');
     
     try {
-      const result = await userApi.changePassword({ currentPassword, newPassword });
+      const result = await userApi.changePassword(currentPassword, newPassword);
       if (result.success) {
         // Redirect based on role
         if (user?.role === 'company_admin' || user?.role === 'company') {
@@ -42,7 +42,7 @@ export function UpdatePasswordPage() {
           navigate('/');
         }
       } else {
-        setError(result.error?.message || 'Failed to update password');
+        setError(result.message || 'Failed to update password');
       }
     } catch (err: any) {
       setError('An unexpected error occurred');

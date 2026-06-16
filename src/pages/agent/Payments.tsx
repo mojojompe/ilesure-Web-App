@@ -4,6 +4,7 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import paymentsApi, { Transaction } from '../../api/payments';
+import { useAuth } from '../../api/authContext';
 
 export function AgentPaymentsPage() {
   const [tab, setTab] = useState<'transactions' | 'subscriptions'>('transactions');
@@ -11,9 +12,16 @@ export function AgentPaymentsPage() {
   const [totalPaid, setTotalPaid] = useState(0);
   const [loading, setLoading] = useState(true);
 
+  const { role } = useAuth();
+
   useEffect(() => {
     loadPayments();
   }, []);
+
+  if (role === 'sub_agent') {
+    window.location.href = '/agent';
+    return null; // Redirect
+  }
 
   const loadPayments = async () => {
     try {
