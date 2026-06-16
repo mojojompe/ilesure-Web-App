@@ -250,8 +250,8 @@ export function CompanyCreateListingPage() {
     switch (step) {
       case 1: return 'Basic Info';
       case 2: return 'Location';
-      case 3: return 'Pricing';
-      case 4: return 'Property Type';
+      case 3: return 'Property Type';
+      case 4: return 'Pricing';
       case 5: return 'Furnishing';
       case 6: return 'Utilities';
       case 7: return 'Rules';
@@ -364,92 +364,13 @@ export function CompanyCreateListingPage() {
     </div>
   );
 
-  const renderStep3 = () => (
+  const renderStep3 = () => {
+    const isShortlet = formData.propertyType === 'shortlet';
+    return (
     <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="number"
-            value={formData.annualRent}
-            onChange={e => handleChange('annualRent', e.target.value)}
-            placeholder="250000"
-            className="clay-input w-full pl-11"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Caution Fee (Optional)</label>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="number"
-            value={formData.cautionFee}
-            onChange={e => handleChange('cautionFee', e.target.value)}
-            placeholder="50000"
-            className="clay-input w-full pl-11"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Agency Fee (Optional)</label>
-        <div className="relative">
-          <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="number"
-            value={formData.agencyFee}
-            onChange={e => handleChange('agencyFee', e.target.value)}
-            placeholder="25000"
-            className="clay-input w-full pl-11"
-          />
-        </div>
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
-        <div className="grid grid-cols-2 gap-2">
-          {paymentFrequencyOptions.map(option => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleChange('paymentFrequency', option.value)}
-              className={clsx(
-                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
-                formData.paymentFrequency === option.value
-                  ? 'border-mustard bg-mustard-pale text-mustard'
-                  : 'border-clay-border text-text-secondary hover:border-mustard'
-              )}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-        {formData.paymentFrequency === 'custom' && (
-          <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
-                <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
-              </div>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Interval</label>
-                <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
-                  <option value="monthly">Monthly</option>
-                  <option value="bi-monthly">Bi-monthly</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
-              <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
-            </div>
-          </div>
-        )}
-      </div>
-      {formData.propertyType === 'shortlet' && (
-        <div className="space-y-4 pt-2 border-t-2 border-clay-border-light">
-          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing (Optional)</p>
+      {isShortlet ? (
+        <>
+          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing</p>
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-text-secondary mb-1">Hourly (₦)</label>
@@ -494,10 +415,100 @@ export function CompanyCreateListingPage() {
               </div>
             </div>
           </div>
-        </div>
+        </>
+      ) : (
+        <>
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <input
+                type="number"
+                value={formData.annualRent}
+                onChange={e => handleChange('annualRent', e.target.value)}
+                placeholder="250000"
+                className="clay-input w-full pl-11"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
+            <div className="grid grid-cols-2 gap-2">
+              {paymentFrequencyOptions.map(option => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleChange('paymentFrequency', option.value)}
+                  className={clsx(
+                    'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                    formData.paymentFrequency === option.value
+                      ? 'border-mustard bg-mustard-pale text-mustard'
+                      : 'border-clay-border text-text-secondary hover:border-mustard'
+                  )}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            {formData.paymentFrequency === 'custom' && (
+              <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
+                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
+                    <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-text-secondary mb-1">Interval</label>
+                    <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
+                      <option value="monthly">Monthly</option>
+                      <option value="bi-monthly">Bi-monthly</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
+                  <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
+                </div>
+              </div>
+            )}
+          </div>
+        </>
       )}
+      <div className="border-t border-clay-border-light pt-4">
+        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
+        <div className="space-y-3">
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <input
+                type="number"
+                value={formData.cautionFee}
+                onChange={e => handleChange('cautionFee', e.target.value)}
+                placeholder="50000"
+                className="clay-input w-full pl-11"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <input
+                type="number"
+                value={formData.agencyFee}
+                onChange={e => handleChange('agencyFee', e.target.value)}
+                placeholder="25000"
+                className="clay-input w-full pl-11"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
+  };
 
   const renderStep4 = () => (
     <div className="space-y-4">
@@ -753,8 +764,19 @@ export function CompanyCreateListingPage() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent/Year:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()}</span></div>
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
+          {formData.propertyType === 'shortlet' ? (
+            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Pricing:</span> <span className="font-medium text-right">
+              {formData.shortletHourly && `₦${Number(formData.shortletHourly).toLocaleString()}/hr `}
+              {formData.shortletDaily && `₦${Number(formData.shortletDaily).toLocaleString()}/day `}
+              {formData.shortletWeekly && `₦${Number(formData.shortletWeekly).toLocaleString()}/wk `}
+              {formData.shortletMonthly && `₦${Number(formData.shortletMonthly).toLocaleString()}/mo`}
+            </span></div>
+          ) : (
+            <>
+              <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent/Year:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()}</span></div>
+              <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
+            </>
+          )}
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Location:</span> <span className="font-medium text-right max-w-[60%]">{formData.address}, {formData.area}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Landmark:</span> <span className="font-medium text-right max-w-[60%]">{formData.landmark || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Occupants:</span> <span className="font-medium">{formData.maxOccupants}</span></div>
@@ -762,14 +784,6 @@ export function CompanyCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Power:</span> <span className="font-medium capitalize">{formData.power}</span></div>
           {formData.additionalNotes && (
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
-          )}
-          {formData.propertyType === 'shortlet' && (
-            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Pricing:</span> <span className="font-medium text-right">
-              {formData.shortletHourly && `₦${Number(formData.shortletHourly).toLocaleString()}/hr `}
-              {formData.shortletDaily && `₦${Number(formData.shortletDaily).toLocaleString()}/day `}
-              {formData.shortletWeekly && `₦${Number(formData.shortletWeekly).toLocaleString()}/wk `}
-              {formData.shortletMonthly && `₦${Number(formData.shortletMonthly).toLocaleString()}/mo`}
-            </span></div>
           )}
           <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
         </div>
@@ -787,8 +801,8 @@ export function CompanyCreateListingPage() {
 
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
-          {step === 3 && renderStep3()}
-          {step === 4 && renderStep4()}
+          {step === 3 && renderStep4()}
+          {step === 4 && renderStep3()}
           {step === 5 && renderStep5()}
           {step === 6 && renderStep6()}
           {step === 7 && renderStep7()}
