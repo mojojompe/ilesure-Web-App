@@ -182,7 +182,9 @@ export function CompanyCreateListingPage() {
         title: formData.title,
         description: formData.description,
         propertyType: formData.propertyType,
-        rentAnnual: Number(formData.annualRent),
+        rentAnnual: formData.propertyType === 'shortlet'
+          ? (formData.shortletMonthly ? Number(formData.shortletMonthly) * 12 : 0)
+          : Number(formData.annualRent),
         cautionFee: formData.cautionFee ? Number(formData.cautionFee) : undefined,
         agencyFee: formData.agencyFee ? Number(formData.agencyFee) : undefined,
         paymentFrequency: formData.paymentFrequency,
