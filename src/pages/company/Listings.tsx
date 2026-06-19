@@ -88,6 +88,7 @@ export function CompanyListingsPage() {
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {listings.map(listing => {
             const isFullyBooked = listing.status === 'fully_booked';
+            const isShortlet = listing.propertyType === 'shortlet';
             return (
             <ClayCard key={listing.id} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
               <div className="relative h-40">
@@ -107,7 +108,16 @@ export function CompanyListingsPage() {
               <div className="p-4">
                 <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
                 <p className="text-xs text-text-tertiary">{listing.city}, {listing.state}</p>
-                <p className="text-lg font-bold text-mustard mt-2">{formatCurrency(listing.price)}</p>
+                {isShortlet && listing.shortletPricing ? (
+                  <div className="mt-2">
+                    {listing.shortletPricing.hourly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.hourly.toLocaleString()}/hr</p>}
+                    {listing.shortletPricing.daily && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.daily.toLocaleString()}/day</p>}
+                    {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.weekly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.weekly.toLocaleString()}/wk</p>}
+                    {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.monthly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.monthly.toLocaleString()}/mo</p>}
+                  </div>
+                ) : (
+                  <p className="text-lg font-bold text-mustard mt-2">{formatCurrency(listing.price || listing.rentAnnual || 0)}</p>
+                )}
                 <div className="flex items-center gap-4 text-xs text-text-tertiary mt-2">
                   <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || 0}</span>
                   <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
@@ -141,8 +151,17 @@ export function CompanyListingsPage() {
               {selectedListing.status}
             </StatusBadge>
             <div>
-              <p className="text-2xl font-bold text-mustard">{formatCurrency(selectedListing.price)}</p>
-              <p className="text-sm text-text-tertiary capitalize">/ {selectedListing.type}</p>
+              {selectedListing.propertyType === 'shortlet' && selectedListing.shortletPricing ? (
+                <div className="space-y-1">
+                  {selectedListing.shortletPricing.hourly && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.hourly.toLocaleString()}/hr</p>}
+                  {selectedListing.shortletPricing.daily && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.daily.toLocaleString()}/day</p>}
+                  {selectedListing.shortletPricing.weekly && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.weekly.toLocaleString()}/wk</p>}
+                  {selectedListing.shortletPricing.monthly && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.monthly.toLocaleString()}/mo</p>}
+                </div>
+              ) : (
+                <p className="text-2xl font-bold text-mustard">{formatCurrency(selectedListing.price || selectedListing.rentAnnual || 0)}</p>
+              )}
+              <p className="text-sm text-text-tertiary capitalize">{selectedListing.propertyType?.replace(/_/g, ' ') || selectedListing.type}</p>
             </div>
             <p className="text-text-secondary">{selectedListing.description}</p>
             <div className="flex flex-col gap-2 text-text-tertiary">
