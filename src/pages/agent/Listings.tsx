@@ -205,7 +205,7 @@ export function AgentListingsPage() {
               const city = listing.location?.city || listing.areaCluster || listing.city || '';
               const state = listing.location?.state || listing.state || '';
               const isFullyBooked = listing.status === 'fully_booked';
-              const isShortlet = listing.propertyType === 'shortlet';
+              const isShortlet = listing.propertyType?.toLowerCase() === 'shortlet';
               return (
                 <ClayCard key={listingId} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
                   <div className="relative h-40">

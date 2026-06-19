@@ -88,7 +88,7 @@ export function CompanyListingsPage() {
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
           {listings.map(listing => {
             const isFullyBooked = listing.status === 'fully_booked';
-            const isShortlet = listing.propertyType === 'shortlet';
+            const isShortlet = listing.propertyType?.toLowerCase() === 'shortlet';
             return (
             <ClayCard key={listing.id} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
               <div className="relative h-40">

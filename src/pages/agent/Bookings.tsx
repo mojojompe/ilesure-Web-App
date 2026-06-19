@@ -116,7 +116,11 @@ export function AgentBookingsPage() {
                   const listingTitle = booking.listingId?.title || booking.listingTitle || '—';
                   const tenantName = booking.userId?.fullName || booking.userName || '—';
                   const tenantPhone = booking.userId?.phone || booking.userPhone || '—';
-                  const rent = booking.listingId?.rentAnnual || booking.price || 0;
+                  const isShortlet = booking.listingId?.propertyType?.toLowerCase() === 'shortlet';
+                  const shortletPricing = (booking.listingId as any)?.shortletPricing;
+                  const rent = isShortlet
+                    ? shortletPricing?.weekly || shortletPricing?.daily || shortletPricing?.hourly || shortletPricing?.monthly || 0
+                    : booking.listingId?.rentAnnual || booking.price || 0;
                   const moveIn = booking.moveInDate
                     ? new Date(booking.moveInDate).toLocaleDateString()
                     : '—';
@@ -132,7 +136,16 @@ export function AgentBookingsPage() {
                         </div>
                       </td>
                       <td>
-                        <p className="font-bold text-mustard">{formatCurrency(rent)}</p>
+                        {isShortlet && shortletPricing ? (
+                          <div className="text-xs">
+                            {shortletPricing.hourly && <p className="font-bold text-mustard">₦{shortletPricing.hourly.toLocaleString()}/hr</p>}
+                            {shortletPricing.daily && <p className="font-bold text-mustard">₦{shortletPricing.daily.toLocaleString()}/day</p>}
+                            {shortletPricing.weekly && <p className="font-bold text-mustard">₦{shortletPricing.weekly.toLocaleString()}/wk</p>}
+                            {shortletPricing.monthly && <p className="font-bold text-mustard">₦{shortletPricing.monthly.toLocaleString()}/mo</p>}
+                          </div>
+                        ) : (
+                          <p className="font-bold text-mustard">{formatCurrency(rent)}</p>
+                        )}
                       </td>
                       <td>
                         <p className="text-sm text-text-secondary">{moveIn}</p>
@@ -182,7 +195,8 @@ export function AgentBookingsPage() {
               const listingArea = selectedBooking.listingId?.areaCluster || selectedBooking.listing?.address || '—';
               const tenantName = selectedBooking.userId?.fullName || selectedBooking.userName || '—';
               const tenantPhone = selectedBooking.userId?.phone || selectedBooking.userPhone || '—';
-              const rent = selectedBooking.listingId?.rentAnnual || selectedBooking.price || 0;
+              const isShortlet = selectedBooking.listingId?.propertyType?.toLowerCase() === 'shortlet';
+              const shortletPricing = (selectedBooking.listingId as any)?.shortletPricing;
               const moveIn = selectedBooking.moveInDate
                 ? new Date(selectedBooking.moveInDate).toLocaleDateString()
                 : '—';
@@ -210,8 +224,17 @@ export function AgentBookingsPage() {
                       <p className="text-xs text-text-tertiary">{tenantPhone}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-text-tertiary">Annual Rent</p>
-                      <p className="text-lg font-bold text-mustard">{formatCurrency(rent)}</p>
+                      <p className="text-xs text-text-tertiary">{isShortlet ? 'Pricing' : 'Annual Rent'}</p>
+                      {isShortlet && shortletPricing ? (
+                        <div>
+                          {shortletPricing.hourly && <p className="text-sm font-bold text-mustard">₦{shortletPricing.hourly.toLocaleString()}/hr</p>}
+                          {shortletPricing.daily && <p className="text-sm font-bold text-mustard">₦{shortletPricing.daily.toLocaleString()}/day</p>}
+                          {shortletPricing.weekly && <p className="text-sm font-bold text-mustard">₦{shortletPricing.weekly.toLocaleString()}/wk</p>}
+                          {shortletPricing.monthly && <p className="text-sm font-bold text-mustard">₦{shortletPricing.monthly.toLocaleString()}/mo</p>}
+                        </div>
+                      ) : (
+                        <p className="text-lg font-bold text-mustard">{formatCurrency(selectedBooking.listingId?.rentAnnual || selectedBooking.price || 0)}</p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-text-tertiary">Move-in Date</p>
