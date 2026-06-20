@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Archive, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, Loader } from 'lucide-react';
+import { Plus, Search, Edit, Archive, Trash2, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -127,6 +127,24 @@ export function AgentListingsPage() {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    if (!window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
+    setSubmitting(true);
+    try {
+      const response = await agentApi.deleteListing(id);
+      if (response.success) {
+        showToast('Listing deleted successfully', 'success');
+        fetchListings();
+      } else {
+        showToast(response.message || 'Failed to delete listing', 'error');
+      }
+    } catch {
+      showToast('Failed to delete listing', 'error');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   const handleView = (listing: any) => {
     setSelectedListing(listing);
     setShowViewModal(true);
@@ -250,6 +268,9 @@ export function AgentListingsPage() {
                       </Button>
                       <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))} disabled={isFullyBooked}>
                         <Archive className="w-3 h-3" />
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={() => handleDelete(String(listingId))} disabled={isFullyBooked}>
+                        <Trash2 className="w-3 h-3 text-red-500" />
                       </Button>
                     </div>
                   </div>
