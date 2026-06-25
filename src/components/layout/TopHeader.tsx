@@ -1,6 +1,7 @@
 import { Menu, Search, Bell, ChevronDown, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
+import { useAuth } from '../../api/authContext';
 
 interface TopHeaderProps {
   onMenuClick: () => void;
@@ -10,9 +11,18 @@ interface TopHeaderProps {
 }
 
 export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderProps) {
+  const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+
+  let displaySubtitle = subtitle;
+  if (subtitle === "Welcome back" && user) {
+    const name = user.role === 'company' ? ((user as any).companyName || user.company?.name || user.fullName) : user.fullName;
+    if (name) {
+      displaySubtitle = `Welcome back, ${name}`;
+    }
+  }
 
   useEffect(() => {
     const fetchNotifications = async () => {
@@ -40,8 +50,8 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
   }, []);
 
   return (
-    <header className="fixed top-3 left-3 md:left-[276px] right-3 z-20 bg-white rounded-[9999px] shadow-clay-sm h-14 flex items-center px-4 md:px-5 gap-3 md:gap-4">
-      <div className="flex items-center justify-between px-4 py-3">
+    <header className="fixed top-4 left-4 md:left-[276px] right-4 z-20 bg-white rounded-[9999px] shadow-clay-sm h-16 flex items-center px-4 md:px-6">
+      <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}
@@ -51,7 +61,7 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
           </button>
           <div>
             <h1 className="text-lg font-bold text-text-primary">{title}</h1>
-            {subtitle && <p className="text-xs text-text-tertiary">{subtitle}</p>}
+            {displaySubtitle && <p className="text-xs text-text-tertiary">{displaySubtitle}</p>}
           </div>
         </div>
 
@@ -108,11 +118,6 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
               </div>
             )}
           </div>
-
-          <button className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-pill bg-clay-border-light hover:bg-mustard-pale transition-colors">
-            <span className="text-xs font-medium text-text-secondary">EN</span>
-            <ChevronDown className="w-3 h-3 text-text-tertiary" />
-          </button>
         </div>
       </div>
     </header>

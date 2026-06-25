@@ -15,7 +15,6 @@ export function TierPage({ role }: TierPageProps) {
   const [searchParams] = useSearchParams();
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   useEffect(() => {
     loadTiers();
@@ -30,8 +29,8 @@ export function TierPage({ role }: TierPageProps) {
     setLoading(false);
   };
 
-  const handleSelectTier = (tierId: string) => {
-    navigate(`/payment?tier=${tierId}&billing=${billingCycle}`);
+  const handleSelectTier = (tier: Tier) => {
+    navigate(`/payment?tier=${tier.id}&billing=${tier.billingCycle || 'monthly'}`);
   };
 
   const formatPrice = (price: number) => {
@@ -48,7 +47,10 @@ export function TierPage({ role }: TierPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-off-white py-8 px-4">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat py-8 px-4"
+      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_tier.png')" }}
+    >
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text-primary">
@@ -59,38 +61,9 @@ export function TierPage({ role }: TierPageProps) {
           </p>
         </div>
 
-        <div className="flex justify-center mb-8">
-          <div className="bg-white rounded-pill p-1 border border-clay-border flex">
-            <button
-              onClick={() => setBillingCycle('monthly')}
-              className={clsx(
-                'px-6 py-2 rounded-pill text-sm font-medium transition-all',
-                billingCycle === 'monthly'
-                  ? 'bg-burnt-brown text-white'
-                  : 'text-text-secondary hover:text-text-primary'
-              )}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingCycle('annually')}
-              className={clsx(
-                'px-6 py-2 rounded-pill text-sm font-medium transition-all',
-                billingCycle === 'annually'
-                  ? 'bg-burnt-brown text-white'
-                  : 'text-text-secondary hover:text-text-primary'
-              )}
-            >
-              Annually <span className="text-xs opacity-75">-20%</span>
-            </button>
-          </div>
-        </div>
-
         <div className="grid md:grid-cols-3 gap-6">
           {tiers.map(tier => {
-            const price = billingCycle === 'annually' && tier.price > 0
-              ? Math.round(tier.price * 12 * 0.8)
-              : tier.price;
+            const price = tier.price;
             const isPopular = tier.isPopular;
 
             return (
@@ -119,21 +92,39 @@ export function TierPage({ role }: TierPageProps) {
                 <div className="text-center mb-6">
                   <span className="text-3xl font-bold text-text-primary">{formatPrice(price)}</span>
                   {price > 0 && (
-                    <span className="text-sm text-text-tertiary">/{billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
+                    <span className="text-sm text-text-tertiary">/{tier.billingCycle === 'monthly' ? 'mo' : 'yr'}</span>
                   )}
                 </div>
 
                 <div className="space-y-2 mb-6">
-                  {tier.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm">
+                  {tier.features?.maxListings !== undefined && (
+                    <div className="flex items-start gap-2 text-sm">
                       <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                      <span className="text-text-secondary">{feature}</span>
+                      <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
                     </div>
-                  ))}
+                  )}
+                  {tier.features?.analytics && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                      <span className="text-text-secondary">{tier.features.analytics}</span>
+                    </div>
+                  )}
+                  {tier.features?.support && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                      <span className="text-text-secondary">{tier.features.support}</span>
+                    </div>
+                  )}
+                  {tier.features?.visibility && (
+                    <div className="flex items-start gap-2 text-sm">
+                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                      <span className="text-text-secondary">{tier.features.visibility}</span>
+                    </div>
+                  )}
                 </div>
 
                 <Button
-                  onClick={() => handleSelectTier(tier.id)}
+                  onClick={() => handleSelectTier(tier)}
                   variant={isPopular ? 'mustard' : 'primary'}
                   className="w-full"
                 >

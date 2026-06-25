@@ -53,7 +53,10 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-off-white flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat flex items-center justify-center p-4"
+      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_login.png')" }}
+    >
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-clay overflow-hidden shadow-clay">

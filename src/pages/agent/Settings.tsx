@@ -281,18 +281,19 @@ export function AgentSettingsPage() {
                     Subaccount Active
                   </div>
                   <div className="text-sm text-text-secondary space-y-1">
+                    <p><span className="font-medium">Bank Name:</span> {banks.find(b => b.code === subaccount.bankCode)?.name || subaccount.bankCode}</p>
                     <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
                     <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
                     <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
                     <p className="text-xs text-text-tertiary mt-2">
-                      Rent payments will be split automatically — 5% goes to IleSure, balance to your account.
+                      Rent payments will be settled automatically to your account.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-4">
                   <p className="text-sm text-text-tertiary">
-                    Set up your bank account to receive rent payments directly. IleSure takes a 5% commission.
+                    Set up your bank account to receive rent payments directly.
                   </p>
                   <div>
                     <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">

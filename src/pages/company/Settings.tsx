@@ -262,6 +262,7 @@ export function CompanySettingsPage() {
                   Subaccount Active
                 </div>
                 <div className="text-sm text-text-secondary space-y-1">
+                  <p><span className="font-medium">Bank Name:</span> {banks.find(b => b.code === subaccount.bankCode)?.name || subaccount.bankCode}</p>
                   <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
                   <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
                   <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>

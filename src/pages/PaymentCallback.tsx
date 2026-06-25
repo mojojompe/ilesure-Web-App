@@ -53,7 +53,10 @@ export function PaymentCallbackPage() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-off-white flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat flex items-center justify-center p-4"
+      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_payment.png')" }}
+    >
       <div className="w-full max-w-md text-center">
         <div className="clay-card p-8">
           {status === 'verifying' && (

@@ -45,9 +45,10 @@ const companyNavItems = [
 export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
   const location = useLocation();
   const { logout, user } = useAuth();
-  const navItems = role === 'company' 
+  const currentUserRole = user?.role || role;
+  const navItems = currentUserRole === 'company' 
     ? companyNavItems 
-    : (role === 'sub_agent' 
+    : (currentUserRole === 'sub_agent' 
         ? agentNavItems.filter(item => item.label !== 'Payments') 
         : agentNavItems);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
@@ -141,6 +142,16 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
         </nav>
 
         <div className="px-3 py-4 border-t border-white/10 space-y-1">
+          {role === 'sub_agent' && (
+            <div className="px-3 py-2 mb-2 rounded-clay-sm bg-white/5 border border-white/10">
+              <div className="text-[10px] text-white/50 font-bold uppercase tracking-wider mb-0.5">Affiliated Company</div>
+              <div className="text-white/80 text-xs font-medium truncate">
+                {(typeof user?.companyId === 'object' 
+                  ? user.companyId.name || user.companyId.tradingName 
+                  : user?.company?.name) || 'Company'}
+              </div>
+            </div>
+          )}
           <NavLink
             to={role === 'company' ? '/company/settings' : '/agent/settings'}
             onClick={onClose}
@@ -155,7 +166,9 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-white text-sm font-semibold truncate">{user?.fullName}</div>
-              <div className="text-white/40 text-xs truncate">{user?.email}</div>
+              <div className="text-white/40 text-xs truncate">
+                {role === 'sub_agent' ? 'Sub-Agent' : role === 'company' ? 'Company Admin' : 'Agent / Landlord'}
+              </div>
             </div>
             <button onClick={() => setShowLogoutModal(true)} className="text-white/40 hover:text-status-error transition-colors duration-150" title="Logout">
               <LogOut className="w-4 h-4" />

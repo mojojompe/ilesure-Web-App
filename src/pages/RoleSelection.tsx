@@ -41,7 +41,10 @@ export function RoleSelectionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-off-white py-8 px-4">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat py-8 px-4"
+      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_role.png')" }}
+    >
       <div className="max-w-2xl mx-auto">
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-clay overflow-hidden shadow-clay">

@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { AppLayout } from '../../components/layout/AppLayout';
 import companyApi from '../../api/company';
+import { useAuth } from '../../api/authContext';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -141,6 +142,7 @@ const initialFormData: ListingFormData = {
 
 export function CompanyCreateListingPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ListingFormData>(initialFormData);
   const [loading, setLoading] = useState(false);
@@ -792,6 +794,25 @@ export function CompanyCreateListingPage() {
       </div>
     </div>
   );
+
+  if (user?.verificationStatus !== 'verified') {
+    return (
+      <AppLayout role="company" title="Create Listing">
+        <div className="max-w-3xl mx-auto flex flex-col items-center justify-center py-24 px-4 text-center">
+          <div className="w-20 h-20 bg-status-error/10 rounded-full flex items-center justify-center mb-6">
+            <Shield className="w-10 h-10 text-status-error" />
+          </div>
+          <h2 className="text-2xl font-bold text-text-primary mb-3">Verification Required</h2>
+          <p className="text-text-secondary max-w-md mb-8">
+            You must verify your company before you can create and publish listings on iléSure. This helps us maintain a safe platform for all users.
+          </p>
+          <Button variant="primary" onClick={() => navigate('/verification/company')}>
+            Verify Company Now
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout role="company" title="Create Listing" subtitle={`Step ${step} of 9`}>

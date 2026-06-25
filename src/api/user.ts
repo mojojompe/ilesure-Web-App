@@ -76,6 +76,30 @@ export const userApi = {
       return { success: false, message: 'Failed to change password' };
     }
   },
+
+  async submitKycReference(referenceId: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; message?: string }>('/users/kyc', {
+        referenceId,
+      });
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to submit KYC verification' };
+    }
+  },
+
+  async submitCompanyVerification(formData: FormData): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; message?: string }>('/users/company-verification', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to submit company verification' };
+    }
+  },
 };
 
 export default userApi;

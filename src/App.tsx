@@ -41,7 +41,7 @@ import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
 import { NotFound } from './pages/NotFound';
 
-function ProtectedRoute({ children, role }: { children: React.ReactNode; role: 'agent' | 'company' }) {
+function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role: 'agent' | 'company'; excludeRole?: string }) {
   const { isAuthenticated, role: userRole } = useAuth();
   
   if (!isAuthenticated) {
@@ -52,6 +52,10 @@ function ProtectedRoute({ children, role }: { children: React.ReactNode; role: '
   
   if (effectiveRole && effectiveRole !== role) {
     return <Navigate to={effectiveRole === 'company' ? '/company' : '/agent'} replace />;
+  }
+
+  if (excludeRole && userRole === excludeRole) {
+    return <Navigate to={`/${effectiveRole}`} replace />;
   }
   
   return <>{children}</>;
@@ -137,7 +141,7 @@ function AppRoutes() {
         </ProtectedRoute>
       } />
       <Route path="/agent/payments" element={
-        <ProtectedRoute role="agent">
+        <ProtectedRoute role="agent" excludeRole="sub_agent">
           <AgentPaymentsPage />
         </ProtectedRoute>
       } />

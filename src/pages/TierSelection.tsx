@@ -49,7 +49,10 @@ export function TierSelectionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-off-white py-8 px-4">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat py-8 px-4"
+      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_tier.png')" }}
+    >
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text-primary">Choose Your Plan</h1>
@@ -113,12 +116,30 @@ export function TierSelectionPage() {
               </div>
 
               <div className="space-y-2">
-                {tier.features.map((feature, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0" />
-                    <span className="text-text-secondary">{feature}</span>
+                {tier.features?.maxListings !== undefined && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
                   </div>
-                ))}
+                )}
+                {tier.features?.analytics && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <span className="text-text-secondary">{tier.features.analytics}</span>
+                  </div>
+                )}
+                {tier.features?.support && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <span className="text-text-secondary">{tier.features.support}</span>
+                  </div>
+                )}
+                {tier.features?.visibility && (
+                  <div className="flex items-start gap-2 text-sm">
+                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <span className="text-text-secondary">{tier.features.visibility}</span>
+                  </div>
+                )}
               </div>
             </button>
           ))}

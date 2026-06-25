@@ -140,7 +140,12 @@ export interface TierDetails {
     featuredListings: number;
     agentSlots?: number;
   };
-  features: string[];
+  features: {
+    maxListings: number;
+    analytics?: string;
+    support?: string;
+    visibility?: string;
+  };
 }
 
 export interface Tier {
@@ -149,7 +154,12 @@ export interface Tier {
   description: string;
   price: number;
   billingCycle: 'monthly' | 'annually';
-  features: string[];
+  features: {
+    maxListings: number;
+    analytics?: string;
+    support?: string;
+    visibility?: string;
+  };
   limits: {
     maxListings: number;
     featuredListings: number;

@@ -80,7 +80,10 @@ export function CreateOTPPage() {
   };
 
   return (
-    <div className="min-h-screen bg-off-white flex items-center justify-center p-4">
+    <div 
+      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat flex items-center justify-center p-4"
+      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_otp.png')" }}
+    >
       <div className="w-full max-w-md">
         <button onClick={() => navigate(-1)} className="flex items-center text-mustard text-sm hover:underline mb-6">
           <ArrowLeft className="w-4 h-4 mr-1" /> Back
