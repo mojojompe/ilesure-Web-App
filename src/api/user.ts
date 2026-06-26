@@ -88,16 +88,16 @@ export const userApi = {
     }
   },
 
-  async submitCompanyVerification(formData: FormData): Promise<{ success: boolean; message?: string }> {
+  async submitCompanyVerification(formData: FormData): Promise<{ success: boolean; message?: string; data?: any; error?: { message: string } }> {
     try {
-      const response = await apiClient.post<{ success: boolean; message?: string }>('/users/company-verification', formData, {
+      const response = await apiClient.post<{ success: boolean; message?: string; data?: any }>('/kyc/company-documents', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
       return response.data;
-    } catch {
-      return { success: false, message: 'Failed to submit company verification' };
+    } catch (err: any) {
+      return { success: false, message: err?.response?.data?.error?.message || 'Failed to submit company documents' };
     }
   },
 };
