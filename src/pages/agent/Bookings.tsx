@@ -250,6 +250,18 @@ export function AgentBookingsPage() {
                         <p className="text-sm text-text-primary">{selectedBooking.message}</p>
                       </div>
                     )}
+                    
+                    {/* Timeline Info */}
+                    <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
+                      <p className="text-xs text-text-tertiary">Timeline Status</p>
+                      <p className="text-sm font-semibold text-text-primary">
+                        {selectedBooking.timelineStep === 1 && 'Step 1: Booking Requested'}
+                        {selectedBooking.timelineStep === 2 && `Step 2: Inspection Scheduled (${new Date(selectedBooking.inspectionDate).toLocaleDateString()} at ${selectedBooking.inspectionTime})`}
+                        {selectedBooking.timelineStep === 3 && 'Step 3: Inspection Verified (Ready for Payment)'}
+                        {selectedBooking.timelineStep === 4 && 'Step 4: Paid / Completed'}
+                        {!selectedBooking.timelineStep && 'Step 1: Booking Requested'}
+                      </p>
+                    </div>
                   </div>
 
                   {selectedBooking.status === 'pending' && (
