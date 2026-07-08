@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Edit, Eye, Heart, Archive, Loader, MapPin } from 'lucide-react';
+import { Plus, Search, Edit, Eye, Heart, Archive, Loader, MapPin, Home } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -90,26 +90,56 @@ export function CompanyListingsPage() {
             const isFullyBooked = listing.status === 'fully_booked';
             const isShortlet = listing.propertyType?.toLowerCase() === 'shortlet';
             return (
-                    {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.weekly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.weekly.toLocaleString()}/wk</p>}
-                    {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.monthly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.monthly.toLocaleString()}/mo</p>}
+              <ClayCard key={listing._id || listing.id} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
+                <div className="relative h-56">
+                  {listing.images?.[0] ? (
+                    <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-clay-border-light flex items-center justify-center">
+                      <Home className="w-8 h-8 text-text-tertiary" />
+                    </div>
+                  )}
+                  {/* Progressive Gradient Fade to White */}
+                  <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent z-0"></div>
+                  
+                  <div className="absolute top-3 right-3 z-10">
+                    <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
+                      {listing.status}
+                    </StatusBadge>
                   </div>
-                ) : (
-                  <p className="text-lg font-bold text-mustard mt-2">{formatCurrency(listing.price || listing.rentAnnual || 0)}</p>
-                )}
-                <div className="flex items-center gap-4 text-xs text-text-tertiary mt-2">
-                  <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || 0}</span>
-                  <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
                 </div>
-                <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
-                  <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
-                    <Eye className="w-3 h-3 mr-1" /> View
-                  </Button>
-                  <Button variant="secondary" size="sm" onClick={() => handleView(listing)} disabled={isFullyBooked}>
-                    <Edit className="w-3 h-3" />
-                  </Button>
+                <div className="relative z-10 p-4 -mt-6">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
+                      <p className="text-xs text-text-tertiary">{[listing.city || listing.areaCluster, listing.state].filter(Boolean).join(', ') || '—'}</p>
+                    </div>
+                    {isShortlet && listing.shortletPricing ? (
+                      <div className="text-right">
+                        {listing.shortletPricing.hourly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.hourly.toLocaleString()}/hr</p>}
+                        {listing.shortletPricing.daily && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.daily.toLocaleString()}/day</p>}
+                        {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.weekly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.weekly.toLocaleString()}/wk</p>}
+                        {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.monthly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.monthly.toLocaleString()}/mo</p>}
+                      </div>
+                    ) : (
+                      <p className="text-lg font-bold text-mustard">{formatCurrency(listing.price || listing.rentAnnual || 0)}</p>
+                    )}
+                  </div>
+                  <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
+                  <div className="flex items-center gap-4 text-xs text-text-tertiary mt-2">
+                    <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
+                    <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
+                  </div>
+                  <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
+                    <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
+                      <Eye className="w-3 h-3 mr-1" /> View
+                    </Button>
+                    <Button variant="secondary" size="sm" onClick={() => handleView(listing)} disabled={isFullyBooked}>
+                      <Edit className="w-3 h-3" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            </ClayCard>
+              </ClayCard>
             );
           })}
         </div>
