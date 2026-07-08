@@ -90,28 +90,6 @@ export function CompanyListingsPage() {
             const isFullyBooked = listing.status === 'fully_booked';
             const isShortlet = listing.propertyType?.toLowerCase() === 'shortlet';
             return (
-            <ClayCard key={listing.id} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
-              <div className="relative h-40">
-                {listing.images?.[0] ? (
-                  <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-clay-border-light flex items-center justify-center">
-                    <Eye className="w-8 h-8 text-text-tertiary" />
-                  </div>
-                )}
-                <div className="absolute top-3 right-3">
-                  <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
-                    {listing.status}
-                  </StatusBadge>
-                </div>
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
-                <p className="text-xs text-text-tertiary">{listing.city}, {listing.state}</p>
-                {isShortlet && listing.shortletPricing ? (
-                  <div className="mt-2">
-                    {listing.shortletPricing.hourly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.hourly.toLocaleString()}/hr</p>}
-                    {listing.shortletPricing.daily && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.daily.toLocaleString()}/day</p>}
                     {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.weekly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.weekly.toLocaleString()}/wk</p>}
                     {!listing.shortletPricing.hourly && !listing.shortletPricing.daily && listing.shortletPricing.monthly && <p className="text-lg font-bold text-mustard">₦{listing.shortletPricing.monthly.toLocaleString()}/mo</p>}
                   </div>

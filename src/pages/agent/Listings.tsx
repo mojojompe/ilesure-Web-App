@@ -226,7 +226,7 @@ export function AgentListingsPage() {
               const isShortlet = listing.propertyType?.toLowerCase() === 'shortlet';
               return (
                 <ClayCard key={listingId} hover={!isFullyBooked} className={`overflow-hidden ${isFullyBooked ? 'opacity-60 grayscale' : ''}`}>
-                  <div className="relative h-40">
+                  <div className="relative h-56">
                     {listing.images?.[0] ? (
                       <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
                     ) : (
@@ -234,13 +234,16 @@ export function AgentListingsPage() {
                         <Home className="w-8 h-8 text-text-tertiary" />
                       </div>
                     )}
-                    <div className="absolute top-3 right-3">
+                    {/* Progressive Gradient Fade to White */}
+                    <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent z-0"></div>
+                    
+                    <div className="absolute top-3 right-3 z-10">
                       <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
                         {listing.status}
                       </StatusBadge>
                     </div>
                   </div>
-                  <div className="p-4">
+                  <div className="relative z-10 p-4 -mt-6">
                     <div className="flex items-start justify-between mb-2">
                       <div>
                         <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
