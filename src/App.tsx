@@ -40,7 +40,6 @@ import { RoommateMatchesPage } from './pages/roommate/Matches';
 import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
 import { NotFound } from './pages/NotFound';
-import { GoogleAuthProxyPage } from './pages/GoogleAuthProxy';
 
 function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role: 'agent' | 'company'; excludeRole?: string }) {
   const { isAuthenticated, role: userRole } = useAuth();
@@ -105,7 +104,6 @@ function AppRoutes() {
       <Route path="/tiers" element={<GenericTierRoute />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
-      <Route path="/auth/google" element={<GoogleAuthProxyPage />} />
       
       <Route path="/agent" element={
         <ProtectedRoute role="agent">
