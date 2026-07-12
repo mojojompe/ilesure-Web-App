@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Loader } from 'lucide-react';
+import { Search, Check, X, Loader, Users } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -8,7 +8,7 @@ import { Modal } from '../../components/ui/Modal';
 import { agentApi } from '../../api/agent';
 
 export function AgentBookingsPage() {
-  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all');
+  const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'shared'>('all');
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
@@ -22,12 +22,19 @@ export function AgentBookingsPage() {
   const fetchBookings = async () => {
     setLoading(true);
     try {
-      const params: { status?: string } = {};
-      if (filter !== 'all') params.status = filter;
+      if (filter === 'shared') {
+        const response = await agentApi.getSharedBookings();
+        if (response.success && response.data) {
+          setBookings(response.data.bookings || []);
+        }
+      } else {
+        const params: { status?: string } = {};
+        if (filter !== 'all') params.status = filter;
 
-      const response = await agentApi.getBookings(params);
-      if (response.success && response.data) {
-        setBookings(response.data.bookings || []);
+        const response = await agentApi.getBookings(params);
+        if (response.success && response.data) {
+          setBookings(response.data.bookings || []);
+        }
       }
     } catch (error) {
       console.error('Failed to fetch bookings:', error);
@@ -76,7 +83,7 @@ export function AgentBookingsPage() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(['all', 'pending', 'confirmed', 'completed'] as const).map(f => (
+        {(['all', 'pending', 'confirmed', 'completed', 'shared'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -86,7 +93,11 @@ export function AgentBookingsPage() {
                 : 'bg-white text-text-secondary hover:bg-clay-border-light'
             }`}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'shared' ? (
+              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Shared</span>
+            ) : (
+              f.charAt(0).toUpperCase() + f.slice(1)
+            )}
           </button>
         ))}
       </div>
@@ -98,89 +109,167 @@ export function AgentBookingsPage() {
           </div>
         ) : bookings.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="clay-table">
-              <thead>
-                <tr>
-                  <th>Listing</th>
-                  <th>Tenant</th>
-                  <th>Price</th>
-                  <th>Move-in Date</th>
-                  <th>Status</th>
-                  <th>Payment</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {bookings.map(booking => {
-                  const bookingId = booking._id || booking.id;
-                  const listingTitle = booking.listingId?.title || booking.listingTitle || '—';
-                  const tenantName = booking.userId?.fullName || booking.userName || '—';
-                  const tenantPhone = booking.userId?.phone || booking.userPhone || '—';
-                  const isShortlet = booking.listingId?.propertyType?.toLowerCase() === 'shortlet';
-                  const shortletPricing = (booking.listingId as any)?.shortletPricing;
-                  const rent = isShortlet
-                    ? shortletPricing?.weekly || shortletPricing?.daily || shortletPricing?.hourly || shortletPricing?.monthly || 0
-                    : booking.listingId?.rentAnnual || booking.price || 0;
-                  const moveIn = booking.moveInDate
-                    ? new Date(booking.moveInDate).toLocaleDateString()
-                    : '—';
-                  return (
-                    <tr key={bookingId}>
-                      <td>
-                        <p className="font-medium text-text-primary">{listingTitle}</p>
-                      </td>
-                      <td>
-                        <div>
-                          <p className="text-sm text-text-primary">{tenantName}</p>
-                          <p className="text-xs text-text-tertiary">{tenantPhone}</p>
-                        </div>
-                      </td>
-                      <td>
-                        {isShortlet && shortletPricing ? (
-                          <div className="text-xs">
-                            {shortletPricing.hourly && <p className="font-bold text-mustard">₦{shortletPricing.hourly.toLocaleString()}/hr</p>}
-                            {shortletPricing.daily && <p className="font-bold text-mustard">₦{shortletPricing.daily.toLocaleString()}/day</p>}
-                            {shortletPricing.weekly && <p className="font-bold text-mustard">₦{shortletPricing.weekly.toLocaleString()}/wk</p>}
-                            {shortletPricing.monthly && <p className="font-bold text-mustard">₦{shortletPricing.monthly.toLocaleString()}/mo</p>}
+            {filter === 'shared' ? (
+              <table className="clay-table">
+                <thead>
+                  <tr>
+                    <th>Listing</th>
+                    <th>Participants</th>
+                    <th>Paid</th>
+                    <th>Total</th>
+                    <th>Progress</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map((booking: any) => {
+                    const deadline = booking.paymentDeadline
+                      ? new Date(booking.paymentDeadline).toLocaleDateString()
+                      : '—';
+                    const progressPercent = booking.totalRequired > 0
+                      ? Math.round((booking.totalPaid / booking.totalRequired) * 100)
+                      : 0;
+                    return (
+                      <tr key={booking.id}>
+                        <td>
+                          <p className="font-medium text-text-primary">{booking.listingTitle}</p>
+                          <p className="text-xs text-text-tertiary">{booking.listingArea}</p>
+                        </td>
+                        <td>
+                          <p className="text-sm text-text-primary">{booking.participantCount} tenants</p>
+                        </td>
+                        <td>
+                          <p className="text-sm text-text-primary">{booking.paidCount}/{booking.participantCount}</p>
+                        </td>
+                        <td>
+                          <p className="font-bold text-mustard">₦{booking.totalPaid?.toLocaleString()}</p>
+                          <p className="text-xs text-text-tertiary">of ₦{booking.totalRequired?.toLocaleString()}</p>
+                        </td>
+                        <td>
+                          <div className="w-24">
+                            <div className="h-2 bg-clay-border-light rounded-full overflow-hidden">
+                              <div
+                                className={`h-2 rounded-full transition-all ${
+                                  progressPercent === 100 ? 'bg-status-success' : 'bg-mustard'
+                                }`}
+                                style={{ width: `${progressPercent}%` }}
+                              />
+                            </div>
+                            <p className="text-xs text-text-tertiary mt-1">{progressPercent}%</p>
                           </div>
-                        ) : (
-                          <p className="font-bold text-mustard">{formatCurrency(rent)}</p>
-                        )}
-                      </td>
-                      <td>
-                        <p className="text-sm text-text-secondary">{moveIn}</p>
-                      </td>
-                      <td>
-                        <StatusBadge
-                          variant={
-                            booking.status === 'confirmed' ? 'success' :
-                            booking.status === 'pending' ? 'warning' :
-                            booking.status === 'cancelled' ? 'error' : 'default'
-                          }
-                        >
-                          {booking.status}
-                        </StatusBadge>
-                      </td>
-                      <td>
-                        <StatusBadge
-                          variant={
-                            booking.paymentStatus === 'paid' ? 'success' :
-                            booking.paymentStatus === 'pending' ? 'warning' : 'error'
-                          }
-                        >
-                          {booking.paymentStatus || 'unpaid'}
-                        </StatusBadge>
-                      </td>
-                      <td>
-                        <Button variant="secondary" size="sm" onClick={() => handleView(booking)}>
-                          View
-                        </Button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                        </td>
+                        <td>
+                          <p className="text-sm text-text-secondary">{deadline}</p>
+                        </td>
+                        <td>
+                          <StatusBadge
+                            variant={
+                              booking.status === 'confirmed' ? 'success' :
+                              booking.status === 'expired' || booking.status === 'refunded' ? 'error' :
+                              booking.status === 'fully_paid' ? 'success' :
+                              'warning'
+                            }
+                          >
+                            {booking.status?.replace(/_/g, ' ')}
+                          </StatusBadge>
+                        </td>
+                        <td>
+                          <Button variant="secondary" size="sm" onClick={() => handleView(booking)}>
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            ) : (
+              <table className="clay-table">
+                <thead>
+                  <tr>
+                    <th>Listing</th>
+                    <th>Tenant</th>
+                    <th>Price</th>
+                    <th>Move-in Date</th>
+                    <th>Status</th>
+                    <th>Payment</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bookings.map(booking => {
+                    const bookingId = booking._id || booking.id;
+                    const listingTitle = booking.listingId?.title || booking.listingTitle || '—';
+                    const tenantName = booking.userId?.fullName || booking.userName || '—';
+                    const tenantPhone = booking.userId?.phone || booking.userPhone || '—';
+                    const isShortlet = booking.listingId?.propertyType?.toLowerCase() === 'shortlet';
+                    const shortletPricing = (booking.listingId as any)?.shortletPricing;
+                    const rent = isShortlet
+                      ? shortletPricing?.weekly || shortletPricing?.daily || shortletPricing?.hourly || shortletPricing?.monthly || 0
+                      : booking.listingId?.rentAnnual || booking.price || 0;
+                    const moveIn = booking.moveInDate
+                      ? new Date(booking.moveInDate).toLocaleDateString()
+                      : '—';
+                    return (
+                      <tr key={bookingId}>
+                        <td>
+                          <p className="font-medium text-text-primary">{listingTitle}</p>
+                        </td>
+                        <td>
+                          <div>
+                            <p className="text-sm text-text-primary">{tenantName}</p>
+                            <p className="text-xs text-text-tertiary">{tenantPhone}</p>
+                          </div>
+                        </td>
+                        <td>
+                          {isShortlet && shortletPricing ? (
+                            <div className="text-xs">
+                              {shortletPricing.hourly && <p className="font-bold text-mustard">₦{shortletPricing.hourly.toLocaleString()}/hr</p>}
+                              {shortletPricing.daily && <p className="font-bold text-mustard">₦{shortletPricing.daily.toLocaleString()}/day</p>}
+                              {shortletPricing.weekly && <p className="font-bold text-mustard">₦{shortletPricing.weekly.toLocaleString()}/wk</p>}
+                              {shortletPricing.monthly && <p className="font-bold text-mustard">₦{shortletPricing.monthly.toLocaleString()}/mo</p>}
+                            </div>
+                          ) : (
+                            <p className="font-bold text-mustard">{formatCurrency(rent)}</p>
+                          )}
+                        </td>
+                        <td>
+                          <p className="text-sm text-text-secondary">{moveIn}</p>
+                        </td>
+                        <td>
+                          <StatusBadge
+                            variant={
+                              booking.status === 'confirmed' ? 'success' :
+                              booking.status === 'pending' ? 'warning' :
+                              booking.status === 'cancelled' ? 'error' : 'default'
+                            }
+                          >
+                            {booking.status}
+                          </StatusBadge>
+                        </td>
+                        <td>
+                          <StatusBadge
+                            variant={
+                              booking.paymentStatus === 'paid' ? 'success' :
+                              booking.paymentStatus === 'pending' ? 'warning' : 'error'
+                            }
+                          >
+                            {booking.paymentStatus || 'unpaid'}
+                          </StatusBadge>
+                        </td>
+                        <td>
+                          <Button variant="secondary" size="sm" onClick={() => handleView(booking)}>
+                            View
+                          </Button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
           </div>
         ) : (
           <div className="text-center py-12">
@@ -191,6 +280,90 @@ export function AgentBookingsPage() {
 
       <Modal isOpen={showDetailModal} onClose={() => setShowDetailModal(false)} title="Booking Details" size="md">
             {selectedBooking && (() => {
+              const isShared = !!selectedBooking.participants;
+              if (isShared) {
+                const progressPercent = selectedBooking.totalRequired > 0
+                  ? Math.round((selectedBooking.totalPaid / selectedBooking.totalRequired) * 100)
+                  : 0;
+                return (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-text-primary">{selectedBooking.listingTitle}</p>
+                        <p className="text-sm text-text-tertiary">{selectedBooking.listingArea}</p>
+                      </div>
+                      <StatusBadge
+                        variant={
+                          selectedBooking.status === 'confirmed' ? 'success' :
+                          selectedBooking.status === 'expired' || selectedBooking.status === 'refunded' ? 'error' :
+                          'warning'
+                        }
+                      >
+                        {selectedBooking.status?.replace(/_/g, ' ')}
+                      </StatusBadge>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-text-tertiary">Total Paid</p>
+                        <p className="text-lg font-bold text-mustard">₦{selectedBooking.totalPaid?.toLocaleString()}</p>
+                        <p className="text-xs text-text-tertiary">of ₦{selectedBooking.totalRequired?.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-text-tertiary">Payment Deadline</p>
+                        <p className="text-sm text-text-primary">
+                          {selectedBooking.paymentDeadline
+                            ? new Date(selectedBooking.paymentDeadline).toLocaleDateString()
+                            : '—'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-text-tertiary mb-2">Payment Progress</p>
+                      <div className="h-3 bg-clay-border-light rounded-full overflow-hidden">
+                        <div
+                          className={`h-3 rounded-full transition-all ${
+                            progressPercent === 100 ? 'bg-status-success' : 'bg-mustard'
+                          }`}
+                          style={{ width: `${progressPercent}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-text-tertiary mt-1 text-right">{progressPercent}%</p>
+                    </div>
+
+                    <div>
+                      <p className="text-xs text-text-tertiary mb-2">Participants</p>
+                      <div className="space-y-2">
+                        {selectedBooking.participants?.map((p: any, idx: number) => (
+                          <div key={idx} className="flex items-center justify-between p-2 bg-clay-border-light/30 rounded-lg">
+                            <div>
+                              <p className="text-sm font-medium text-text-primary">{p.name || 'Unknown'}</p>
+                              <p className="text-xs text-text-tertiary">{p.email}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-medium text-text-primary">₦{p.amountPaid?.toLocaleString()} / ₦{p.amountDue?.toLocaleString()}</p>
+                              <StatusBadge variant={p.status === 'paid' ? 'success' : 'warning'}>
+                                {p.status}
+                              </StatusBadge>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {selectedBooking.confirmedAt && (
+                      <div>
+                        <p className="text-xs text-text-tertiary">Confirmed At</p>
+                        <p className="text-sm text-text-primary">
+                          {new Date(selectedBooking.confirmedAt).toLocaleString()}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const listingTitle = selectedBooking.listingId?.title || selectedBooking.listingTitle || '—';
               const listingArea = selectedBooking.listingId?.areaCluster || selectedBooking.listing?.address || '—';
               const tenantName = selectedBooking.userId?.fullName || selectedBooking.userName || '—';

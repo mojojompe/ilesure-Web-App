@@ -299,6 +299,33 @@ export interface Booking {
   updatedAt: string;
 }
 
+export interface SharedBookingParticipant {
+  name: string;
+  email: string;
+  phone: string;
+  amountDue: number;
+  amountPaid: number;
+  status: 'pending' | 'paid';
+}
+
+export interface SharedBooking {
+  id: string;
+  listingTitle: string;
+  listingId: string;
+  listingArea: string;
+  rentAnnual: number;
+  images: string[];
+  status: 'pending_payment' | 'partially_paid' | 'fully_paid' | 'confirmed' | 'expired' | 'refunded';
+  totalRequired: number;
+  totalPaid: number;
+  participants: SharedBookingParticipant[];
+  participantCount: number;
+  paidCount: number;
+  paymentDeadline: string;
+  confirmedAt?: string;
+  createdAt: string;
+}
+
 export interface Chat {
   id: string;
   participant: {

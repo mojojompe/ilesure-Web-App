@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { Listing, Booking } from '../types';
+import type { Listing, Booking, SharedBooking } from '../types';
 
 interface DashboardResponse {
   success: boolean;
@@ -73,6 +73,19 @@ interface BookingsResponse {
   success: boolean;
   data?: {
     bookings: Booking[];
+    pagination: {
+      currentPage: number;
+      totalPages: number;
+      totalItems: number;
+    };
+  };
+  error?: { message: string };
+}
+
+interface SharedBookingsResponse {
+  success: boolean;
+  data?: {
+    bookings: SharedBooking[];
     pagination: {
       currentPage: number;
       totalPages: number;
@@ -223,6 +236,21 @@ export const agentApi = {
       return response.data;
     } catch {
       return { success: false, error: { message: 'Failed to update booking' } };
+    }
+  },
+
+  async getSharedBookings(params?: { status?: string; limit?: number; page?: number }): Promise<SharedBookingsResponse> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set('status', params.status);
+      if (params?.limit) searchParams.set('limit', String(params.limit));
+      if (params?.page) searchParams.set('page', String(params.page));
+
+      const queryString = searchParams.toString();
+      const response = await apiClient.get<SharedBookingsResponse>(`/agent/shared-bookings${queryString ? `?${queryString}` : ''}`);
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to fetch shared bookings' } };
     }
   },
 };

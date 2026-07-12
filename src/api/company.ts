@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { Listing, Booking, CompanyAgent, Company } from '../types';
+import type { Listing, Booking, SharedBooking, CompanyAgent, Company } from '../types';
 
 interface CompanyDashboardResponse {
   success: boolean;
@@ -176,6 +176,21 @@ export const companyApi = {
       return response.data;
     } catch {
       return { success: false, message: 'Failed to update booking' };
+    }
+  },
+
+  async getSharedBookings(params?: { status?: string; limit?: number; page?: number }): Promise<{ success: boolean; data?: { bookings: SharedBooking[]; pagination: { currentPage: number; totalPages: number; totalItems: number } }; message?: string }> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set('status', params.status);
+      if (params?.limit) searchParams.set('limit', String(params.limit));
+      if (params?.page) searchParams.set('page', String(params.page));
+
+      const queryString = searchParams.toString();
+      const response = await apiClient.get<{ success: boolean; data: { bookings: SharedBooking[]; pagination: any } }>(`/company/shared-bookings${queryString ? `?${queryString}` : ''}`);
+      return { success: true, data: response.data.data };
+    } catch {
+      return { success: false, message: 'Failed to fetch shared bookings' };
     }
   },
 
