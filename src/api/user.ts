@@ -100,6 +100,55 @@ export const userApi = {
       return { success: false, message: err?.response?.data?.error?.message || 'Failed to submit company documents' };
     }
   },
+
+  async getKycStatus(): Promise<{ success: boolean; data?: KycStatus; error?: { message: string } }> {
+    try {
+      const response = await apiClient.get<{ success: boolean; data?: KycStatus; error?: { message: string } }>('/kyc/status');
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to fetch verification status' } };
+    }
+  },
+
+  async initializeKyc(type: 'nin' | 'bvn'): Promise<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string }; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string }; error?: { message: string } }>('/kyc/initialize', { type });
+      return response.data;
+    } catch (err: any) {
+      return { success: false, error: { message: err?.response?.data?.error?.message || 'Failed to initialize verification' } };
+    }
+  },
+
+  async verifyKyc(referenceId: string, type: 'nin' | 'bvn'): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data?: any; error?: { message: string } }>('/kyc/verify', { referenceId, type });
+      return response.data;
+    } catch (err: any) {
+      return { success: false, error: { message: err?.response?.data?.error?.message || 'Failed to verify' } };
+    }
+  },
+
+  async syncKyc(type?: 'nin' | 'bvn'): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data?: any; error?: { message: string } }>('/kyc/sync', type ? { type } : {});
+      return response.data;
+    } catch (err: any) {
+      return { success: false, error: { message: err?.response?.data?.error?.message || 'Failed to sync verification' } };
+    }
+  },
 };
+
+interface KycStatus {
+  ninVerified: boolean;
+  bvnVerified: boolean;
+  verificationStatus: string;
+  role: string;
+  ninVerifiedAt?: string;
+  bvnVerifiedAt?: string;
+  ninPhoto?: string;
+  bvnPhoto?: string;
+}
+
+export type { KycStatus };
 
 export default userApi;

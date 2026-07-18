@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader, Banknote, CheckCircle } from 'lucide-react';
+import { Save, Loader, Banknote, CheckCircle, Shield, FileText, Upload, X, AlertCircle } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { companyApi } from '../../api/company';
 import { userApi } from '../../api/user';
 import { paymentsApi, Bank } from '../../api/payments';
+import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 
 export function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -44,6 +45,12 @@ export function CompanySettingsPage() {
   const [resolving, setResolving] = useState(false);
   const [resolved, setResolved] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
+
+  const [cacFile, setCacFile] = useState<File | null>(null);
+  const [permitFile, setPermitFile] = useState<File | null>(null);
+  const [officeAddress, setOfficeAddress] = useState('');
+  const [docUploading, setDocUploading] = useState(false);
+  const [docSubmitted, setDocSubmitted] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -156,6 +163,37 @@ export function CompanySettingsPage() {
     await userApi.updateNotificationSettings(newSettings);
   };
 
+  const handleDocumentUpload = async () => {
+    if (!cacFile) {
+      showToast('CAC Certificate is required', 'error');
+      return;
+    }
+    if (!officeAddress.trim()) {
+      showToast('Office address is required', 'error');
+      return;
+    }
+    setDocUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('officeAddress', officeAddress.trim());
+      formData.append('cacCertificate', cacFile);
+      if (permitFile) {
+        formData.append('businessPermit', permitFile);
+      }
+      const res = await userApi.submitCompanyVerification(formData);
+      if (res.success) {
+        setDocSubmitted(true);
+        showToast('Company documents submitted successfully!');
+      } else {
+        showToast(res.message || 'Failed to submit documents', 'error');
+      }
+    } catch {
+      showToast('Failed to submit documents. Please try again.', 'error');
+    } finally {
+      setDocUploading(false);
+    }
+  };
+
   if (loading) {
     return (
       <AppLayout role="company" title="Settings" subtitle="Manage your company">
@@ -225,6 +263,126 @@ export function CompanySettingsPage() {
             <Button variant="primary" className="mt-4" loading={saving} onClick={handleSave}>
               <Save className="w-4 h-4 mr-2" /> Save Changes
             </Button>
+          </ClayCard>
+
+          <ClayCard className="p-5">
+            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-mustard" />
+              Director Identity Verification
+            </h2>
+            <p className="text-sm text-text-tertiary mb-4">
+              The company director must complete NIN and BVN verification.
+            </p>
+            <DojahKYCSection
+              userRole="company"
+              userName={company?.director || company?.name}
+              userEmail={company?.email}
+              onVerified={fetchData}
+            />
+          </ClayCard>
+
+          <ClayCard className="p-5">
+            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+              <FileText className="w-5 h-5 text-mustard" />
+              Company Documents
+            </h2>
+            {company?.status === 'verified' ? (
+              <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
+                <CheckCircle className="w-4 h-4 text-status-success" />
+                <p className="text-sm font-medium text-status-success">Company is verified</p>
+              </div>
+            ) : company?.documentsSubmitted || docSubmitted ? (
+              <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-mustard/10 border border-mustard/20">
+                <AlertCircle className="w-4 h-4 text-mustard" />
+                <p className="text-sm font-medium text-mustard">Documents submitted — under review</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <p className="text-sm text-text-tertiary">
+                  Upload your CAC certificate and business permit for verification.
+                </p>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                    Office Address <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={officeAddress}
+                    onChange={(e) => setOfficeAddress(e.target.value)}
+                    placeholder="e.g. 14 Lagos Island, Victoria Island, Lagos"
+                    className="clay-input w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                    CAC Certificate <span className="text-red-500">*</span>
+                  </label>
+                  {cacFile ? (
+                    <div className="flex items-center gap-3 p-3 bg-status-success/5 border border-status-success/30 rounded-clay-sm">
+                      <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                      <span className="text-sm text-text-primary truncate flex-1">{cacFile.name}</span>
+                      <button onClick={() => setCacFile(null)} className="p-1 rounded-full hover:bg-clay-border-light">
+                        <X className="w-3.5 h-3.5 text-text-tertiary" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-clay-border rounded-clay-sm cursor-pointer hover:border-mustard hover:bg-mustard-pale/40 transition-all">
+                      <Upload className="w-5 h-5 text-text-tertiary" />
+                      <span className="text-sm text-text-secondary">Click to upload CAC certificate</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) setCacFile(f); }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+                    Business Permit (Optional)
+                  </label>
+                  {permitFile ? (
+                    <div className="flex items-center gap-3 p-3 bg-status-success/5 border border-status-success/30 rounded-clay-sm">
+                      <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                      <span className="text-sm text-text-primary truncate flex-1">{permitFile.name}</span>
+                      <button onClick={() => setPermitFile(null)} className="p-1 rounded-full hover:bg-clay-border-light">
+                        <X className="w-3.5 h-3.5 text-text-tertiary" />
+                      </button>
+                    </div>
+                  ) : (
+                    <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-clay-border rounded-clay-sm cursor-pointer hover:border-mustard hover:bg-mustard-pale/40 transition-all">
+                      <Upload className="w-5 h-5 text-text-tertiary" />
+                      <span className="text-sm text-text-secondary">Click to upload business permit</span>
+                      <input
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        className="hidden"
+                        onChange={(e) => { const f = e.target.files?.[0]; if (f) setPermitFile(f); }}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-clay-sm p-3 flex gap-2 text-xs text-blue-700">
+                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <span>Documents are securely stored and reviewed by iléSure's team. Approval usually takes 1–2 business days.</span>
+                </div>
+
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  onClick={handleDocumentUpload}
+                  loading={docUploading}
+                  disabled={docUploading || !cacFile || !officeAddress.trim()}
+                >
+                  <Upload className="w-4 h-4 mr-2" /> Submit Documents
+                </Button>
+              </div>
+            )}
           </ClayCard>
 
           <ClayCard className="p-5">

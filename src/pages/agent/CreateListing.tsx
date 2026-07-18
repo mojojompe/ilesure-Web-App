@@ -1,11 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, ArrowRight, ArrowLeft, Check, Upload, X } from 'lucide-react';
+import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, ArrowRight, ArrowLeft, Check, Upload, X, Loader2, AlertCircle, CheckCircle, Clock } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 import { AppLayout } from '../../components/layout/AppLayout';
 import agentApi from '../../api/agent';
 import { useAuth } from '../../api/authContext';
+import { userApi } from '../../api/user';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -26,6 +28,186 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
         </div>
       ))}
     </div>
+  );
+}
+
+function loadDojahScript(): Promise<void> {
+  return new Promise((resolve) => {
+    if (document.getElementById('dojah-widget-script')) { resolve(); return; }
+    const script = document.createElement('script');
+    script.id = 'dojah-widget-script';
+    script.src = 'https://widget.dojah.io/widget.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
+    document.body.appendChild(script);
+  });
+}
+
+function VerificationGate({ role, onVerified }: { role: string; onVerified: () => void }) {
+  const requiresBvn = ['agent', 'company', 'landlord', 'sub_agent'].includes(role);
+  const [kycStatus, setKycStatus] = useState<{ ninVerified: boolean; bvnVerified: boolean; verificationStatus: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState<'nin' | 'bvn' | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  useEffect(() => {
+    loadDojahScript();
+    fetchStatus();
+  }, []);
+
+  const fetchStatus = async () => {
+    setLoading(true);
+    try {
+      const res = await userApi.getKycStatus();
+      if (res.success && res.data) setKycStatus(res.data);
+    } catch {} finally { setLoading(false); }
+  };
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  const openDojah = async (type: 'nin' | 'bvn') => {
+    setVerifying(type);
+    try {
+      const appId = import.meta.env.VITE_DOJAH_APP_ID;
+      const pKey = import.meta.env.VITE_DOJAH_PUBLIC_KEY;
+      if (!appId || !pKey || appId.includes('your_')) {
+        showToast('Verification service is not configured. Please contact support.', 'error');
+        setVerifying(null);
+        return;
+      }
+      if (!(window as any).Connect) {
+        showToast('Verification service is still loading. Please try again.', 'error');
+        setVerifying(null);
+        return;
+      }
+      const options = {
+        app_id: appId, p_key: pKey, type: 'custom',
+        config: { pages: [{ page: type }] },
+        onSuccess: async (response: any) => {
+          try {
+            const refId = response.reference_id || '';
+            await userApi.submitKycReference(refId);
+            try { await userApi.verifyKyc(refId, type); } catch {}
+            showToast(`${type.toUpperCase()} verified successfully!`);
+            const res = await userApi.getKycStatus();
+            if (res.success && res.data) setKycStatus(res.data);
+            onVerified();
+          } catch { showToast('Failed to submit verification.', 'error'); }
+          finally { setVerifying(null); }
+        },
+        onError: () => { showToast('Verification error. Please try again.', 'error'); setVerifying(null); },
+        onClose: () => { setVerifying(null); },
+      };
+      const connect = new (window as any).Connect(options);
+      connect.setup();
+      connect.open();
+    } catch { showToast('Failed to start verification.', 'error'); setVerifying(null); }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    try {
+      const res = await userApi.syncKyc();
+      if (res.success) { showToast('Status synced!'); await fetchStatus(); onVerified(); }
+      else showToast(res.error?.message || 'Sync failed.', 'error');
+    } catch { showToast('Sync failed.', 'error'); } finally { setSyncing(false); }
+  };
+
+  const ninDone = kycStatus?.ninVerified ?? false;
+  const bvnDone = kycStatus?.bvnVerified ?? false;
+  const allDone = requiresBvn ? (ninDone && bvnDone) : ninDone;
+
+  return (
+    <AppLayout role="agent" title="Create Listing">
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'}`}>
+          {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />} {toast.message}
+        </div>
+      )}
+      <div className="max-w-lg mx-auto py-12 px-4">
+        <div className="clay-card p-6 text-center mb-6">
+          <div className="w-20 h-20 bg-mustard-pale rounded-full flex items-center justify-center mx-auto mb-6">
+            <Shield className="w-10 h-10 text-mustard" />
+          </div>
+          <h2 className="text-2xl font-bold text-text-primary mb-3">Verification Required</h2>
+          <p className="text-text-secondary max-w-md mx-auto mb-2">
+            You must verify your identity before you can create and publish listings on iléSure. This helps us maintain a safe platform for all users.
+          </p>
+        </div>
+
+        <div className="clay-card p-5 space-y-4">
+          {loading ? (
+            <div className="flex items-center gap-2 py-6 justify-center">
+              <Loader2 className="w-5 h-5 animate-spin text-mustard" />
+              <span className="text-sm text-text-tertiary">Loading verification status...</span>
+            </div>
+          ) : (
+            <>
+              {/* NIN */}
+              <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
+                <div className="flex items-center gap-3">
+                  <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${ninDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
+                    {ninDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-text-primary">NIN Verification</p>
+                    <p className="text-xs text-text-tertiary">{ninDone ? 'Verified' : 'National Identification Number'}</p>
+                  </div>
+                </div>
+                {ninDone ? (
+                  <StatusBadge variant="success">Verified</StatusBadge>
+                ) : (
+                  <Button variant="primary" size="sm" onClick={() => openDojah('nin')} loading={verifying === 'nin'} disabled={verifying !== null}>
+                    Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  </Button>
+                )}
+              </div>
+
+              {/* BVN */}
+              {requiresBvn && (
+                <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${bvnDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
+                      {bvnDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-text-primary">BVN Verification</p>
+                      <p className="text-xs text-text-tertiary">{bvnDone ? 'Verified' : 'Bank Verification Number'}</p>
+                    </div>
+                  </div>
+                  {bvnDone ? (
+                    <StatusBadge variant="success">Verified</StatusBadge>
+                  ) : (
+                    <Button variant="primary" size="sm" onClick={() => openDojah('bvn')} loading={verifying === 'bvn'} disabled={verifying !== null}>
+                      Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    </Button>
+                  )}
+                </div>
+              )}
+
+              {/* Status banner */}
+              {allDone && (
+                <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
+                  <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                  <p className="text-sm font-medium text-status-success">Your identity is fully verified. You can now create listings.</p>
+                </div>
+              )}
+
+              {!allDone && !verifying && (kycStatus?.verificationStatus === 'pending' || ninDone !== bvnDone) && (
+                <Button variant="secondary" size="sm" onClick={handleSync} loading={syncing} disabled={syncing || verifying !== null} className="w-full">
+                  <Clock className="w-4 h-4 mr-2" /> Sync Verification Status
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </AppLayout>
   );
 }
 
@@ -806,20 +988,7 @@ export function AgentCreateListingPage() {
 
   if (user?.verificationStatus !== 'verified') {
     return (
-      <AppLayout role="agent" title="Create Listing">
-        <div className="max-w-3xl mx-auto flex flex-col items-center justify-center py-24 px-4 text-center">
-          <div className="w-20 h-20 bg-status-error/10 rounded-full flex items-center justify-center mb-6">
-            <Shield className="w-10 h-10 text-status-error" />
-          </div>
-          <h2 className="text-2xl font-bold text-text-primary mb-3">Verification Required</h2>
-          <p className="text-text-secondary max-w-md mb-8">
-            You must verify your identity before you can create and publish listings on iléSure. This helps us maintain a safe platform for all users.
-          </p>
-          <Button variant="primary" onClick={() => navigate('/verification/agent')}>
-            Verify Identity Now
-          </Button>
-        </div>
-      </AppLayout>
+      <VerificationGate role={user?.role || 'agent'} onVerified={() => window.location.reload()} />
     );
   }
 

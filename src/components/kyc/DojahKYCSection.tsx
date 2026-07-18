@@ -1,0 +1,278 @@
+import { useState, useEffect } from 'react';
+import { Shield, CheckCircle, Clock, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { StatusBadge } from '../ui/StatusBadge';
+import { userApi, type KycStatus } from '../../api/user';
+
+interface DojahKYCSectionProps {
+  userRole: string;
+  userName?: string;
+  userEmail?: string;
+  onVerified?: () => void;
+}
+
+function loadDojahScript(): Promise<void> {
+  return new Promise((resolve) => {
+    if (document.getElementById('dojah-widget-script')) {
+      resolve();
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = 'dojah-widget-script';
+    script.src = 'https://widget.dojah.io/widget.js';
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => resolve();
+    document.body.appendChild(script);
+  });
+}
+
+export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: DojahKYCSectionProps) {
+  const [kycStatus, setKycStatus] = useState<KycStatus | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [verifying, setVerifying] = useState<'nin' | 'bvn' | null>(null);
+  const [syncing, setSyncing] = useState(false);
+  const [error, setError] = useState('');
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const requiresBvn = ['agent', 'company', 'landlord', 'sub_agent'].includes(userRole);
+
+  const showToast = (message: string, type: 'success' | 'error' = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 4000);
+  };
+
+  useEffect(() => {
+    fetchKycStatus();
+    loadDojahScript();
+  }, []);
+
+  const fetchKycStatus = async () => {
+    setLoading(true);
+    try {
+      const res = await userApi.getKycStatus();
+      if (res.success && res.data) {
+        setKycStatus(res.data);
+      }
+    } catch {
+      // Fall back to profile data
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const openDojahWidget = async (type: 'nin' | 'bvn') => {
+    setError('');
+    setVerifying(type);
+
+    try {
+      const appId = import.meta.env.VITE_DOJAH_APP_ID;
+      const pKey = import.meta.env.VITE_DOJAH_PUBLIC_KEY;
+
+      if (!appId || !pKey || appId.includes('your_')) {
+        setError('Verification service is not configured. Please contact support.');
+        setVerifying(null);
+        return;
+      }
+
+      if (!(window as any).Connect) {
+        setError('Verification service is still loading. Please try again in a few seconds.');
+        setVerifying(null);
+        return;
+      }
+
+      const page = type === 'nin' ? 'nin' : 'bvn';
+      const options = {
+        app_id: appId,
+        p_key: pKey,
+        type: 'custom',
+        config: { pages: [{ page }] },
+        onSuccess: async (response: any) => {
+          try {
+            setVerifying(type);
+            const refId = response.reference_id || '';
+
+            await userApi.submitKycReference(refId);
+
+            try {
+              await userApi.verifyKyc(refId, type);
+            } catch {
+              // verify endpoint may fail if still processing; that's ok
+            }
+
+            showToast(`${type.toUpperCase()} verification submitted successfully!`);
+            await fetchKycStatus();
+            onVerified?.();
+          } catch {
+            showToast('Failed to submit verification. Please try again.', 'error');
+          } finally {
+            setVerifying(null);
+          }
+        },
+        onError: (err: any) => {
+          console.error('[Dojah]', err);
+          showToast('Verification encountered an error. Please try again.', 'error');
+          setVerifying(null);
+        },
+        onClose: () => {
+          setVerifying(null);
+        },
+      };
+
+      const connect = new (window as any).Connect(options);
+      connect.setup();
+      connect.open();
+    } catch {
+      showToast('Failed to start verification. Please try again.', 'error');
+      setVerifying(null);
+    }
+  };
+
+  const handleSync = async () => {
+    setSyncing(true);
+    setError('');
+    try {
+      const res = await userApi.syncKyc();
+      if (res.success) {
+        showToast('Verification status synced successfully!');
+        await fetchKycStatus();
+        onVerified?.();
+      } else {
+        showToast(res.error?.message || 'Sync failed. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Failed to sync verification status.', 'error');
+    } finally {
+      setSyncing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center gap-2 py-6 justify-center">
+        <Loader2 className="w-5 h-5 animate-spin text-mustard" />
+        <span className="text-sm text-text-tertiary">Loading verification status...</span>
+      </div>
+    );
+  }
+
+  const ninDone = kycStatus?.ninVerified ?? false;
+  const bvnDone = kycStatus?.bvnVerified ?? false;
+  const isFullyVerified = kycStatus?.verificationStatus === 'verified';
+  const bothRequired = requiresBvn;
+  const allDone = bothRequired ? (ninDone && bvnDone) : ninDone;
+
+  return (
+    <>
+      {toast && (
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
+          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+        }`}>
+          {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          {toast.message}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {/* NIN Verification */}
+        <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${ninDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
+              {ninDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+            </div>
+            <div>
+              <p className="text-sm font-semibold text-text-primary">NIN Verification</p>
+              <p className="text-xs text-text-tertiary">
+                {ninDone ? 'Verified' : 'National Identification Number'}
+                {kycStatus?.ninVerifiedAt && ninDone && (
+                  <span className="ml-1">— {new Date(kycStatus.ninVerifiedAt).toLocaleDateString()}</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {ninDone ? (
+              <StatusBadge variant="success">Verified</StatusBadge>
+            ) : (
+              <Button
+                variant="primary"
+                size="sm"
+                onClick={() => openDojahWidget('nin')}
+                loading={verifying === 'nin'}
+                disabled={verifying !== null}
+              >
+                Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* BVN Verification (agents, companies, landlords, sub_agents only) */}
+        {bothRequired && (
+          <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${bvnDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
+                {bvnDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text-primary">BVN Verification</p>
+                <p className="text-xs text-text-tertiary">
+                  {bvnDone ? 'Verified' : 'Bank Verification Number'}
+                  {kycStatus?.bvnVerifiedAt && bvnDone && (
+                    <span className="ml-1">— {new Date(kycStatus.bvnVerifiedAt).toLocaleDateString()}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {bvnDone ? (
+                <StatusBadge variant="success">Verified</StatusBadge>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => openDojahWidget('bvn')}
+                  loading={verifying === 'bvn'}
+                  disabled={verifying !== null}
+                >
+                  Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Overall status */}
+        {allDone && (
+          <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
+            <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+            <p className="text-sm font-medium text-status-success">
+              {isFullyVerified ? 'Your identity is fully verified' : 'Verification submitted — pending review'}
+            </p>
+          </div>
+        )}
+
+        {/* Sync button for pending states */}
+        {!allDone && !verifying && (kycStatus?.verificationStatus === 'pending' || ninDone !== bvnDone) && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleSync}
+            loading={syncing}
+            disabled={syncing || verifying !== null}
+            className="w-full"
+          >
+            <Clock className="w-4 h-4 mr-2" /> Sync Verification Status
+          </Button>
+        )}
+
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-red-50 border border-red-200">
+            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <p className="text-xs text-red-700">{error}</p>
+          </div>
+        )}
+      </div>
+    </>
+  );
+}

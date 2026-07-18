@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader, Banknote, CheckCircle } from 'lucide-react';
+import { Save, Loader, Banknote, CheckCircle, Shield } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
+import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 
 export function AgentSettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -243,6 +244,22 @@ export function AgentSettingsPage() {
             <Button variant="primary" className="mt-4" loading={saving} onClick={handleSaveProfile}>
               <Save className="w-4 h-4 mr-2" /> Save Changes
             </Button>
+          </ClayCard>
+
+          <ClayCard className="p-5">
+            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+              <Shield className="w-5 h-5 text-mustard" />
+              Identity Verification
+            </h2>
+            <p className="text-sm text-text-tertiary mb-4">
+              Complete your NIN and BVN verification to unlock all platform features.
+            </p>
+            <DojahKYCSection
+              userRole={user?.role || 'agent'}
+              userName={user?.fullName}
+              userEmail={user?.email}
+              onVerified={fetchProfile}
+            />
           </ClayCard>
 
           <ClayCard className="p-5">
