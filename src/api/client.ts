@@ -46,6 +46,10 @@ class ApiClient {
             window.location.href = '/login';
             return Promise.reject(refreshError);
           }
+
+          this.clearTokens();
+          window.location.href = '/login';
+          return Promise.reject(error);
         }
 
         if (error.response?.status === 403) {
