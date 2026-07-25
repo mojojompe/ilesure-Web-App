@@ -443,6 +443,11 @@ export function AgentCreateListingPage() {
           ...(formData.smokingAllowed ? ['smoking_allowed'] : []),
           ...(formData.studentsOnly ? ['students_only'] : []),
         ],
+        inspectionAvailability: {
+          availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          timeSlots: ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
+          notes: 'Inspections available Mon-Sat 9am to 4pm',
+        },
         images: [],
       };
       const response = await agentApi.createListing(apiData);
