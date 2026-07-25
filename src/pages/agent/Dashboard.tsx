@@ -1,18 +1,34 @@
 import { useState, useEffect } from 'react';
-import { Building2, Calendar, DollarSign, Eye, Heart, MessageCircle, Loader } from 'lucide-react';
+import { Building2, Calendar, DollarSign, Eye, Heart, MessageCircle, Loader, ShieldAlert, X, ArrowRight } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { agentApi } from '../../api/agent';
+import { useAuth } from '../../api/authContext';
 
 const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
+const BANNER_DISMISSED_KEY = 'ilesure_kyc_banner_dismissed';
+
 export function AgentDashboardPage() {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [overview, setOverview] = useState<any>(null);
   const [listings, setListings] = useState<any[]>([]);
   const [bookings, setBookings] = useState<any[]>([]);
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    return sessionStorage.getItem(BANNER_DISMISSED_KEY) === 'true';
+  });
+
+  const isVerified = user?.verificationStatus === 'verified';
+  const isPending = user?.verificationStatus === 'pending';
+  const showBanner = !isVerified && !bannerDismissed;
+
+  const handleDismissBanner = () => {
+    setBannerDismissed(true);
+    sessionStorage.setItem(BANNER_DISMISSED_KEY, 'true');
+  };
 
   useEffect(() => {
     fetchDashboard();
@@ -36,7 +52,7 @@ export function AgentDashboardPage() {
 
   if (loading) {
     return (
-      <AppLayout role="agent" title="Dashboard" subtitle="Welcome back, James">
+      <AppLayout role="agent" title="Dashboard" subtitle="Welcome back">
         <div className="flex items-center justify-center h-64">
           <Loader className="w-8 h-8 animate-spin text-mustard" />
         </div>
@@ -46,6 +62,56 @@ export function AgentDashboardPage() {
 
   return (
     <AppLayout role="agent" title="Dashboard" subtitle="Welcome back" onReload={fetchDashboard}>
+
+      {/* ── Verification Banner ── */}
+      {showBanner && (
+        <div
+          className={`relative flex items-start gap-4 p-4 rounded-clay mb-6 border animate-fade-in ${
+            isPending
+              ? 'bg-amber-50 border-amber-200'
+              : 'bg-gradient-to-r from-mustard/10 via-burnt-brown-pale/30 to-mustard/5 border-mustard/30'
+          }`}
+        >
+          {/* Icon */}
+          <div className={`flex-shrink-0 w-10 h-10 rounded-clay-sm flex items-center justify-center ${
+            isPending ? 'bg-amber-100' : 'bg-mustard-pale'
+          }`}>
+            <ShieldAlert className={`w-5 h-5 ${isPending ? 'text-amber-600' : 'text-mustard'}`} />
+          </div>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <p className={`text-sm font-bold mb-0.5 ${isPending ? 'text-amber-800' : 'text-text-primary'}`}>
+              {isPending
+                ? 'Verification pending review'
+                : 'Verify your account to create listings'}
+            </p>
+            <p className={`text-xs leading-relaxed ${isPending ? 'text-amber-700' : 'text-text-secondary'}`}>
+              {isPending
+                ? "Your identity documents are under review. We'll notify you once approved."
+                : 'You must complete NIN and BVN verification before you can publish listings on iléSure.'}
+            </p>
+            {!isPending && (
+              <a
+                href="/agent/settings"
+                className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-mustard hover:text-burnt-brown transition-colors"
+              >
+                Verify now <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            )}
+          </div>
+
+          {/* Dismiss */}
+          <button
+            onClick={handleDismissBanner}
+            className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors"
+            aria-label="Dismiss"
+          >
+            <X className="w-4 h-4 text-text-tertiary" />
+          </button>
+        </div>
+      )}
+
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <KpiCard
           title="Total Listings"

@@ -66,38 +66,37 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
     setVerifying(type);
 
     try {
-      const appId = import.meta.env.VITE_DOJAH_APP_ID;
-      const pKey = import.meta.env.VITE_DOJAH_PUBLIC_KEY;
-
-      if (!appId || !pKey || appId.includes('your_')) {
-        setError('Verification service is not configured. Please contact support.');
-        setVerifying(null);
-        return;
-      }
-
       if (!(window as any).Connect) {
         setError('Verification service is still loading. Please try again in a few seconds.');
         setVerifying(null);
         return;
       }
 
-      const page = type === 'nin' ? 'nin' : 'bvn';
+      // Call backend to get the proper widgetId and referenceId (mirrors mobile app flow)
+      const initRes = await userApi.initializeKyc(type);
+      if (!initRes.success || !initRes.data) {
+        setError(initRes.error?.message || 'Failed to initialize verification. Please try again.');
+        setVerifying(null);
+        return;
+      }
+
+      const { widgetId, referenceId } = initRes.data;
+
       const options = {
-        app_id: appId,
-        p_key: pKey,
+        app_id: import.meta.env.VITE_DOJAH_APP_ID,
+        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
         type: 'custom',
-        config: { pages: [{ page }] },
+        reference_id: referenceId,
+        config: { widget_id: widgetId },
         onSuccess: async (response: any) => {
           try {
             setVerifying(type);
-            const refId = response.reference_id || '';
-
-            await userApi.submitKycReference(refId);
+            const refId = response.reference_id || referenceId;
 
             try {
               await userApi.verifyKyc(refId, type);
             } catch {
-              // verify endpoint may fail if still processing; that's ok
+              // verify endpoint may still be processing; webhook will handle it
             }
 
             showToast(`${type.toUpperCase()} verification submitted successfully!`);

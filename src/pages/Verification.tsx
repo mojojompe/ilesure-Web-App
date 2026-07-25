@@ -316,43 +316,53 @@ export function VerificationPage({ role }: VerificationProps) {
               <div className="space-y-4">
                 <div className="text-center py-4">
                   <Button
-                    onClick={() => {
-                      const appId = import.meta.env.VITE_DOJAH_APP_ID;
-                      const pKey = import.meta.env.VITE_DOJAH_PUBLIC_KEY;
-
-                      if (!appId || !pKey || appId.includes('your_')) {
-                        alert('Verification service is not configured. Please contact support.');
-                        return;
-                      }
-
+                    onClick={async () => {
                       if (!(window as any).Connect) {
                         alert('Verification service is still loading. Please try again in a few seconds.');
                         return;
                       }
 
-                      const options = {
-                        app_id: appId,
-                        p_key: pKey,
-                        type: 'custom',
-                        config: { pages: [{ page: 'bvn' }] },
-                        onSuccess: async (response: any) => {
-                          try {
-                            setLoading(true);
-                            await userApi.submitKycReference(response.reference_id || 'dojah_success');
-                            setStep(2);
-                          } catch {
-                            alert('Failed to submit verification. Please try again.');
-                          } finally {
-                            setLoading(false);
-                          }
-                        },
-                        onError: (err: any) => { console.error('[Dojah]', err); },
-                        onClose: () => {},
-                      };
+                      setLoading(true);
+                      try {
+                        // Call backend to get widgetId (mirrors mobile app flow)
+                        const initRes = await userApi.initializeKyc('bvn');
+                        if (!initRes.success || !initRes.data) {
+                          alert(initRes.error?.message || 'Failed to initialize verification. Please try again.');
+                          setLoading(false);
+                          return;
+                        }
 
-                      const connect = new (window as any).Connect(options);
-                      connect.setup();
-                      connect.open();
+                        const { widgetId, referenceId } = initRes.data;
+                        setLoading(false);
+
+                        const options = {
+                          app_id: import.meta.env.VITE_DOJAH_APP_ID,
+                          p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
+                          type: 'custom',
+                          reference_id: referenceId,
+                          config: { widget_id: widgetId },
+                          onSuccess: async (response: any) => {
+                            try {
+                              setLoading(true);
+                              await userApi.verifyKyc(response.reference_id || referenceId, 'bvn');
+                              setStep(2);
+                            } catch {
+                              alert('Failed to submit verification. Please try again.');
+                            } finally {
+                              setLoading(false);
+                            }
+                          },
+                          onError: (err: any) => { console.error('[Dojah]', err); },
+                          onClose: () => {},
+                        };
+
+                        const connect = new (window as any).Connect(options);
+                        connect.setup();
+                        connect.open();
+                      } catch {
+                        alert('Failed to start verification. Please try again.');
+                        setLoading(false);
+                      }
                     }}
                     variant="primary"
                     className="w-full"

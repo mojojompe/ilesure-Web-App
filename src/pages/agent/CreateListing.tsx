@@ -73,25 +73,31 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
   const openDojah = async (type: 'nin' | 'bvn') => {
     setVerifying(type);
     try {
-      const appId = import.meta.env.VITE_DOJAH_APP_ID;
-      const pKey = import.meta.env.VITE_DOJAH_PUBLIC_KEY;
-      if (!appId || !pKey || appId.includes('your_')) {
-        showToast('Verification service is not configured. Please contact support.', 'error');
-        setVerifying(null);
-        return;
-      }
       if (!(window as any).Connect) {
         showToast('Verification service is still loading. Please try again.', 'error');
         setVerifying(null);
         return;
       }
+
+      // Call backend to get widgetId and referenceId (mirrors mobile app flow)
+      const initRes = await userApi.initializeKyc(type);
+      if (!initRes.success || !initRes.data) {
+        showToast(initRes.error?.message || 'Failed to initialize verification. Please try again.', 'error');
+        setVerifying(null);
+        return;
+      }
+
+      const { widgetId, referenceId } = initRes.data;
+
       const options = {
-        app_id: appId, p_key: pKey, type: 'custom',
-        config: { pages: [{ page: type }] },
+        app_id: import.meta.env.VITE_DOJAH_APP_ID,
+        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
+        type: 'custom',
+        reference_id: referenceId,
+        config: { widget_id: widgetId },
         onSuccess: async (response: any) => {
           try {
-            const refId = response.reference_id || '';
-            await userApi.submitKycReference(refId);
+            const refId = response.reference_id || referenceId;
             try { await userApi.verifyKyc(refId, type); } catch {}
             showToast(`${type.toUpperCase()} verified successfully!`);
             const res = await userApi.getKycStatus();
@@ -335,6 +341,29 @@ export function AgentCreateListingPage() {
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Live verification check — don't rely on stale localStorage value
+  const [liveVerified, setLiveVerified] = useState<boolean | null>(
+    user?.verificationStatus === 'verified' ? true : null
+  );
+
+  useEffect(() => {
+    // Always confirm verification status against the server
+    userApi.getKycStatus().then(res => {
+      if (res.success && res.data) {
+        const { verificationStatus, ninVerified, bvnVerified, role } = res.data as any;
+        const requiresBvn = ['agent', 'company', 'landlord', 'sub_agent'].includes(role || user?.role || '');
+        const verified =
+          verificationStatus === 'verified' ||
+          (requiresBvn ? (ninVerified && bvnVerified) : ninVerified);
+        setLiveVerified(!!verified);
+      } else {
+        // Fall back to cached value if API fails
+        setLiveVerified(user?.verificationStatus === 'verified');
+      }
+    }).catch(() => {
+      setLiveVerified(user?.verificationStatus === 'verified');
+    });
+  }, []);
 
   const handleChange = (field: keyof ListingFormData, value: ListingFormData[keyof ListingFormData]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -986,9 +1015,20 @@ export function AgentCreateListingPage() {
     </div>
   );
 
-  if (user?.verificationStatus !== 'verified') {
+  // Show loading state while we confirm verification from the server
+  if (liveVerified === null) {
     return (
-      <VerificationGate role={user?.role || 'agent'} onVerified={() => window.location.reload()} />
+      <AppLayout role="agent" title="Create Listing">
+        <div className="flex items-center justify-center h-64">
+          <Loader2 className="w-8 h-8 animate-spin text-mustard" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!liveVerified) {
+    return (
+      <VerificationGate role={user?.role || 'agent'} onVerified={() => setLiveVerified(true)} />
     );
   }
 
