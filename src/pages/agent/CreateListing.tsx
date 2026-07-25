@@ -289,6 +289,9 @@ interface ListingFormData {
   photos: string[];
   duration: string;
   isRecurring: boolean;
+  availableDays: string[];
+  availableTimeSlots: string[];
+  inspectionNotes: string;
 }
 
 const initialFormData: ListingFormData = {
@@ -330,6 +333,9 @@ const initialFormData: ListingFormData = {
   photos: [],
   duration: 'yearly',
   isRecurring: false,
+  availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+  availableTimeSlots: ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
+  inspectionNotes: '',
 };
 
 export function AgentCreateListingPage() {
@@ -444,9 +450,9 @@ export function AgentCreateListingPage() {
           ...(formData.studentsOnly ? ['students_only'] : []),
         ],
         inspectionAvailability: {
-          availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-          timeSlots: ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
-          notes: 'Inspections available Mon-Sat 9am to 4pm',
+          availableDays: formData.availableDays.length > 0 ? formData.availableDays : ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+          timeSlots: formData.availableTimeSlots.length > 0 ? formData.availableTimeSlots : ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
+          notes: formData.inspectionNotes || 'Inspections available Mon-Sat 9am to 4pm',
         },
         images: [],
       };
@@ -895,7 +901,7 @@ export function AgentCreateListingPage() {
   );
 
   const renderStep7 = () => (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">House Rules</label>
         <div className="space-y-2">
@@ -927,6 +933,77 @@ export function AgentCreateListingPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="border-t border-clay-border-light pt-4">
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">Inspection Available Days</label>
+        <p className="text-xs text-text-tertiary mb-3">Select the days you are available to host property viewings:</p>
+        <div className="flex flex-wrap gap-2">
+          {['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'].map(day => {
+            const isSelected = formData.availableDays.includes(day);
+            return (
+              <button
+                key={day}
+                type="button"
+                onClick={() => {
+                  const next = isSelected
+                    ? formData.availableDays.filter(d => d !== day)
+                    : [...formData.availableDays, day];
+                  handleChange('availableDays', next);
+                }}
+                className={clsx(
+                  'px-3 py-2 text-xs font-semibold rounded-clay-sm border-2 transition-all',
+                  isSelected
+                    ? 'border-mustard bg-mustard text-white'
+                    : 'border-clay-border text-text-primary bg-clay-surface hover:border-mustard'
+                )}
+              >
+                {day.slice(0, 3)}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">Inspection Time Slots</label>
+        <p className="text-xs text-text-tertiary mb-3">Select time slots suitable for viewing this property:</p>
+        <div className="flex flex-wrap gap-2">
+          {['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM'].map(slot => {
+            const isSelected = formData.availableTimeSlots.includes(slot);
+            return (
+              <button
+                key={slot}
+                type="button"
+                onClick={() => {
+                  const next = isSelected
+                    ? formData.availableTimeSlots.filter(s => s !== slot)
+                    : [...formData.availableTimeSlots, slot];
+                  handleChange('availableTimeSlots', next);
+                }}
+                className={clsx(
+                  'px-3 py-2 text-xs font-semibold rounded-clay-sm border-2 transition-all',
+                  isSelected
+                    ? 'border-mustard bg-mustard text-white'
+                    : 'border-clay-border text-text-primary bg-clay-surface hover:border-mustard'
+                )}
+              >
+                {slot}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">Inspection Notes / Instructions (Optional)</label>
+        <textarea
+          value={formData.inspectionNotes}
+          onChange={e => handleChange('inspectionNotes', e.target.value)}
+          placeholder="e.g. Inspections available Mon-Sat 9am to 4pm with 2hrs notice"
+          rows={2}
+          className="clay-input w-full text-sm"
+        />
       </div>
     </div>
   );
