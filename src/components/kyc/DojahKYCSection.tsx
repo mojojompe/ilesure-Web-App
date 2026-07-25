@@ -143,10 +143,23 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
     setError('');
     try {
       const res = await userApi.syncKyc();
-      if (res.success) {
-        showToast('Verification status synced successfully!');
+      if (res.success && res.data) {
         await fetchKycStatus();
         onVerified?.();
+
+        const results = res.data.results || {};
+        const ninResult = results.nin;
+        const bvnResult = results.bvn;
+
+        if (res.data.ninVerified || res.data.bvnVerified) {
+          showToast('Verification status updated successfully!');
+        } else if (ninResult?.reason?.includes('Still processing')) {
+          showToast('NIN verification is still processing with Dojah. Please wait a few moments.');
+        } else if (bvnResult?.reason?.includes('No reference ID found')) {
+          showToast('NIN checked. Please click "Verify" next to BVN to complete verification.');
+        } else {
+          showToast('Verification status synced.');
+        }
       } else {
         showToast(res.error?.message || 'Sync failed. Please try again.', 'error');
       }
