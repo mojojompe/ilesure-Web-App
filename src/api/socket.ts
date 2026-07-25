@@ -50,6 +50,10 @@ class SocketService {
     this.socket.on('message_notification', (data: { chatId: string; senderId: string; preview: string; createdAt: string }) => {
       this.emit('notification', data);
     });
+
+    this.socket.on('kyc_status_changed', (data: { ninVerified: boolean; bvnVerified: boolean; verificationStatus: string }) => {
+      this.emit('kyc_status_changed', data);
+    });
   }
 
   disconnect(): void {

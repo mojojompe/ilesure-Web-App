@@ -3,6 +3,7 @@ import { Shield, CheckCircle, Clock, Loader2, AlertCircle, ArrowRight } from 'lu
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/StatusBadge';
 import { userApi, type KycStatus } from '../../api/user';
+import { socketService } from '../../api/socket';
 
 interface DojahKYCSectionProps {
   userRole: string;
@@ -45,6 +46,16 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
   useEffect(() => {
     fetchKycStatus();
     loadDojahScript();
+
+    const handleKycChange = () => {
+      fetchKycStatus();
+      onVerified?.();
+    };
+
+    socketService.on('kyc_status_changed', handleKycChange);
+    return () => {
+      socketService.off('kyc_status_changed', handleKycChange);
+    };
   }, []);
 
   const fetchKycStatus = async () => {
@@ -192,6 +203,8 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           <div className="flex items-center gap-2">
             {ninDone ? (
               <StatusBadge variant="success">Verified</StatusBadge>
+            ) : kycStatus?.verificationStatus === 'pending' ? (
+              <StatusBadge variant="warning">Pending</StatusBadge>
             ) : (
               <Button
                 variant="primary"
@@ -226,6 +239,8 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
             <div className="flex items-center gap-2">
               {bvnDone ? (
                 <StatusBadge variant="success">Verified</StatusBadge>
+              ) : kycStatus?.verificationStatus === 'pending' ? (
+                <StatusBadge variant="warning">Pending</StatusBadge>
               ) : (
                 <Button
                   variant="primary"
@@ -237,6 +252,19 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
                   Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
                 </Button>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Pending Review Banner */}
+        {kycStatus?.verificationStatus === 'pending' && !isFullyVerified && (
+          <div className="flex items-center gap-3 p-4 rounded-clay-sm bg-amber-50 border border-amber-200">
+            <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
+            <div>
+              <p className="text-sm font-semibold text-amber-900">Verification Pending Review</p>
+              <p className="text-xs text-amber-700">
+                Your identity verification is currently being processed. You can click sync below to check for updates.
+              </p>
             </div>
           </div>
         )}
