@@ -37,7 +37,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await authApi.login(email, password);
 
       if (response.success && response.user && response.accessToken) {
-        const { user, accessToken, refreshToken } = response;
+        // SECURITY-FIX (W-H1): refreshToken is intentionally NOT destructured or persisted.
+        // The backend delivers it as an httpOnly cookie; it must never touch localStorage.
+        const { user, accessToken } = response;
 
         // ── Role gate: only agents and companies can use the web app ──
         const allowedRoles = ['agent', 'landlord', 'company', 'company_admin', 'sub_agent'];
@@ -57,10 +59,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           role: user.role as UserRole,
         });
 
+        // SECURITY-FIX (W-H1): store only the short-lived access token + non-sensitive
+        // profile. The refresh token stays in the backend-set httpOnly cookie and is
+        // deliberately omitted here.
+        // FLAG: access token remains in JS-readable localStorage short-term (XSS-exposable).
         localStorage.setItem(STORAGE_KEY, JSON.stringify({
           user: user,
           accessToken,
-          refreshToken,
           role: user.role,
           isAuthenticated: true,
         }));
