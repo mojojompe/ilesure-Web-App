@@ -16,6 +16,7 @@ import { PaymentPage } from './pages/Payment';
 import { PaymentCallbackPage } from './pages/PaymentCallback';
 import { AgentDashboardPage } from './pages/agent/Dashboard';
 import { AgentListingsPage } from './pages/agent/Listings';
+import { AgentStorePage } from './pages/agent/AgentStore';
 import { AgentCreateListingPage } from './pages/agent/CreateListing';
 import { AgentBookingsPage } from './pages/agent/Bookings';
 import { AgentChatsPage } from './pages/agent/Chats';
@@ -145,6 +146,11 @@ function AppRoutes() {
           <AgentPaymentsPage />
         </ProtectedRoute>
       } />
+      <Route path="/agent/store" element={
+        <ProtectedRoute role="agent">
+          <AgentStorePage />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/analytics" element={
         <ProtectedRoute role="agent">
           <AgentAnalyticsPage />
@@ -204,6 +210,11 @@ function AppRoutes() {
       <Route path="/company/payments" element={
         <ProtectedRoute role="company">
           <CompanyPaymentsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/company/store" element={
+        <ProtectedRoute role="company">
+          <AgentStorePage />
         </ProtectedRoute>
       } />
       <Route path="/company/analytics" element={
