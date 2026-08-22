@@ -149,6 +149,10 @@ export interface TierDetails {
 }
 
 export interface Tier {
+  /** Price for one month, in naira. */
+  priceMonthly?: number;
+  /** Price for one year, in naira — set per tier, not derived from the monthly price. */
+  priceYearly?: number;
   id: string;
   name: string;
   description: string;
