@@ -56,6 +56,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
 export function SignupPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -156,6 +157,10 @@ export function SignupPage() {
   const [error, setError] = useState('');
 
   const handleSubmit = async () => {
+    if (!acceptedTerms) {
+      setError('Please accept the Terms of Service and Privacy Policy to continue.');
+      return;
+    }
     setLoading(true);
     setError('');
     
@@ -451,6 +456,26 @@ export function SignupPage() {
 
   const renderStep3 = () => (
     <div className="space-y-4">
+      {/* Consent sits at the top of the final step, so it is read before the
+          account is created rather than buried under optional uploads. */}
+      <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={e => setAcceptedTerms(e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
+        />
+        <span className="text-sm leading-5 text-text-secondary">
+          I agree to the{' '}
+          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+            Privacy Policy
+          </a>.
+        </span>
+      </label>
       {!isCompany ? (
         <>
           <div>
@@ -640,7 +665,7 @@ export function SignupPage() {
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
-              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading}>
+              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading} disabled={!acceptedTerms}>
                 Complete <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             )}

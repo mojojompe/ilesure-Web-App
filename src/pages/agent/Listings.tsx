@@ -14,7 +14,9 @@ const amenityOptions = ['WiFi', 'Security', 'Water', 'Electricity', 'Parking', '
 
 export function AgentListingsPage() {
   const navigate = useNavigate();
-  const [filter, setFilter] = useState<'all' | 'active' | 'occupied'>('all');
+  // 'fully_booked' is the real status value; the tab used to send 'occupied',
+  // which is in no enum, so the Occupied tab was always empty.
+  const [filter, setFilter] = useState<'all' | 'active' | 'fully_booked'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [selectedListing, setSelectedListing] = useState<any | null>(null);
@@ -200,7 +202,7 @@ export function AgentListingsPage() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(['all', 'active', 'occupied'] as const).map(f => (
+        {(['all', 'active', 'fully_booked'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -210,7 +212,7 @@ export function AgentListingsPage() {
                 : 'bg-white text-text-secondary hover:bg-clay-border-light'
             }`}
           >
-            {f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'fully_booked' ? 'Occupied' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
