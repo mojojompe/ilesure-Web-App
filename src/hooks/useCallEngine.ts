@@ -117,6 +117,8 @@ export function useCallEngine(enabled: boolean = true) {
   const pendingOffer = useRef<RTCSessionDescriptionInit | null>(null);
   const candidateQueue = useRef<RTCIceCandidateInit[]>([]);
   const remoteDescriptionSet = useRef(false);
+  /** Guards ensureIceConfig so the credentials are fetched at most once. */
+  const iceFetched = useRef(false);
 
   const endedTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -133,21 +135,34 @@ export function useCallEngine(enabled: boolean = true) {
   /* ICE configuration                                                      */
   /* ---------------------------------------------------------------------- */
 
-  useEffect(() => {
-    // /calls/ice requires a session; fetching it signed out 401s and used to
-    // send the interceptor to /login, reloading the login page in a loop.
-    if (!enabled) return;
-
-    let cancelled = false;
-    callApi.getIceConfig().then((config) => {
-      if (cancelled || !config?.iceServers?.length) return;
-      iceConfig.current = { iceServers: config.iceServers };
-      setState((s) => ({ ...s, relayAvailable: config.turnConfigured }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [enabled]);
+  /**
+   * Fetches the ICE configuration the first time a call actually needs it.
+   *
+   * This used to run on mount. Two problems with that: it fired an
+   * authenticated request during app start — so a stale token in storage
+   * produced a 401 on /calls/ice before the user had done anything, and it was
+   * that background request which discovered the dead session. And TURN
+   * credentials are time-limited (12-24h), so a long-lived tab could reach a
+   * call holding expired ones.
+   *
+   * Fetching at call setup costs one request on a path that is already doing
+   * network round trips, and the result is cached for the rest of the session.
+   */
+  const ensureIceConfig = useCallback(async () => {
+    if (iceFetched.current) return;
+    iceFetched.current = true;
+    try {
+      const config = await callApi.getIceConfig();
+      if (config?.iceServers?.length) {
+        iceConfig.current = { iceServers: config.iceServers };
+        setState((s) => ({ ...s, relayAvailable: config.turnConfigured }));
+      }
+    } catch {
+      // Falls back to whatever default iceConfig already holds; a call over
+      // STUN alone is better than no call at all.
+      iceFetched.current = false;
+    }
+  }, []);
 
   /* ---------------------------------------------------------------------- */
   /* Teardown                                                               */
@@ -306,18 +321,20 @@ export function useCallEngine(enabled: boolean = true) {
   /** Caller side: the callee picked up, so offer. */
   const sendOffer = useCallback(
     async (callId: string) => {
+      await ensureIceConfig();
       const connection = pc.current ?? createPeerConnection(callId);
       const offer = await connection.createOffer();
       await connection.setLocalDescription(offer);
       callApi.sendOffer(callId, offer);
       trace('offer sent');
     },
-    [createPeerConnection]
+    [createPeerConnection, ensureIceConfig]
   );
 
   /** Callee side: answer the caller's offer. */
   const answerOffer = useCallback(
     async (callId: string, sdp: RTCSessionDescriptionInit) => {
+      await ensureIceConfig();
       const connection = pc.current ?? createPeerConnection(callId);
       await connection.setRemoteDescription(sdp);
       remoteDescriptionSet.current = true;
