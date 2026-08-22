@@ -46,6 +46,14 @@ interface ListingResponse {
   error?: { message: string };
 }
 
+interface ShortletRateData {
+  id?: string;
+  label: string;
+  durationValue: number;
+  durationUnit: 'hour' | 'day' | 'week' | 'month';
+  price: number;
+}
+
 interface CreateListingData {
   title: string;
   description: string;
@@ -67,6 +75,21 @@ interface CreateListingData {
   amenities?: string[];
   rules?: string[];
   images?: string[];
+  // Pricing / lease term
+  paymentFrequency?: string;
+  customPaymentPlan?: { installments: number; interval: string; amountPerInstallment: number };
+  leaseDuration?: string;
+  leaseDurationValue?: number;
+  leaseDurationUnit?: 'year' | 'month';
+  additionalNotes?: string;
+  // Flexible custom shortlet tiers (+ legacy fixed pricing for back-compat)
+  shortletRates?: ShortletRateData[];
+  shortletPricing?: { hourly?: number; daily?: number; weekly?: number; monthly?: number };
+  minStay?: number;
+  minStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  maxStay?: number;
+  maxStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  inspectionAvailability?: { availableDays?: string[]; timeSlots?: string[]; notes?: string };
 }
 
 interface BookingsResponse {
