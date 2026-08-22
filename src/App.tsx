@@ -43,6 +43,7 @@ import { CompanyArchivedPage } from './pages/company/Archived';
 import { NotFound } from './pages/NotFound';
 import { CallProvider } from './contexts/CallContext';
 import { CallOverlay } from './components/call/CallOverlay';
+import chatApi from './api/chat';
 
 function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role?: 'agent' | 'company'; excludeRole?: string }) {
   // DECISION (W-M1): `isAuthenticated` and `role` originate from the client-controlled
@@ -264,12 +265,42 @@ function AppRoutes() {
   );
 }
 
+/**
+ * Holds a socket open for the whole session.
+ *
+ * The socket used to be connected only by the Chats page, so an agent sitting
+ * on the dashboard or their listings was not connected at all: they showed as
+ * offline to everyone, and calls could neither arrive nor be placed from
+ * anywhere except that one screen.
+ */
+function SocketConnection() {
+  const { isAuthenticated } = useAuth();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      chatApi.disconnectFromSocket();
+      return;
+    }
+    try {
+      const stored = localStorage.getItem('ilesure_web_auth');
+      const token = stored ? JSON.parse(stored)?.accessToken : null;
+      if (token) chatApi.connectToSocket(token);
+    } catch {
+      // A malformed auth blob just means no socket; the app still works.
+    }
+    return () => { chatApi.disconnectFromSocket(); };
+  }, [isAuthenticated]);
+
+  return null;
+}
+
 export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
         {/* Above the router so a call survives navigation and can arrive on any page. */}
         <CallProvider>
+          <SocketConnection />
           <AppRoutes />
           <CallOverlay />
         </CallProvider>

@@ -192,6 +192,12 @@ export function useCallEngine(enabled: boolean = true) {
         phase: 'ended',
         endedReason: reason,
         durationSeconds: s.durationSeconds,
+        // The ended card still shows who the call was with, so the peer and the
+        // call type have to survive the reset. Spreading IDLE alone wiped them,
+        // which is why it read "Unknown" with no avatar.
+        peer: s.peer,
+        callType: s.callType,
+        isCaller: s.isCaller,
       }));
 
       if (endedTimer.current) clearTimeout(endedTimer.current);
