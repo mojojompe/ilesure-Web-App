@@ -36,6 +36,13 @@ class ApiClient {
         if (error.response?.status === 401 && !originalRequest._retry) {
           originalRequest._retry = true;
 
+          // A 401 on a request made with no token means "not signed in yet",
+          // not "session expired". Redirecting here reloaded the page the user
+          // was already on, which looped when a request fired on mount.
+          if (!this.getToken()) {
+            return Promise.reject(error);
+          }
+
           try {
             const refreshed = await this.handleRefreshToken();
             if (refreshed) {
@@ -47,12 +54,12 @@ class ApiClient {
             }
           } catch (refreshError) {
             this.clearTokens();
-            window.location.href = '/login';
+            this.redirectToLogin();
             return Promise.reject(refreshError);
           }
 
           this.clearTokens();
-          window.location.href = '/login';
+          this.redirectToLogin();
           return Promise.reject(error);
         }
 
@@ -68,6 +75,17 @@ class ApiClient {
         return Promise.reject(error);
       }
     );
+  }
+
+  /**
+   * Sends an expired session back to sign-in without reloading the page.
+   * `window.location.href = '/login'` while already on /login is a reload,
+   * which loops forever against a request that 401s on mount.
+   */
+  private redirectToLogin(): void {
+    const path = window.location.pathname;
+    if (path === '/login' || path === '/signup' || path.startsWith('/auth')) return;
+    window.location.assign('/login');
   }
 
   private getToken(): string | null {
