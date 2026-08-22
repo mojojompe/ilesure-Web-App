@@ -42,22 +42,28 @@ export const authApi = {
   async login(email: string, password: string): Promise<AuthResponse> {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/login', { email, password });
-      const data = response.data;
-      
-      if (data.success && data.user && data.accessToken) {
+      const body = response.data;
+
+      // SECURITY-FIX / DECISION (W-M2): the documented contract nests
+      // { user, accessToken, refreshToken } under `data`, but this code assumed top-level.
+      // Read from either shape so login works regardless of which the backend returns.
+      // The `success`/`error`/`onboardingRequired`/`nextStep` envelope stays top-level.
+      const data = body.data ?? body;
+
+      if (body.success && data.user && data.accessToken) {
         return {
           success: true,
           user: data.user,
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
-          onboardingRequired: data.onboardingRequired,
-          nextStep: data.nextStep,
+          onboardingRequired: body.onboardingRequired,
+          nextStep: body.nextStep,
         };
       }
-      
+
       return {
         success: false,
-        error: { message: data.error?.message || 'Login failed' },
+        error: { message: body.error?.message || 'Login failed' },
       };
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -75,22 +81,26 @@ export const authApi = {
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/register', data);
-      const resData = response.data;
-      
-      if (resData.success && resData.user && resData.accessToken) {
+      const body = response.data;
+
+      // SECURITY-FIX / DECISION (W-M2): tolerate both nested (`body.data`) and top-level
+      // token/user shapes, consistent with login().
+      const resData = body.data ?? body;
+
+      if (body.success && resData.user && resData.accessToken) {
         return {
           success: true,
           user: resData.user,
           accessToken: resData.accessToken,
           refreshToken: resData.refreshToken,
-          onboardingRequired: resData.onboardingRequired,
-          nextStep: resData.nextStep,
+          onboardingRequired: body.onboardingRequired,
+          nextStep: body.nextStep,
         };
       }
-      
+
       return {
         success: false,
-        error: { message: resData.error?.message || 'Registration failed' },
+        error: { message: body.error?.message || 'Registration failed' },
       };
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -123,22 +133,26 @@ export const authApi = {
   async verifyOtp(email: string, otp: string): Promise<AuthResponse> {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/verify-otp', { email, otp });
-      const data = response.data;
-      
-      if (data.success && data.user && data.accessToken) {
+      const body = response.data;
+
+      // SECURITY-FIX / DECISION (W-M2): tolerate both nested (`body.data`) and top-level
+      // token/user shapes, consistent with login().
+      const data = body.data ?? body;
+
+      if (body.success && data.user && data.accessToken) {
         return {
           success: true,
           user: data.user,
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
-          onboardingRequired: data.onboardingRequired,
-          nextStep: data.nextStep,
+          onboardingRequired: body.onboardingRequired,
+          nextStep: body.nextStep,
         };
       }
-      
+
       return {
         success: false,
-        error: { message: data.error?.message || 'Verification failed' },
+        error: { message: body.error?.message || 'Verification failed' },
       };
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {

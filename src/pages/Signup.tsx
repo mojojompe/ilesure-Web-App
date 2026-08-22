@@ -174,9 +174,11 @@ export function SignupPage() {
       if (response.success && response.user && response.accessToken) {
         const role = response.user.role === 'company' ? 'company' : 'agent';
         
+        // SECURITY-FIX (W-H1): this registration path writes the same `ilesure_web_auth`
+        // blob as login, so it must also NOT persist the refresh token. It stays in the
+        // backend-set httpOnly cookie; only the short-lived access token + profile persist.
         localStorage.setItem('ilesure_web_auth', JSON.stringify({
           accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
           user: response.user,
           role: role,
         }));

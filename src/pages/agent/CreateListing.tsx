@@ -8,6 +8,23 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import agentApi from '../../api/agent';
 import { useAuth } from '../../api/authContext';
 import { userApi } from '../../api/user';
+import { TenancyAgreementUpload } from '../../components/listing/TenancyAgreementUpload';
+import type { TenancyAgreementDocument } from '../../api/agent';
+import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
+import {
+  propertyTypes,
+  distanceOptions,
+  furnishingOptions,
+  powerOptions,
+  waterOptions,
+  genderOptions,
+  PropertyType,
+  Furnishing,
+  PowerSource,
+  WaterSource,
+  GenderRestriction,
+  DistanceBucket,
+} from '../../constants/listingVocabulary';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -217,30 +234,12 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
   );
 }
 
-type PropertyType = 'selfcon' | '1bedroom' | '2bedroom' | 'miniflat' | 'studio' | 'penthouse' | 'hostel' | 'shortlet';
-type GenderPreference = 'any' | 'female' | 'male';
-type Furnishing = 'furnished' | 'semifurnished' | 'unfurnished';
-type PowerSource = 'phcn' | 'generator' | 'solar' | 'hybrid';
-type WaterSource = 'borehole' | 'public' | 'tank';
-type DistanceFromSchool = 'veryclose' | 'close' | 'budget';
+// Enumerated values come from the shared canonical vocabulary rather than
+// being redeclared per form — see constants/listingVocabulary.
+type GenderPreference = GenderRestriction;
+type DistanceFromSchool = DistanceBucket;
 type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
 
-const propertyTypes: { value: PropertyType; label: string }[] = [
-  { value: 'selfcon', label: 'Self-con' },
-  { value: '1bedroom', label: '1-Bedroom' },
-  { value: '2bedroom', label: '2-Bedroom' },
-  { value: 'miniflat', label: 'Mini Flat' },
-  { value: 'studio', label: 'Studio' },
-  { value: 'penthouse', label: 'Penthouse' },
-  { value: 'hostel', label: 'Hostel Room' },
-  { value: 'shortlet', label: 'Shortlet' },
-];
-
-const distanceOptions: { value: DistanceFromSchool; label: string }[] = [
-  { value: 'veryclose', label: 'Very Close' },
-  { value: 'close', label: 'Close' },
-  { value: 'budget', label: 'Budget Stretch' },
-];
 
 const paymentFrequencyOptions: { value: PaymentFrequency; label: string }[] = [
   { value: 'annually', label: 'Yearly' },
@@ -249,6 +248,14 @@ const paymentFrequencyOptions: { value: PaymentFrequency; label: string }[] = [
   { value: 'monthly', label: 'Monthly' },
   { value: 'custom', label: 'Custom' },
 ];
+
+interface ShortletRateForm {
+  id?: string;
+  label: string;
+  durationValue: string;
+  durationUnit: 'hour' | 'day' | 'week' | 'month';
+  price: string;
+}
 
 interface ListingFormData {
   title: string;
@@ -267,10 +274,7 @@ interface ListingFormData {
   customInterval: 'monthly' | 'bi-monthly';
   customAmountPerInstallment: string;
   propertyType: PropertyType;
-  shortletHourly: string;
-  shortletDaily: string;
-  shortletWeekly: string;
-  shortletMonthly: string;
+  shortletRates: ShortletRateForm[];
   minStay: string;
   minStayUnit: 'hour' | 'day' | 'week' | 'month';
   maxStay: string;
@@ -287,8 +291,8 @@ interface ListingFormData {
   smokingAllowed: boolean;
   studentsOnly: boolean;
   photos: string[];
-  duration: string;
-  isRecurring: boolean;
+  leaseDurationValue: string;
+  leaseDurationUnit: 'year' | 'month';
   availableDays: string[];
   availableTimeSlots: string[];
   inspectionNotes: string;
@@ -310,11 +314,8 @@ const initialFormData: ListingFormData = {
   customInstallments: '',
   customInterval: 'monthly',
   customAmountPerInstallment: '',
-  propertyType: 'selfcon',
-  shortletHourly: '',
-  shortletDaily: '',
-  shortletWeekly: '',
-  shortletMonthly: '',
+  propertyType: 'self_con',
+  shortletRates: [],
   minStay: '',
   minStayUnit: 'day',
   maxStay: '',
@@ -322,7 +323,7 @@ const initialFormData: ListingFormData = {
   maxOccupants: '1',
   gender: 'any',
   furnishing: 'unfurnished',
-  power: 'phcn',
+  power: 'constant',
   water: 'public',
   hasWifi: false,
   hasParking: false,
@@ -331,8 +332,8 @@ const initialFormData: ListingFormData = {
   smokingAllowed: false,
   studentsOnly: false,
   photos: [],
-  duration: 'yearly',
-  isRecurring: false,
+  leaseDurationValue: '1',
+  leaseDurationUnit: 'year',
   availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
   availableTimeSlots: ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
   inspectionNotes: '',
@@ -343,9 +344,16 @@ export function AgentCreateListingPage() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ListingFormData>(initialFormData);
+  /**
+   * Coordinates from a picked address suggestion, in GeoJSON order [lng, lat].
+   * Optional: with none, the backend geocodes the address fields on save.
+   */
+  const [pickedCoordinates, setPickedCoordinates] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  // Uploaded ahead of listing creation; the metadata rides along in the payload.
+  const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Live verification check — don't rely on stale localStorage value
   const [liveVerified, setLiveVerified] = useState<boolean | null>(
@@ -379,6 +387,27 @@ export function AgentCreateListingPage() {
     setFormData(prev => ({ ...prev, [field]: !prev[field] }));
   };
 
+  const addShortletRate = () => {
+    setFormData(prev => ({
+      ...prev,
+      shortletRates: [...prev.shortletRates, { label: '', durationValue: '1', durationUnit: 'day', price: '' }],
+    }));
+  };
+
+  const updateShortletRate = (index: number, field: keyof ShortletRateForm, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      shortletRates: prev.shortletRates.map((rate, i) => (i === index ? { ...rate, [field]: value } : rate)),
+    }));
+  };
+
+  const removeShortletRate = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      shortletRates: prev.shortletRates.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     const remaining = 6 - photoFiles.length;
@@ -399,15 +428,20 @@ export function AgentCreateListingPage() {
   };
 
   const handleSubmit = async () => {
+    if (formData.propertyType === 'shortlet') {
+      const validTiers = formData.shortletRates.filter(r => r.label.trim() && Number(r.price) > 0 && Number(r.durationValue) >= 1);
+      if (validTiers.length === 0) {
+        alert('Add at least one shortlet pricing tier (label, duration, and price).');
+        return;
+      }
+    }
     try {
       setLoading(true);
       const apiData = {
         title: formData.title,
         description: formData.description,
         propertyType: formData.propertyType,
-        rentAnnual: formData.propertyType === 'shortlet'
-          ? (formData.shortletMonthly ? Number(formData.shortletMonthly) * 12 : 0)
-          : Number(formData.annualRent),
+        rentAnnual: formData.propertyType === 'shortlet' ? 0 : Number(formData.annualRent),
         cautionFee: formData.cautionFee ? Number(formData.cautionFee) : undefined,
         agencyFee: formData.agencyFee ? Number(formData.agencyFee) : undefined,
         paymentFrequency: formData.paymentFrequency,
@@ -416,19 +450,31 @@ export function AgentCreateListingPage() {
           interval: formData.customInterval,
           amountPerInstallment: Number(formData.customAmountPerInstallment),
         } : undefined,
-        duration: formData.duration,
-        isRecurring: formData.isRecurring,
+        // Lease term (regular rentals only)
+        leaseDurationValue: formData.propertyType === 'shortlet' ? undefined : Number(formData.leaseDurationValue) || 1,
+        leaseDurationUnit: formData.propertyType === 'shortlet' ? undefined : formData.leaseDurationUnit,
+        leaseDuration: formData.propertyType === 'shortlet'
+          ? undefined
+          : `${Number(formData.leaseDurationValue) || 1} ${formData.leaseDurationUnit}${(Number(formData.leaseDurationValue) || 1) > 1 ? 's' : ''}`,
         additionalNotes: formData.additionalNotes || undefined,
-        shortletPricing: formData.propertyType === 'shortlet' ? {
-          ...(formData.shortletHourly ? { hourly: Number(formData.shortletHourly) } : {}),
-          ...(formData.shortletDaily ? { daily: Number(formData.shortletDaily) } : {}),
-          ...(formData.shortletWeekly ? { weekly: Number(formData.shortletWeekly) } : {}),
-          ...(formData.shortletMonthly ? { monthly: Number(formData.shortletMonthly) } : {}),
-        } : undefined,
+        // Flexible custom shortlet tiers
+        shortletRates: formData.propertyType === 'shortlet'
+          ? formData.shortletRates
+              .filter(r => r.label.trim() && Number(r.price) > 0 && Number(r.durationValue) >= 1)
+              .map(r => ({
+                label: r.label.trim(),
+                durationValue: Number(r.durationValue),
+                durationUnit: r.durationUnit,
+                price: Number(r.price),
+              }))
+          : undefined,
         minStay: formData.minStay ? Number(formData.minStay) : undefined,
         minStayUnit: formData.minStay ? formData.minStayUnit : undefined,
         maxStay: formData.maxStay ? Number(formData.maxStay) : undefined,
         maxStayUnit: formData.maxStay ? formData.maxStayUnit : undefined,
+        // Only sent when the lister picked a suggestion; otherwise the server
+        // geocodes address/city/areaCluster itself.
+        ...(pickedCoordinates ? { location: { type: 'Point', coordinates: pickedCoordinates } } : {}),
         address: formData.address,
         city: formData.city,
         landmark: formData.landmark,
@@ -455,6 +501,7 @@ export function AgentCreateListingPage() {
           notes: formData.inspectionNotes || 'Inspections available Mon-Sat 9am to 4pm',
         },
         images: [],
+        tenancyAgreement,
       };
       const response = await agentApi.createListing(apiData);
       if (response.success) {
@@ -534,13 +581,10 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Address</label>
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="text"
+          <AddressAutocomplete
             value={formData.address}
-            onChange={e => handleChange('address', e.target.value)}
-            placeholder="Street address"
-            className="clay-input w-full pl-11"
+            onChange={v => handleChange('address', v)}
+            onSelectCoordinates={setPickedCoordinates}
           />
         </div>
       </div>
@@ -575,7 +619,7 @@ export function AgentCreateListingPage() {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Distance from School</label>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Distance from Campus / Town Centre</label>
         <div className="grid grid-cols-3 gap-2">
           {distanceOptions.map(option => (
             <button
@@ -603,24 +647,50 @@ export function AgentCreateListingPage() {
       <div className="space-y-4">
         {isShortlet ? (
           <>
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing</p>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Hourly (₦)</label>
-                <input type="number" value={formData.shortletHourly} onChange={e => handleChange('shortletHourly', e.target.value)} placeholder="10000" className="clay-input w-full" />
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing Tiers</p>
+              <button type="button" onClick={addShortletRate} className="text-xs font-semibold text-mustard hover:underline">+ Add tier</button>
+            </div>
+            <p className="text-xs text-text-tertiary -mt-2">Define your priced packages, e.g. "1 Hour" ₦20,000, "Full Day" ₦100,000, "Weekend" ₦180,000. Guests pick a tier and quantity when booking.</p>
+            {formData.shortletRates.length === 0 && (
+              <div className="text-center py-4 border-2 border-dashed border-clay-border rounded-clay-sm text-xs text-text-tertiary">
+                No pricing tiers yet. Tap "+ Add tier" to create one.
               </div>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Daily (₦)</label>
-                <input type="number" value={formData.shortletDaily} onChange={e => handleChange('shortletDaily', e.target.value)} placeholder="150000" className="clay-input w-full" />
-              </div>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Weekly (₦)</label>
-                <input type="number" value={formData.shortletWeekly} onChange={e => handleChange('shortletWeekly', e.target.value)} placeholder="700000" className="clay-input w-full" />
-              </div>
-              <div>
-                <label className="block text-xs text-text-secondary mb-1">Monthly (₦)</label>
-                <input type="number" value={formData.shortletMonthly} onChange={e => handleChange('shortletMonthly', e.target.value)} placeholder="2500000" className="clay-input w-full" />
-              </div>
+            )}
+            <div className="space-y-3">
+              {formData.shortletRates.map((rate, index) => (
+                <div key={index} className="p-3 border-2 border-clay-border rounded-clay-sm space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={rate.label}
+                      onChange={e => updateShortletRate(index, 'label', e.target.value)}
+                      placeholder="Tier name (e.g. Full Day)"
+                      className="clay-input flex-1"
+                    />
+                    <button type="button" onClick={() => removeShortletRate(index)} className="text-xs font-semibold text-red-500 hover:underline flex-shrink-0">Remove</button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Every</label>
+                      <input type="number" min="1" value={rate.durationValue} onChange={e => updateShortletRate(index, 'durationValue', e.target.value)} placeholder="1" className="clay-input w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Unit</label>
+                      <select value={rate.durationUnit} onChange={e => updateShortletRate(index, 'durationUnit', e.target.value)} className="clay-input w-full">
+                        <option value="hour">Hour(s)</option>
+                        <option value="day">Day(s)</option>
+                        <option value="week">Week(s)</option>
+                        <option value="month">Month(s)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Price (₦)</label>
+                      <input type="number" value={rate.price} onChange={e => updateShortletRate(index, 'price', e.target.value)} placeholder="100000" className="clay-input w-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -662,6 +732,40 @@ export function AgentCreateListingPage() {
                   placeholder="250000"
                   className="clay-input w-full pl-11"
                 />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Lease Duration</label>
+              <div className="grid grid-cols-4 gap-2">
+                {['1', '2', '3', '5'].map(yrs => (
+                  <button
+                    key={yrs}
+                    type="button"
+                    onClick={() => { handleChange('leaseDurationValue', yrs); handleChange('leaseDurationUnit', 'year'); }}
+                    className={clsx(
+                      'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                      formData.leaseDurationUnit === 'year' && formData.leaseDurationValue === yrs
+                        ? 'border-mustard bg-mustard-pale text-mustard'
+                        : 'border-clay-border text-text-secondary hover:border-mustard'
+                    )}
+                  >
+                    {yrs} yr{Number(yrs) > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.leaseDurationValue}
+                  onChange={e => handleChange('leaseDurationValue', e.target.value)}
+                  placeholder="Custom"
+                  className="clay-input w-24 flex-shrink-0"
+                />
+                <select value={formData.leaseDurationUnit} onChange={e => handleChange('leaseDurationUnit', e.target.value)} className="clay-input flex-1">
+                  <option value="year">Year(s)</option>
+                  <option value="month">Month(s)</option>
+                </select>
               </div>
             </div>
             <div>
@@ -778,19 +882,19 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Gender Preference</label>
         <div className="grid grid-cols-3 gap-2">
-          {(['any', 'female', 'male'] as const).map(g => (
+          {genderOptions.map(opt => (
             <button
-              key={g}
+              key={opt.value}
               type="button"
-              onClick={() => handleChange('gender', g)}
+              onClick={() => handleChange('gender', opt.value)}
               className={clsx(
-                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all capitalize',
-                formData.gender === g
+                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                formData.gender === opt.value
                   ? 'border-mustard bg-mustard-pale text-mustard'
                   : 'border-clay-border text-text-secondary hover:border-mustard'
               )}
             >
-              {g === 'any' ? 'Any' : g === 'female' ? 'Female Only' : 'Male Only'}
+              {opt.label}
             </button>
           ))}
         </div>
@@ -803,19 +907,19 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Furnishing Status</label>
         <div className="grid grid-cols-3 gap-2">
-          {(['furnished', 'semifurnished', 'unfurnished'] as const).map(f => (
+          {furnishingOptions.map(opt => (
             <button
-              key={f}
+              key={opt.value}
               type="button"
-              onClick={() => handleChange('furnishing', f)}
+              onClick={() => handleChange('furnishing', opt.value)}
               className={clsx(
-                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all capitalize',
-                formData.furnishing === f
+                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                formData.furnishing === opt.value
                   ? 'border-mustard bg-mustard-pale text-mustard'
                   : 'border-clay-border text-text-secondary hover:border-mustard'
               )}
             >
-              {f}
+              {opt.label}
             </button>
           ))}
         </div>
@@ -828,7 +932,7 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Power Source</label>
         <div className="grid grid-cols-2 gap-2">
-          {[{ value: 'phcn', label: 'Constant PHCN' }, { value: 'generator', label: 'Gen Backup' }, { value: 'solar', label: 'Solar-Backed' }, { value: 'hybrid', label: 'Hybrid' }].map(opt => (
+          {powerOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -848,7 +952,7 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Water Source</label>
         <div className="grid grid-cols-3 gap-2">
-          {[{ value: 'borehole', label: 'Borehole' }, { value: 'public', label: 'Public Supply' }, { value: 'tank', label: 'Water Tank' }].map(opt => (
+          {waterOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -1056,6 +1160,10 @@ export function AgentCreateListingPage() {
         />
         <p className="text-xs text-text-tertiary mt-2">Include bedroom, bathroom, kitchen, living area, exterior.</p>
       </div>
+
+      <div className="pt-4 border-t border-clay-border-light">
+        <TenancyAgreementUpload value={tenancyAgreement} onChange={setTenancyAgreement} />
+      </div>
     </div>
   );
 
@@ -1068,18 +1176,13 @@ export function AgentCreateListingPage() {
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent Price:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()} / {formData.duration} {formData.isRecurring ? '(Recurring)' : ''}</span></div>
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
           {formData.propertyType === 'shortlet' ? (
-            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Pricing:</span> <span className="font-medium text-right">
-              {formData.shortletHourly && `₦${Number(formData.shortletHourly).toLocaleString()}/hr `}
-              {formData.shortletDaily && `₦${Number(formData.shortletDaily).toLocaleString()}/day `}
-              {formData.shortletWeekly && `₦${Number(formData.shortletWeekly).toLocaleString()}/wk `}
-              {formData.shortletMonthly && `₦${Number(formData.shortletMonthly).toLocaleString()}/mo`}
+            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Pricing:</span> <span className="font-medium text-right max-w-[60%]">
+              {formData.shortletRates.filter(r => r.label.trim() && Number(r.price) > 0).map(r => `${r.label}: ₦${Number(r.price).toLocaleString()}`).join(' · ') || '-'}
             </span></div>
           ) : (
             <>
-              <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent/Year:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()}</span></div>
+              <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Rent:</span> <span className="font-medium font-bold text-mustard">₦{Number(formData.annualRent).toLocaleString()} / {Number(formData.leaseDurationValue) || 1} {formData.leaseDurationUnit}{(Number(formData.leaseDurationValue) || 1) > 1 ? 's' : ''}</span></div>
               <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Payment:</span> <span className="font-medium capitalize">{formData.paymentFrequency === 'custom' ? `${formData.customInstallments} x ₦${Number(formData.customAmountPerInstallment).toLocaleString()} (${formData.customInterval})` : formData.paymentFrequency}</span></div>
             </>
           )}
@@ -1092,6 +1195,7 @@ export function AgentCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
           )}
           <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
+          <div className="flex justify-between border-t border-clay-border-light pt-2 mt-2"><span className="text-text-tertiary">Tenancy Agreement:</span> <span className="font-medium text-right max-w-[60%] truncate">{tenancyAgreement ? tenancyAgreement.fileName : 'Standard iléSure template'}</span></div>
         </div>
       </div>
     </div>

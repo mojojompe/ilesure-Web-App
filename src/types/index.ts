@@ -249,12 +249,12 @@ export interface Listing {
   address?: string;
   city?: string;
   landmark?: string;
-  propertyType: 'self_con' | '1_bed' | '2_bed' | '3_bed' | 'mini_flat' | 'hostel_room' | 'shared_apartment' | 'shortlet' | 'selfcon' | '1bedroom' | '2bedroom' | 'miniflat' | 'studio' | 'penthouse' | 'hostel';
-  furnishing: 'fully_furnished' | 'semi-furnished' | 'unfurnished' | 'furnished' | 'semifurnished';
-  power: 'constant' | 'gen-dependent' | 'solar-backed' | 'phcn' | 'generator' | 'solar' | 'hybrid';
+  propertyType: 'self_con' | '1_bed' | '2_bed' | '3_bed' | 'mini_flat' | 'studio' | 'penthouse' | 'hostel_room' | 'shared_apartment' | 'shortlet';
+  furnishing: 'fully_furnished' | 'semi_furnished' | 'unfurnished';
+  power: 'constant' | 'gen_dependent' | 'solar_backed' | 'hybrid';
   water: 'borehole' | 'public' | 'tank';
   maxOccupants: number;
-  genderRestriction: 'any' | 'male_only' | 'female_only' | 'mixed' | 'male' | 'female';
+  genderRestriction: 'any' | 'male_only' | 'female_only' | 'mixed';
   status: 'pending_approval' | 'active' | 'needs_roommate' | 'fully_booked' | 'archived' | 'rejected';
   images: string[];
   agentId?: string;

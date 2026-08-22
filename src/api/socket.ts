@@ -20,18 +20,20 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('Socket connected');
+      // SECURITY-FIX (W-M3): removed console logging of socket lifecycle to avoid
+      // leaking connection internals / user context in production builds.
       this.reconnectAttempts = 0;
       this.emit('connect', undefined);
     });
 
-    this.socket.on('disconnect', (reason: string) => {
-      console.log('Socket disconnected:', reason);
+    this.socket.on('disconnect', () => {
+      // SECURITY-FIX (W-M3): removed console logging of disconnect reason.
       this.emit('disconnect', undefined);
     });
 
-    this.socket.on('connect_error', (error: Error) => {
-      console.error('Socket connection error:', error);
+    this.socket.on('connect_error', () => {
+      // SECURITY-FIX (W-M3): removed console logging of the error object (may carry
+      // handshake/token details).
       this.reconnectAttempts++;
     });
 
@@ -91,6 +93,17 @@ class SocketService {
 
   isConnected(): boolean {
     return this.socket?.connected ?? false;
+  }
+
+  /**
+   * Raw socket access, for call signalling.
+   *
+   * The re-emitting wrapper above exists to give chat a stable event surface; call
+   * signalling is high-frequency and strictly request/response, so it attaches its own
+   * listeners directly rather than routing every ICE candidate through the fan-out map.
+   */
+  getSocket(): Socket | null {
+    return this.socket;
   }
 
   on(event: string, callback: Function): void {

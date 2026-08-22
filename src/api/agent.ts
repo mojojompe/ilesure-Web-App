@@ -46,6 +46,26 @@ interface ListingResponse {
   error?: { message: string };
 }
 
+interface ShortletRateData {
+  id?: string;
+  label: string;
+  durationValue: number;
+  durationUnit: 'hour' | 'day' | 'week' | 'month';
+  price: number;
+}
+
+/**
+ * A tenancy agreement PDF supplied by the lister for a specific property.
+ * When present it replaces the platform template in the tenant's signing flow.
+ */
+export interface TenancyAgreementDocument {
+  url: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  pageCount?: number;
+}
+
 interface CreateListingData {
   title: string;
   description: string;
@@ -67,6 +87,22 @@ interface CreateListingData {
   amenities?: string[];
   rules?: string[];
   images?: string[];
+  // Pricing / lease term
+  paymentFrequency?: string;
+  customPaymentPlan?: { installments: number; interval: string; amountPerInstallment: number };
+  leaseDuration?: string;
+  leaseDurationValue?: number;
+  leaseDurationUnit?: 'year' | 'month';
+  additionalNotes?: string;
+  // Flexible custom shortlet tiers (+ legacy fixed pricing for back-compat)
+  shortletRates?: ShortletRateData[];
+  shortletPricing?: { hourly?: number; daily?: number; weekly?: number; monthly?: number };
+  minStay?: number;
+  minStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  maxStay?: number;
+  maxStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  inspectionAvailability?: { availableDays?: string[]; timeSlots?: string[]; notes?: string };
+  tenancyAgreement?: TenancyAgreementDocument | null;
 }
 
 interface BookingsResponse {
@@ -151,6 +187,22 @@ export const agentApi = {
     } catch {
       return { success: false, error: { message: 'Failed to create listing' } };
     }
+  },
+
+  /**
+   * Uploads a tenancy agreement PDF and returns its stored metadata.
+   *
+   * Not tied to a listing id: the wizard collects the document before the listing
+   * exists, so the returned metadata is sent back in the create payload.
+   */
+  async uploadTenancyAgreement(file: File): Promise<TenancyAgreementDocument> {
+    const formData = new FormData();
+    formData.append('document', file);
+    const response = await apiClient.upload<{ success: boolean; data: TenancyAgreementDocument }>(
+      '/listings/tenancy-agreement',
+      formData
+    );
+    return response.data.data;
   },
 
   async uploadImages(listingId: string, formData: FormData): Promise<string[]> {

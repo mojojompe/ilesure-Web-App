@@ -41,17 +41,26 @@ import { RoommateMatchesPage } from './pages/roommate/Matches';
 import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
 import { NotFound } from './pages/NotFound';
+import { CallProvider } from './contexts/CallContext';
+import { CallOverlay } from './components/call/CallOverlay';
 
-function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role: 'agent' | 'company'; excludeRole?: string }) {
+function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role?: 'agent' | 'company'; excludeRole?: string }) {
+  // DECISION (W-M1): `isAuthenticated` and `role` originate from the client-controlled
+  // localStorage auth blob, so this guard is UI-ONLY — it decides which shell/redirect to
+  // render, NOT authorization. It is NOT a security boundary. The backend MUST enforce
+  // role and permissions server-side on every /agent/*, /company/*, admin, and booking
+  // endpoint; tampered roles are caught there because API calls carry the JWT and 401/403.
   const { isAuthenticated, role: userRole } = useAuth();
-  
+
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
   const effectiveRole = (userRole === 'landlord' || userRole === 'sub_agent') ? 'agent' : userRole;
-  
-  if (effectiveRole && effectiveRole !== role) {
+
+  // SECURITY-FIX (W-L1): when no specific `role` is required (e.g. roommate routes), the
+  // authentication check above still applies but the role-based redirect is skipped.
+  if (role && effectiveRole && effectiveRole !== role) {
     return <Navigate to={effectiveRole === 'company' ? '/company' : '/agent'} replace />;
   }
 
@@ -234,8 +243,20 @@ function AppRoutes() {
       } />
       
       {/* Roommate Matching (Students) */}
-      <Route path="/roommate/profile" element={<RoommateProfilePage />} />
-      <Route path="/roommate/matches" element={<RoommateMatchesPage />} />
+      {/* SECURITY-FIX (W-L1): wrapped in ProtectedRoute for parity with the other authed
+          routes. No `role` prop is passed, so these require authentication only (no
+          agent/company redirect), since roommate pages aren't role-scoped in this portal.
+          Backend still enforces data access. */}
+      <Route path="/roommate/profile" element={
+        <ProtectedRoute>
+          <RoommateProfilePage />
+        </ProtectedRoute>
+      } />
+      <Route path="/roommate/matches" element={
+        <ProtectedRoute>
+          <RoommateMatchesPage />
+        </ProtectedRoute>
+      } />
       
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFound />} />
@@ -247,7 +268,11 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        {/* Above the router so a call survives navigation and can arrive on any page. */}
+        <CallProvider>
+          <AppRoutes />
+          <CallOverlay />
+        </CallProvider>
       </AuthProvider>
     </BrowserRouter>
   );
