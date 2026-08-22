@@ -27,12 +27,22 @@ export function TierSelectionPage() {
     setLoading(false);
   };
 
-  const formatPrice = (price: number) => {
-    if (price === 0) return 'Free';
-    if (billingCycle === 'annually') {
-      return `₦${price.toLocaleString()}/yr`;
-    }
-    return `₦${Math.round(price).toLocaleString()}/mo`;
+  /**
+   * Both prices are set per tier on the backend. This previously rendered the
+   * MONTHLY price with a "/yr" suffix on the annual toggle, while checkout
+   * charged price * 12 * 0.8 — so the quoted figure was roughly a tenth of what
+   * the customer was actually billed.
+   */
+  const priceFor = (tier: Tier): number => {
+    const monthly = tier.priceMonthly ?? tier.price ?? 0;
+    return billingCycle === 'annually' ? (tier.priceYearly ?? 0) : monthly;
+  };
+
+  const formatPrice = (tier: Tier) => {
+    const amount = priceFor(tier);
+    if ((tier.priceMonthly ?? tier.price) === 0) return 'Free';
+    if (!amount) return 'Not available';
+    return `₦${amount.toLocaleString()}${billingCycle === 'annually' ? '/yr' : '/mo'}`;
   };
 
   const handleContinue = async () => {
@@ -111,7 +121,7 @@ export function TierSelectionPage() {
 
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-text-primary">{tier.name}</h3>
-                <p className="text-2xl font-bold text-text-primary mt-1">{formatPrice(tier.price)}</p>
+                <p className="text-2xl font-bold text-text-primary mt-1">{formatPrice(tier)}</p>
                 <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
               </div>
 
