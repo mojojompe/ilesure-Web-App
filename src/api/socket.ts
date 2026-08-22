@@ -95,6 +95,17 @@ class SocketService {
     return this.socket?.connected ?? false;
   }
 
+  /**
+   * Raw socket access, for call signalling.
+   *
+   * The re-emitting wrapper above exists to give chat a stable event surface; call
+   * signalling is high-frequency and strictly request/response, so it attaches its own
+   * listeners directly rather than routing every ICE candidate through the fan-out map.
+   */
+  getSocket(): Socket | null {
+    return this.socket;
+  }
+
   on(event: string, callback: Function): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());

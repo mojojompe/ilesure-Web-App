@@ -8,6 +8,23 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import agentApi from '../../api/agent';
 import { useAuth } from '../../api/authContext';
 import { userApi } from '../../api/user';
+import { TenancyAgreementUpload } from '../../components/listing/TenancyAgreementUpload';
+import type { TenancyAgreementDocument } from '../../api/agent';
+import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
+import {
+  propertyTypes,
+  distanceOptions,
+  furnishingOptions,
+  powerOptions,
+  waterOptions,
+  genderOptions,
+  PropertyType,
+  Furnishing,
+  PowerSource,
+  WaterSource,
+  GenderRestriction,
+  DistanceBucket,
+} from '../../constants/listingVocabulary';
 
 interface StepIndicatorProps {
   currentStep: number;
@@ -217,30 +234,12 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
   );
 }
 
-type PropertyType = 'selfcon' | '1bedroom' | '2bedroom' | 'miniflat' | 'studio' | 'penthouse' | 'hostel' | 'shortlet';
-type GenderPreference = 'any' | 'female' | 'male';
-type Furnishing = 'furnished' | 'semifurnished' | 'unfurnished';
-type PowerSource = 'phcn' | 'generator' | 'solar' | 'hybrid';
-type WaterSource = 'borehole' | 'public' | 'tank';
-type DistanceFromSchool = 'veryclose' | 'close' | 'budget';
+// Enumerated values come from the shared canonical vocabulary rather than
+// being redeclared per form — see constants/listingVocabulary.
+type GenderPreference = GenderRestriction;
+type DistanceFromSchool = DistanceBucket;
 type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
 
-const propertyTypes: { value: PropertyType; label: string }[] = [
-  { value: 'selfcon', label: 'Self-con' },
-  { value: '1bedroom', label: '1-Bedroom' },
-  { value: '2bedroom', label: '2-Bedroom' },
-  { value: 'miniflat', label: 'Mini Flat' },
-  { value: 'studio', label: 'Studio' },
-  { value: 'penthouse', label: 'Penthouse' },
-  { value: 'hostel', label: 'Hostel Room' },
-  { value: 'shortlet', label: 'Shortlet' },
-];
-
-const distanceOptions: { value: DistanceFromSchool; label: string }[] = [
-  { value: 'veryclose', label: 'Very Close' },
-  { value: 'close', label: 'Close' },
-  { value: 'budget', label: 'Budget Stretch' },
-];
 
 const paymentFrequencyOptions: { value: PaymentFrequency; label: string }[] = [
   { value: 'annually', label: 'Yearly' },
@@ -315,7 +314,7 @@ const initialFormData: ListingFormData = {
   customInstallments: '',
   customInterval: 'monthly',
   customAmountPerInstallment: '',
-  propertyType: 'selfcon',
+  propertyType: 'self_con',
   shortletRates: [],
   minStay: '',
   minStayUnit: 'day',
@@ -324,7 +323,7 @@ const initialFormData: ListingFormData = {
   maxOccupants: '1',
   gender: 'any',
   furnishing: 'unfurnished',
-  power: 'phcn',
+  power: 'constant',
   water: 'public',
   hasWifi: false,
   hasParking: false,
@@ -345,9 +344,16 @@ export function AgentCreateListingPage() {
   const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<ListingFormData>(initialFormData);
+  /**
+   * Coordinates from a picked address suggestion, in GeoJSON order [lng, lat].
+   * Optional: with none, the backend geocodes the address fields on save.
+   */
+  const [pickedCoordinates, setPickedCoordinates] = useState<[number, number] | null>(null);
   const [loading, setLoading] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  // Uploaded ahead of listing creation; the metadata rides along in the payload.
+  const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Live verification check — don't rely on stale localStorage value
   const [liveVerified, setLiveVerified] = useState<boolean | null>(
@@ -466,6 +472,9 @@ export function AgentCreateListingPage() {
         minStayUnit: formData.minStay ? formData.minStayUnit : undefined,
         maxStay: formData.maxStay ? Number(formData.maxStay) : undefined,
         maxStayUnit: formData.maxStay ? formData.maxStayUnit : undefined,
+        // Only sent when the lister picked a suggestion; otherwise the server
+        // geocodes address/city/areaCluster itself.
+        ...(pickedCoordinates ? { location: { type: 'Point', coordinates: pickedCoordinates } } : {}),
         address: formData.address,
         city: formData.city,
         landmark: formData.landmark,
@@ -492,6 +501,7 @@ export function AgentCreateListingPage() {
           notes: formData.inspectionNotes || 'Inspections available Mon-Sat 9am to 4pm',
         },
         images: [],
+        tenancyAgreement,
       };
       const response = await agentApi.createListing(apiData);
       if (response.success) {
@@ -571,13 +581,10 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Address</label>
         <div className="relative">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="text"
+          <AddressAutocomplete
             value={formData.address}
-            onChange={e => handleChange('address', e.target.value)}
-            placeholder="Street address"
-            className="clay-input w-full pl-11"
+            onChange={v => handleChange('address', v)}
+            onSelectCoordinates={setPickedCoordinates}
           />
         </div>
       </div>
@@ -612,7 +619,7 @@ export function AgentCreateListingPage() {
         />
       </div>
       <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Distance from School</label>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Distance from Campus / Town Centre</label>
         <div className="grid grid-cols-3 gap-2">
           {distanceOptions.map(option => (
             <button
@@ -875,19 +882,19 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Gender Preference</label>
         <div className="grid grid-cols-3 gap-2">
-          {(['any', 'female', 'male'] as const).map(g => (
+          {genderOptions.map(opt => (
             <button
-              key={g}
+              key={opt.value}
               type="button"
-              onClick={() => handleChange('gender', g)}
+              onClick={() => handleChange('gender', opt.value)}
               className={clsx(
-                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all capitalize',
-                formData.gender === g
+                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                formData.gender === opt.value
                   ? 'border-mustard bg-mustard-pale text-mustard'
                   : 'border-clay-border text-text-secondary hover:border-mustard'
               )}
             >
-              {g === 'any' ? 'Any' : g === 'female' ? 'Female Only' : 'Male Only'}
+              {opt.label}
             </button>
           ))}
         </div>
@@ -900,19 +907,19 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Furnishing Status</label>
         <div className="grid grid-cols-3 gap-2">
-          {(['furnished', 'semifurnished', 'unfurnished'] as const).map(f => (
+          {furnishingOptions.map(opt => (
             <button
-              key={f}
+              key={opt.value}
               type="button"
-              onClick={() => handleChange('furnishing', f)}
+              onClick={() => handleChange('furnishing', opt.value)}
               className={clsx(
-                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all capitalize',
-                formData.furnishing === f
+                'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                formData.furnishing === opt.value
                   ? 'border-mustard bg-mustard-pale text-mustard'
                   : 'border-clay-border text-text-secondary hover:border-mustard'
               )}
             >
-              {f}
+              {opt.label}
             </button>
           ))}
         </div>
@@ -925,7 +932,7 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Power Source</label>
         <div className="grid grid-cols-2 gap-2">
-          {[{ value: 'phcn', label: 'Constant PHCN' }, { value: 'generator', label: 'Gen Backup' }, { value: 'solar', label: 'Solar-Backed' }, { value: 'hybrid', label: 'Hybrid' }].map(opt => (
+          {powerOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -945,7 +952,7 @@ export function AgentCreateListingPage() {
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Water Source</label>
         <div className="grid grid-cols-3 gap-2">
-          {[{ value: 'borehole', label: 'Borehole' }, { value: 'public', label: 'Public Supply' }, { value: 'tank', label: 'Water Tank' }].map(opt => (
+          {waterOptions.map(opt => (
             <button
               key={opt.value}
               type="button"
@@ -1153,6 +1160,10 @@ export function AgentCreateListingPage() {
         />
         <p className="text-xs text-text-tertiary mt-2">Include bedroom, bathroom, kitchen, living area, exterior.</p>
       </div>
+
+      <div className="pt-4 border-t border-clay-border-light">
+        <TenancyAgreementUpload value={tenancyAgreement} onChange={setTenancyAgreement} />
+      </div>
     </div>
   );
 
@@ -1184,6 +1195,7 @@ export function AgentCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
           )}
           <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
+          <div className="flex justify-between border-t border-clay-border-light pt-2 mt-2"><span className="text-text-tertiary">Tenancy Agreement:</span> <span className="font-medium text-right max-w-[60%] truncate">{tenancyAgreement ? tenancyAgreement.fileName : 'Standard iléSure template'}</span></div>
         </div>
       </div>
     </div>

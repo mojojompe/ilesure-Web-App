@@ -40,6 +40,8 @@ import { RoommateMatchesPage } from './pages/roommate/Matches';
 import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
 import { NotFound } from './pages/NotFound';
+import { CallProvider } from './contexts/CallContext';
+import { CallOverlay } from './components/call/CallOverlay';
 
 function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role?: 'agent' | 'company'; excludeRole?: string }) {
   // DECISION (W-M1): `isAuthenticated` and `role` originate from the client-controlled
@@ -255,7 +257,11 @@ export function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRoutes />
+        {/* Above the router so a call survives navigation and can arrive on any page. */}
+        <CallProvider>
+          <AppRoutes />
+          <CallOverlay />
+        </CallProvider>
       </AuthProvider>
     </BrowserRouter>
   );

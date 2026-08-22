@@ -4,6 +4,8 @@ import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { chatApi } from '../../api/chat';
 import { useAuth } from '../../api/authContext';
+import { callApi, type CallAvailability } from '../../api/callApi';
+import { useCall } from '../../contexts/CallContext';
 
 interface Chat {
   id: string;
@@ -43,6 +45,30 @@ export function CompanyChatsPage() {
   const [partnerTyping, setPartnerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const call = useCall();
+  // Fetched per conversation so the buttons can show the peer as busy before the user
+  // taps, rather than after a call that goes nowhere.
+  const [callAvailability, setCallAvailability] = useState<CallAvailability | null>(null);
+
+  useEffect(() => {
+    if (!selectedChat) { setCallAvailability(null); return; }
+    let cancelled = false;
+    callApi.getAvailability(selectedChat.id).then((data) => {
+      if (!cancelled) setCallAvailability(data);
+    });
+    return () => { cancelled = true; };
+  }, [selectedChat?.id]);
+
+  const placeCall = (callType: 'audio' | 'video') => {
+    if (!selectedChat) return;
+    call.startCall(selectedChat.id, callType, {
+      id: callAvailability?.peerId ?? selectedChat.participant.id,
+      fullName: selectedChat.participant.fullName,
+      avatar: selectedChat.participant.avatar,
+    });
+  };
+
   const selectedChatRef = useRef(selectedChat);
 
   useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
@@ -285,10 +311,22 @@ export function CompanyChatsPage() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button className="p-2 rounded-full hover:bg-clay-border-light">
+                  <button
+                    onClick={() => placeCall('audio')}
+                    disabled={callAvailability?.peerBusy}
+                    aria-label="Start voice call"
+                    title={callAvailability?.peerBusy ? 'They are on another call' : 'Voice call'}
+                    className="p-2 rounded-full hover:bg-clay-border-light disabled:opacity-40"
+                  >
                     <Phone className="w-5 h-5 text-text-secondary" />
                   </button>
-                  <button className="p-2 rounded-full hover:bg-clay-border-light">
+                  <button
+                    onClick={() => placeCall('video')}
+                    disabled={callAvailability?.peerBusy}
+                    aria-label="Start video call"
+                    title={callAvailability?.peerBusy ? 'They are on another call' : 'Video call'}
+                    className="p-2 rounded-full hover:bg-clay-border-light disabled:opacity-40"
+                  >
                     <Video className="w-5 h-5 text-text-secondary" />
                   </button>
                   <button className="p-2 rounded-full hover:bg-clay-border-light">

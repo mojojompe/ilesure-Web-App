@@ -54,6 +54,18 @@ interface ShortletRateData {
   price: number;
 }
 
+/**
+ * A tenancy agreement PDF supplied by the lister for a specific property.
+ * When present it replaces the platform template in the tenant's signing flow.
+ */
+export interface TenancyAgreementDocument {
+  url: string;
+  fileName: string;
+  mimeType: string;
+  fileSize: number;
+  pageCount?: number;
+}
+
 interface CreateListingData {
   title: string;
   description: string;
@@ -90,6 +102,7 @@ interface CreateListingData {
   maxStay?: number;
   maxStayUnit?: 'hour' | 'day' | 'week' | 'month';
   inspectionAvailability?: { availableDays?: string[]; timeSlots?: string[]; notes?: string };
+  tenancyAgreement?: TenancyAgreementDocument | null;
 }
 
 interface BookingsResponse {
@@ -174,6 +187,22 @@ export const agentApi = {
     } catch {
       return { success: false, error: { message: 'Failed to create listing' } };
     }
+  },
+
+  /**
+   * Uploads a tenancy agreement PDF and returns its stored metadata.
+   *
+   * Not tied to a listing id: the wizard collects the document before the listing
+   * exists, so the returned metadata is sent back in the create payload.
+   */
+  async uploadTenancyAgreement(file: File): Promise<TenancyAgreementDocument> {
+    const formData = new FormData();
+    formData.append('document', file);
+    const response = await apiClient.upload<{ success: boolean; data: TenancyAgreementDocument }>(
+      '/listings/tenancy-agreement',
+      formData
+    );
+    return response.data.data;
   },
 
   async uploadImages(listingId: string, formData: FormData): Promise<string[]> {

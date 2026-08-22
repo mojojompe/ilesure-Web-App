@@ -8,6 +8,7 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { agentApi } from '../../api/agent';
 import type { Listing } from '../../types';
+import { propertyTypes } from '../../constants/listingVocabulary';
 
 const amenityOptions = ['WiFi', 'Security', 'Water', 'Electricity', 'Parking', 'AC', 'Laundry', 'Generator', 'Balcony', 'Common Room'];
 
@@ -26,7 +27,7 @@ export function AgentListingsPage() {
   const [newListing, setNewListing] = useState({
     title: '',
     description: '',
-    type: 'hostel',
+    type: 'hostel_room',
     price: '',
     address: '',
     city: '',
@@ -81,12 +82,14 @@ export function AgentListingsPage() {
         landmark: newListing.landmark,
         amenities: newListing.amenities,
         areaCluster: newListing.city,
-        // Required fields with sensible defaults (user can edit later via full form)
-        distanceBucket: 'within_5km',
+        // Required fields with sensible defaults (user can edit later via full form).
+        // These must be canonical values from constants/listingVocabulary —
+        // 'within_5km' and 'irregular' were in no enum and failed validation.
+        distanceBucket: 'close',
         maxOccupants: 1,
         genderRestriction: 'any',
         furnishing: 'unfurnished',
-        power: 'irregular',
+        power: 'gen_dependent',
         water: 'borehole',
       } as any);
 
@@ -96,7 +99,7 @@ export function AgentListingsPage() {
         setNewListing({
           title: '',
           description: '',
-          type: 'hostel',
+          type: 'hostel_room',
           price: '',
           address: '',
           city: '',
@@ -181,12 +184,14 @@ export function AgentListingsPage() {
           />
         </div>
         <div className="flex gap-2">
+          {/* NOTE: this type selector is still unwired — agentApi.getListings
+              takes no propertyType param. Its options are canonical now so it
+              stops advertising types that do not exist. */}
           <select className="clay-input">
             <option value="all">All Types</option>
-            <option value="hostel">Hostel</option>
-            <option value="apartment">Apartment</option>
-            <option value="single_room">Single Room</option>
-            <option value="bedsitter">Bedsitter</option>
+            {propertyTypes.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
           </select>
           <Button variant="primary" onClick={() => navigate('/agent/create-listing')}>
             <Plus className="w-4 h-4 mr-2" /> Add Listing
@@ -317,10 +322,9 @@ export function AgentListingsPage() {
                 onChange={(e) => setNewListing({ ...newListing, type: e.target.value })}
                 className="clay-input w-full"
               >
-                <option value="hostel">Hostel</option>
-                <option value="apartment">Apartment</option>
-                <option value="single_room">Single Room</option>
-                <option value="bedsitter">Bedsitter</option>
+                {propertyTypes.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
               </select>
             </div>
             <div>
