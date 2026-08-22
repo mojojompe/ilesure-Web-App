@@ -531,7 +531,7 @@ export function useCallEngine(enabled: boolean = true) {
       socket.off('call:busy', onBusy);
       socket.off('call:error', onError);
     };
-  }, [answerOffer, finish, flushCandidateQueue, sendOffer, socketEpoch]);
+  }, [answerOffer, finish, flushCandidateQueue, sendOffer, socketEpoch, enabled]);
 
   /* ---------------------------------------------------------------------- */
   /* Call timer                                                             */
