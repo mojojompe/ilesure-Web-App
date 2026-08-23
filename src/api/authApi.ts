@@ -26,6 +26,11 @@ interface RegisterData {
   password: string;
   role?: UserRole;
   referrerCode?: string;
+  companyName?: string;
+  cacNumber?: string;
+  idCardUrl?: string;
+  ninUrl?: string;
+  companyDocUrl?: string;
 }
 
 interface SendOtpResponse {
@@ -194,6 +199,20 @@ export const authApi = {
         };
       }
       return { success: false, message: 'Network error' };
+    }
+  },
+
+  async uploadDoc(file: File): Promise<{ success: boolean; data?: { url: string }; error?: { message: string } }> {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const response = await apiClient.upload<{ success: boolean; data: { url: string } }>('/auth/upload-doc', formData);
+      return { success: true, data: response.data.data };
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return { success: false, error: { message: error.response?.data?.error?.message || 'Upload failed' } };
+      }
+      return { success: false, error: { message: 'Network error' } };
     }
   },
 

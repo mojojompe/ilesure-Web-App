@@ -185,9 +185,14 @@ export function AgentSettingsPage() {
               </div>
               <div>
                 <p className="font-semibold text-text-primary">{user?.fullName}</p>
-                <StatusBadge variant={user?.verificationStatus === 'verified' ? 'success' : 'warning'}>
-                  {user?.verificationStatus || 'unverified'}
-                </StatusBadge>
+                <div className="flex flex-row gap-2 mt-2">
+                  <StatusBadge variant={user?.verificationStatus === 'verified' ? 'success' : 'warning'}>
+                    {user?.verificationStatus || 'unverified'}
+                  </StatusBadge>
+                  <div className="bg-[#E1AD01]/10 px-3 py-1 rounded-full border border-[#E1AD01]/20 flex items-center gap-1">
+                    <span className="text-xs font-bold text-[#E1AD01]">{user?.rewardPoints || 0} Points</span>
+                  </div>
+                </div>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">

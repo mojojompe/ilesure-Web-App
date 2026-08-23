@@ -81,7 +81,17 @@ export function SignupPage() {
     cacCertificate: '',
   });
 
-  const [isCompany, setIsCompany] = useState(false);
+  const [docFiles, setDocFiles] = useState<{
+    idCard: File | null;
+    nin: File | null;
+    cacCertificate: File | null;
+  }>({
+    idCard: null,
+    nin: null,
+    cacCertificate: null
+  });
+
+  const isCompany = formData.role === 'company';
 
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
   const [selectedBank, setSelectedBank] = useState<{ name: string; code: string } | null>(null);
@@ -165,6 +175,21 @@ export function SignupPage() {
     setError('');
     
     try {
+      let idCardUrl, ninUrl, companyDocUrl;
+      
+      if (docFiles.idCard) {
+        const res = await authApi.uploadDoc(docFiles.idCard);
+        if (res.success && res.data) idCardUrl = res.data.url;
+      }
+      if (docFiles.nin) {
+        const res = await authApi.uploadDoc(docFiles.nin);
+        if (res.success && res.data) ninUrl = res.data.url;
+      }
+      if (docFiles.cacCertificate) {
+        const res = await authApi.uploadDoc(docFiles.cacCertificate);
+        if (res.success && res.data) companyDocUrl = res.data.url;
+      }
+
       const registerData = {
         fullName: formData.fullName,
         email: formData.email,
@@ -172,6 +197,9 @@ export function SignupPage() {
         password: formData.password,
         role: formData.role as UserRole,
         ...(isCompany && companyName ? { companyName } : {}),
+        idCardUrl,
+        ninUrl,
+        companyDocUrl,
       };
       
       const response = await authApi.register(registerData);
@@ -380,7 +408,11 @@ export function SignupPage() {
         </label>
         <button
           type="button"
-          onClick={() => setShowBankList(!showBankList)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setShowBankList(!showBankList);
+          }}
           className="clay-input w-full text-left flex items-center justify-between"
         >
           <span className={selectedBank ? '' : 'text-text-tertiary'}>
@@ -404,7 +436,14 @@ export function SignupPage() {
               <button
                 key={bank.code}
                 type="button"
-                onClick={() => { setSelectedBank(bank); setShowBankList(false); setBankSearch(''); setAccountName(''); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setSelectedBank(bank);
+                  setShowBankList(false);
+                  setBankSearch('');
+                  setAccountName('');
+                }}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${
                   selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
                 }`}
@@ -482,22 +521,24 @@ export function SignupPage() {
             <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
               Upload ID Card
             </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
+            <label className="block border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light relative">
+              <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => setDocFiles(prev => ({ ...prev, idCard: e.target.files?.[0] || null }))} />
               <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Click to upload or drag and drop</p>
+              <p className="text-sm text-text-secondary">{docFiles.idCard ? docFiles.idCard.name : 'Click to upload or drag and drop'}</p>
               <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
+            </label>
           </div>
 
           <div>
             <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
               Upload NIN
             </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
+            <label className="block border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light relative">
+              <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => setDocFiles(prev => ({ ...prev, nin: e.target.files?.[0] || null }))} />
               <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">National ID Number Document</p>
+              <p className="text-sm text-text-secondary">{docFiles.nin ? docFiles.nin.name : 'National ID Number Document'}</p>
               <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
+            </label>
           </div>
 
           <div>
@@ -539,11 +580,12 @@ export function SignupPage() {
             <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
               CAC Certificate
             </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
+            <label className="block border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light relative">
+              <input type="file" accept="application/pdf, image/png, image/jpeg" className="hidden" onChange={(e) => setDocFiles(prev => ({ ...prev, cacCertificate: e.target.files?.[0] || null }))} />
               <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Corporate Affairs Commission Certificate</p>
+              <p className="text-sm text-text-secondary">{docFiles.cacCertificate ? docFiles.cacCertificate.name : 'Corporate Affairs Commission Certificate'}</p>
               <p className="text-xs text-text-tertiary mt-1">PDF up to 10MB</p>
-            </div>
+            </label>
           </div>
 
           <div>
@@ -625,7 +667,7 @@ export function SignupPage() {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => { setIsCompany(false); setFormData(prev => ({ ...prev, role: 'agent' })); }}
+                  onClick={() => { setFormData(prev => ({ ...prev, role: 'agent' })); }}
                   className={clsx(
                     'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
                     !isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
@@ -636,7 +678,7 @@ export function SignupPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setIsCompany(true); setFormData(prev => ({ ...prev, role: 'company' })); }}
+                  onClick={() => { setFormData(prev => ({ ...prev, role: 'company' })); }}
                   className={clsx(
                     'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
                     isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
