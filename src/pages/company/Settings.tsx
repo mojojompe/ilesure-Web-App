@@ -425,14 +425,14 @@ export function CompanySettingsPage() {
                   <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
                   <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
                   <p className="text-xs text-text-tertiary mt-2">
-                    Rent payments are split automatically — 5% to IleSure, balance to your company account.
+                    Rent payments are split automatically — the iléSure service fee to us, the balance to your company account.
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-text-tertiary">
-                  Set up your company bank account to receive rent payments directly. IleSure takes a 5% commission.
+                  Set up your company bank account to receive rent payments directly. iléSure deducts its service fee from each payment.
                 </p>
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
