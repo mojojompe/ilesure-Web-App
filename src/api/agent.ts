@@ -270,7 +270,7 @@ export const agentApi = {
     }
   },
 
-  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string }): Promise<{ success: boolean; data?: SubaccountInfo; message?: string; error?: { message: string } }> {
+  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string; bankName?: string }): Promise<{ success: boolean; data?: SubaccountInfo; message?: string; error?: { message: string } }> {
     try {
       const response = await apiClient.post<{ success: boolean; data: SubaccountInfo; message?: string }>('/agent/subaccount', data);
       return response.data;

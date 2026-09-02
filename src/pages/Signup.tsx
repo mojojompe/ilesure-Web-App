@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Upload, Camera, Building2, GraduationCap, Briefcase, Home, Building, Search } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Building2, Search, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
@@ -8,6 +8,27 @@ import authApi from '../api/authApi';
 import paymentsApi from '../api/payments';
 import agentApi from '../api/agent';
 import companyApi from '../api/company';
+import userApi from '../api/user';
+import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
+import { FileUploadZone, makeFileState, validateFile, IMAGE_TYPES, DOCUMENT_TYPES, type FileState } from '../components/ui/FileUploadZone';
+
+// Per-slot MIME rules (QA-AGT-002): a selfie must be a photo; everything else may be PDF/JPG/PNG.
+const DOC_SLOTS = {
+  idCard: { label: 'Upload ID Card', hint: 'Valid government ID · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+  ninDocument: { label: 'Upload NIN', hint: 'National ID Number slip · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+  propertyProof: { label: 'Property Proof', hint: 'Proof of property ownership · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+  utilityBill: { label: 'Utility Bill', hint: 'Recent utility bill · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+  liveSelfie: { label: 'Live Selfie', hint: 'Take a clear photo of your face · JPG or PNG', types: IMAGE_TYPES, accept: 'image/*' },
+  cacCertificate: { label: 'CAC Certificate', hint: 'Corporate Affairs Commission certificate · PDF, JPG or PNG up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+  directorId: { label: 'Director ID Card', hint: "Director's valid ID · PNG, JPG or PDF up to 10MB", types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+  businessPermit: { label: 'Business Permit', hint: 'Local government business permit · PDF, JPG or PNG up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
+} as const;
+type DocSlot = keyof typeof DOC_SLOTS;
+const AGENT_SLOTS: DocSlot[] = ['idCard', 'ninDocument', 'propertyProof', 'utilityBill', 'liveSelfie'];
+const COMPANY_SLOTS: DocSlot[] = ['cacCertificate', 'directorId', 'businessPermit'];
+function emptyDocs(): Record<DocSlot, FileState> {
+  return Object.fromEntries(Object.keys(DOC_SLOTS).map(k => [k, makeFileState()])) as Record<DocSlot, FileState>;
+}
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -55,6 +76,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const { setSession } = useAuth();
   const [step, setStep] = useState(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -72,14 +94,7 @@ export function SignupPage() {
 
   const [companyName, setCompanyName] = useState('');
 
-  const [documents, setDocuments] = useState({
-    idCard: '',
-    nin: '',
-    propertyProof: '',
-    utilityBill: '',
-    liveSelfie: '',
-    cacCertificate: '',
-  });
+  const [documents, setDocuments] = useState<Record<DocSlot, FileState>>(emptyDocs);
 
   const [isCompany, setIsCompany] = useState(false);
 
@@ -88,6 +103,7 @@ export function SignupPage() {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [bankLoading, setBankLoading] = useState(false);
+  const [bankError, setBankError] = useState('');
   const [showBankList, setShowBankList] = useState(false);
   const [bankSearch, setBankSearch] = useState('');
 
@@ -102,11 +118,15 @@ export function SignupPage() {
   const handleResolveAccount = async () => {
     if (!selectedBank || accountNumber.length < 10) return;
     setBankLoading(true);
+    setBankError('');
     try {
       const res = await paymentsApi.resolveAccount(accountNumber, selectedBank.code);
+      if (!res?.accountName) throw new Error('We could not confirm this account. Check the bank and account number.');
       setAccountName(res.accountName);
-    } catch {
+    } catch (err: any) {
+      // QA-AGT-001: surface the failure inline instead of silently doing nothing.
       setAccountName('');
+      setBankError(err?.message || 'We could not verify this account. Check the bank and account number and try again.');
     }
     setBankLoading(false);
   };
@@ -117,8 +137,36 @@ export function SignupPage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleDocumentChange = (field: string, value: string) => {
-    setDocuments(prev => ({ ...prev, [field]: value }));
+  const handleDocumentFile = (slot: DocSlot, file: File) => {
+    const rule = DOC_SLOTS[slot];
+    setDocuments(prev => {
+      if (prev[slot].previewUrl) URL.revokeObjectURL(prev[slot].previewUrl!);
+      return { ...prev, [slot]: validateFile(file, [...rule.types]) };
+    });
+  };
+
+  const clearDocument = (slot: DocSlot) => {
+    setDocuments(prev => {
+      if (prev[slot].previewUrl) URL.revokeObjectURL(prev[slot].previewUrl!);
+      return { ...prev, [slot]: makeFileState() };
+    });
+  };
+
+  /** Uploads whichever documents were attached. Returns a warning string on failure (signup still succeeds). */
+  const uploadDocuments = async (): Promise<string> => {
+    const slots = isCompany ? COMPANY_SLOTS : AGENT_SLOTS;
+    const attached = slots.filter(s => documents[s].file);
+    if (attached.length === 0) return '';
+    if (isCompany && !documents.cacCertificate.file) {
+      return 'Your CAC certificate is required to submit company documents. Add it from Settings → Company Documents.';
+    }
+    const formData = new FormData();
+    attached.forEach(s => formData.append(s, documents[s].file!));
+    const res = isCompany
+      ? await userApi.submitCompanyVerification(formData)
+      : await userApi.submitAgentDocuments(formData);
+    if (res.success) return '';
+    return res.message || res.error?.message || 'Your documents could not be uploaded. You can re-upload them from Settings.';
   };
 
   const handleNext = async () => {
@@ -177,37 +225,44 @@ export function SignupPage() {
       const response = await authApi.register(registerData);
 
       if (response.success && response.user && response.accessToken) {
-        const role = response.user.role === 'company' ? 'company' : 'agent';
-        
-        // SECURITY-FIX (W-H1): this registration path writes the same `ilesure_web_auth`
-        // blob as login, so it must also NOT persist the refresh token. It stays in the
-        // backend-set httpOnly cookie; only the short-lived access token + profile persist.
-        localStorage.setItem('ilesure_web_auth', JSON.stringify({
-          accessToken: response.accessToken,
-          user: response.user,
-          role: role,
-        }));
+        // QA-AGT-003 / QA-CO-002: establish the session through the auth context so the
+        // OTP page sees the user immediately (a bare localStorage write was invisible to
+        // React state until a hard reload). The pending-email marker survives refreshes.
+        // SECURITY-FIX (W-H1): setSession never persists the refresh token.
+        setSession(response.user, response.accessToken);
+        const email = response.user.email || formData.email;
+        sessionStorage.setItem(PENDING_EMAIL_KEY, email);
 
-        // Setup subaccount if bank details were provided
+        const warnings: string[] = [];
+
+        // QA-AGT-005: persist the verified bank account server-side right away.
         if (selectedBank && accountNumber && accountName) {
           try {
             const subaccountData = {
               businessName: isCompany ? companyName : formData.fullName,
               bankCode: selectedBank.code,
+              bankName: selectedBank.name,
               accountNumber,
               accountName,
             };
-            if (isCompany) {
-              await companyApi.setupSubaccount(subaccountData);
-            } else {
-              await agentApi.setupSubaccount(subaccountData);
-            }
-          } catch (subErr) {
-            console.warn('Subaccount setup failed, will be available in settings:', subErr);
+            const subRes = isCompany
+              ? await companyApi.setupSubaccount(subaccountData)
+              : await agentApi.setupSubaccount(subaccountData);
+            if (!subRes.success) warnings.push(subRes.error?.message || 'Bank account could not be saved. You can add it from Settings.');
+          } catch (subErr: any) {
+            warnings.push(subErr?.message || 'Bank account could not be saved. You can add it from Settings.');
           }
         }
-        
-        navigate('/create-otp');
+
+        // QA-AGT-002: upload the attached documents.
+        try {
+          const docWarning = await uploadDocuments();
+          if (docWarning) warnings.push(docWarning);
+        } catch (docErr: any) {
+          warnings.push(docErr?.message || 'Your documents could not be uploaded. You can re-upload them from Settings.');
+        }
+
+        navigate('/create-otp', { state: { email, warnings } });
       } else {
         setError(response.error?.message || 'Registration failed. Please try again.');
       }
@@ -364,7 +419,7 @@ export function SignupPage() {
             required
           />
         </div>
-        <p className="text-xs text-text-tertiary mt-1">We'll send a verification code to this number</p>
+        <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. We'll ask you to confirm it by SMS once your account is created.</p>
       </div>
     </div>
   );
@@ -404,7 +459,7 @@ export function SignupPage() {
               <button
                 key={bank.code}
                 type="button"
-                onClick={() => { setSelectedBank(bank); setShowBankList(false); setBankSearch(''); setAccountName(''); }}
+                onClick={() => { setSelectedBank(bank); setShowBankList(false); setBankSearch(''); setAccountName(''); setBankError(''); }}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${
                   selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
                 }`}
@@ -421,13 +476,23 @@ export function SignupPage() {
         </label>
         <input
           type="text"
+          inputMode="numeric"
+          name="nuban-account-number"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           value={accountNumber}
-          onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); }}
+          onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); setBankError(''); }}
           placeholder="Enter 10-digit account number"
           className="clay-input w-full"
           maxLength={10}
         />
       </div>
+      {bankError && (
+        <p className="flex items-center gap-1.5 text-xs text-red-600">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
+        </p>
+      )}
       <button
         type="button"
         onClick={handleResolveAccount}
@@ -476,99 +541,23 @@ export function SignupPage() {
           </a>.
         </span>
       </label>
-      {!isCompany ? (
-        <>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Upload ID Card
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Click to upload or drag and drop</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Upload NIN
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">National ID Number Document</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Property Proof (Utility Bill)
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Proof of property ownership</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG, PDF up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Utility Bill
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Recent utility bill</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Live Selfie
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Camera className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Take a live selfie</p>
-              <p className="text-xs text-text-tertiary mt-1">Required for verification</p>
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              CAC Certificate
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Corporate Affairs Commission Certificate</p>
-              <p className="text-xs text-text-tertiary mt-1">PDF up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Director ID Card
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Director's valid ID</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Business Permit
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Local government business permit</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG, PDF up to 10MB</p>
-            </div>
-          </div>
-        </>
-      )}
+      {(isCompany ? COMPANY_SLOTS : AGENT_SLOTS).map(slot => (
+        <FileUploadZone
+          key={slot}
+          id={`signup-doc-${slot}`}
+          label={DOC_SLOTS[slot].label}
+          hint={DOC_SLOTS[slot].hint}
+          accept={DOC_SLOTS[slot].accept}
+          icon={slot === 'liveSelfie' ? 'camera' : 'upload'}
+          capture={slot === 'liveSelfie' ? 'user' : undefined}
+          fileState={documents[slot]}
+          onFile={(f) => handleDocumentFile(slot, f)}
+          onClear={() => clearDocument(slot)}
+        />
+      ))}
+      <p className="text-xs text-text-tertiary">
+        Documents are optional at this step — you can also add them later from Settings — but uploading them now speeds up verification.
+      </p>
     </div>
   );
 

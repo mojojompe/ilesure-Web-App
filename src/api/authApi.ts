@@ -31,6 +31,7 @@ interface RegisterData {
 interface SendOtpResponse {
   success: boolean;
   message?: string;
+  alreadyVerified?: boolean;
 }
 
 interface ForgotPasswordResponse {
@@ -191,6 +192,40 @@ export const authApi = {
         return {
           success: false,
           message: error.response?.data?.error?.message || 'Failed to reset password',
+        };
+      }
+      return { success: false, message: 'Network error' };
+    }
+  },
+
+  /** Sends an SMS code to the signed-in user's phone (QA-AGT-006). */
+  async sendPhoneOtp(phone?: string): Promise<SendOtpResponse & { code?: string; retryAfter?: number }> {
+    try {
+      const response = await apiClient.post<SendOtpResponse>('/auth/phone/send-otp', phone ? { phone } : {});
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return {
+          success: false,
+          code: error.response?.data?.error?.code,
+          retryAfter: error.response?.data?.retryAfter,
+          message: error.response?.data?.error?.message || 'Failed to send SMS code',
+        };
+      }
+      return { success: false, message: 'Network error' };
+    }
+  },
+
+  async verifyPhoneOtp(otp: string): Promise<SendOtpResponse & { code?: string }> {
+    try {
+      const response = await apiClient.post<SendOtpResponse>('/auth/phone/verify-otp', { otp });
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return {
+          success: false,
+          code: error.response?.data?.error?.code,
+          message: error.response?.data?.error?.message || 'Failed to verify code',
         };
       }
       return { success: false, message: 'Network error' };
