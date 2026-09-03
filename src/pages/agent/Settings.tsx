@@ -5,11 +5,13 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
+import { useAuth } from '../../api/authContext';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 
 export function AgentSettingsPage() {
+  const { updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -62,12 +64,12 @@ export function AgentSettingsPage() {
     if (res.success && res.data) {
       setSubaccount(res.data);
       if (res.data.subaccountCode) {
-        setBankForm({
-          businessName: '',
-          bankCode: res.data.bankCode || '',
-          accountNumber: res.data.accountNumber || '',
-          accountName: res.data.accountName || '',
-        });
+        setBankForm(prev => ({
+          businessName: prev.businessName,
+          bankCode: res.data!.bankCode || '',
+          accountNumber: res.data!.accountNumber || '',
+          accountName: res.data!.accountName || '',
+        }));
         setResolved(true);
       }
     }
@@ -81,6 +83,7 @@ export function AgentSettingsPage() {
       setBankForm(prev => ({ ...prev, accountName: result.accountName }));
       setResolved(true);
     } catch (err: any) {
+      setResolved(false);
       showToast(err.message || 'Failed to resolve account', 'error');
     } finally {
       setResolving(false);
@@ -94,7 +97,8 @@ export function AgentSettingsPage() {
     }
     setSetupLoading(true);
     try {
-      const res = await agentApi.setupSubaccount(bankForm);
+      // QA-AGT-005: this is the call that persists the verified account server-side.
+      const res = await agentApi.setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
       if (res.success) {
         setSubaccount(res.data || null);
         showToast('Bank account and subaccount setup successfully!');
@@ -120,6 +124,9 @@ export function AgentSettingsPage() {
           whatsapp: response.data.whatsapp || '',
           bio: response.data.bio || '',
         });
+        // Default the payout business name to the account holder's name so the Setup button is usable.
+        const holder = response.data.fullName || '';
+        setBankForm(prev => ({ ...prev, businessName: prev.businessName || holder }));
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -134,6 +141,18 @@ export function AgentSettingsPage() {
       const response = await userApi.updateProfile(formData);
       if (response.success) {
         showToast('Profile saved successfully!');
+        // QA-AGT-004: reflect the values the server actually persisted and mirror them into the
+        // cached session so the header/sidebar and the next refresh show what was saved.
+        const saved = response.data;
+        if (saved) {
+          setFormData({
+            fullName: saved.fullName || '',
+            phone: saved.phone || '',
+            whatsapp: saved.whatsapp || '',
+            bio: saved.bio || '',
+          });
+          updateUser({ fullName: saved.fullName, phone: saved.phone, whatsapp: saved.whatsapp, bio: saved.bio, avatar: saved.avatar });
+        }
       } else {
         showToast(response.error?.message || 'Failed to save profile', 'error');
       }
@@ -219,6 +238,7 @@ export function AgentSettingsPage() {
                 </label>
                 <input
                   type="tel"
+                  autoComplete="tel"
                   value={formData.phone}
                   onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   className="clay-input w-full"
@@ -351,6 +371,11 @@ export function AgentSettingsPage() {
                     <div className="flex gap-2">
                       <input
                         type="text"
+                        inputMode="numeric"
+                        name="nuban-account-number"
+                        autoComplete="off"
+                        data-lpignore="true"
+                        data-form-type="other"
                         value={bankForm.accountNumber}
                         onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
                         className="clay-input flex-1"
@@ -381,7 +406,7 @@ export function AgentSettingsPage() {
                     loading={setupLoading}
                     disabled={!resolved || !bankForm.businessName}
                   >
-                    <Banknote className="w-4 h-4 mr-2" /> Setup Subaccount
+                    <Banknote className="w-4 h-4 mr-2" /> Save Bank Account
                   </Button>
                 </div>
               )}

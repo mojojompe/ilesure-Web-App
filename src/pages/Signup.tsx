@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Upload, Camera, Building2, GraduationCap, Briefcase, Home, Building, Search } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Building2, Search, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
@@ -8,6 +8,7 @@ import authApi from '../api/authApi';
 import paymentsApi from '../api/payments';
 import agentApi from '../api/agent';
 import companyApi from '../api/company';
+import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -55,6 +56,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
 
 export function SignupPage() {
   const navigate = useNavigate();
+  const { setSession } = useAuth();
   const [step, setStep] = useState(1);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -72,25 +74,8 @@ export function SignupPage() {
 
   const [companyName, setCompanyName] = useState('');
 
-  const [documents, setDocuments] = useState({
-    idCard: '',
-    nin: '',
-    propertyProof: '',
-    utilityBill: '',
-    liveSelfie: '',
-    cacCertificate: '',
-  });
-
-  const [docFiles, setDocFiles] = useState<{
-    idCard: File | null;
-    nin: File | null;
-    cacCertificate: File | null;
-  }>({
-    idCard: null,
-    nin: null,
-    cacCertificate: null
-  });
-
+  // Derived rather than held in state: role is the single source of truth, so the two
+  // cannot drift apart if the role is ever changed from somewhere else.
   const isCompany = formData.role === 'company';
 
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
@@ -98,6 +83,7 @@ export function SignupPage() {
   const [accountNumber, setAccountNumber] = useState('');
   const [accountName, setAccountName] = useState('');
   const [bankLoading, setBankLoading] = useState(false);
+  const [bankError, setBankError] = useState('');
   const [showBankList, setShowBankList] = useState(false);
   const [bankSearch, setBankSearch] = useState('');
 
@@ -112,11 +98,15 @@ export function SignupPage() {
   const handleResolveAccount = async () => {
     if (!selectedBank || accountNumber.length < 10) return;
     setBankLoading(true);
+    setBankError('');
     try {
       const res = await paymentsApi.resolveAccount(accountNumber, selectedBank.code);
+      if (!res?.accountName) throw new Error('We could not confirm this account. Check the bank and account number.');
       setAccountName(res.accountName);
-    } catch {
+    } catch (err: any) {
+      // QA-AGT-001: surface the failure inline instead of silently doing nothing.
       setAccountName('');
+      setBankError(err?.message || 'We could not verify this account. Check the bank and account number and try again.');
     }
     setBankLoading(false);
   };
@@ -125,10 +115,6 @@ export function SignupPage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  };
-
-  const handleDocumentChange = (field: string, value: string) => {
-    setDocuments(prev => ({ ...prev, [field]: value }));
   };
 
   const handleNext = async () => {
@@ -144,19 +130,16 @@ export function SignupPage() {
       return;
     }
     if (step === 3) {
-      setStep(4);
-      return;
-    }
-    if (step === 4) {
       await handleSubmit();
     }
   };
 
-  const handleSkipBank = () => {
-    setStep(4);
-  };
-
-  const handleSkipDocuments = async () => {
+  /** Bank setup is optional: clear anything half-entered and create the account without a payout account. */
+  const handleSkipBank = async () => {
+    setSelectedBank(null);
+    setAccountNumber('');
+    setAccountName('');
+    setBankError('');
     await handleSubmit();
   };
 
@@ -175,21 +158,6 @@ export function SignupPage() {
     setError('');
     
     try {
-      let idCardUrl, ninUrl, companyDocUrl;
-      
-      if (docFiles.idCard) {
-        const res = await authApi.uploadDoc(docFiles.idCard);
-        if (res.success && res.data) idCardUrl = res.data.url;
-      }
-      if (docFiles.nin) {
-        const res = await authApi.uploadDoc(docFiles.nin);
-        if (res.success && res.data) ninUrl = res.data.url;
-      }
-      if (docFiles.cacCertificate) {
-        const res = await authApi.uploadDoc(docFiles.cacCertificate);
-        if (res.success && res.data) companyDocUrl = res.data.url;
-      }
-
       const registerData = {
         fullName: formData.fullName,
         email: formData.email,
@@ -197,45 +165,41 @@ export function SignupPage() {
         password: formData.password,
         role: formData.role as UserRole,
         ...(isCompany && companyName ? { companyName } : {}),
-        idCardUrl,
-        ninUrl,
-        companyDocUrl,
       };
       
       const response = await authApi.register(registerData);
 
       if (response.success && response.user && response.accessToken) {
-        const role = response.user.role === 'company' ? 'company' : 'agent';
-        
-        // SECURITY-FIX (W-H1): this registration path writes the same `ilesure_web_auth`
-        // blob as login, so it must also NOT persist the refresh token. It stays in the
-        // backend-set httpOnly cookie; only the short-lived access token + profile persist.
-        localStorage.setItem('ilesure_web_auth', JSON.stringify({
-          accessToken: response.accessToken,
-          user: response.user,
-          role: role,
-        }));
+        // QA-AGT-003 / QA-CO-002: establish the session through the auth context so the
+        // OTP page sees the user immediately (a bare localStorage write was invisible to
+        // React state until a hard reload). The pending-email marker survives refreshes.
+        // SECURITY-FIX (W-H1): setSession never persists the refresh token.
+        setSession(response.user, response.accessToken);
+        const email = response.user.email || formData.email;
+        sessionStorage.setItem(PENDING_EMAIL_KEY, email);
 
-        // Setup subaccount if bank details were provided
+        const warnings: string[] = [];
+
+        // QA-AGT-005: persist the verified bank account server-side right away.
         if (selectedBank && accountNumber && accountName) {
           try {
             const subaccountData = {
               businessName: isCompany ? companyName : formData.fullName,
               bankCode: selectedBank.code,
+              bankName: selectedBank.name,
               accountNumber,
               accountName,
             };
-            if (isCompany) {
-              await companyApi.setupSubaccount(subaccountData);
-            } else {
-              await agentApi.setupSubaccount(subaccountData);
-            }
-          } catch (subErr) {
-            console.warn('Subaccount setup failed, will be available in settings:', subErr);
+            const subRes = isCompany
+              ? await companyApi.setupSubaccount(subaccountData)
+              : await agentApi.setupSubaccount(subaccountData);
+            if (!subRes.success) warnings.push(subRes.error?.message || 'Bank account could not be saved. You can add it from Settings.');
+          } catch (subErr: any) {
+            warnings.push(subErr?.message || 'Bank account could not be saved. You can add it from Settings.');
           }
         }
-        
-        navigate('/create-otp');
+
+        navigate('/create-otp', { state: { email, warnings } });
       } else {
         setError(response.error?.message || 'Registration failed. Please try again.');
       }
@@ -392,13 +356,32 @@ export function SignupPage() {
             required
           />
         </div>
-        <p className="text-xs text-text-tertiary mt-1">We'll send a verification code to this number</p>
+        <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. Tenants and our team use this number to reach you.</p>
       </div>
     </div>
   );
 
   const renderBankStep = () => (
     <div className="space-y-4">
+      {/* Consent sits at the top of the final step, so it is read before the account is created. */}
+      <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={e => setAcceptedTerms(e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
+        />
+        <span className="text-sm leading-5 text-text-secondary">
+          I agree to the{' '}
+          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+            Privacy Policy
+          </a>.
+        </span>
+      </label>
       <p className="text-sm text-text-secondary">
         Set up your bank account to receive rent payments automatically with instant split settlements.
       </p>
@@ -408,11 +391,7 @@ export function SignupPage() {
         </label>
         <button
           type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            setShowBankList(!showBankList);
-          }}
+          onClick={() => setShowBankList(!showBankList)}
           className="clay-input w-full text-left flex items-center justify-between"
         >
           <span className={selectedBank ? '' : 'text-text-tertiary'}>
@@ -437,12 +416,14 @@ export function SignupPage() {
                 key={bank.code}
                 type="button"
                 onClick={(e) => {
+                  // The list sits inside a form; without these the click submits it.
                   e.preventDefault();
                   e.stopPropagation();
                   setSelectedBank(bank);
                   setShowBankList(false);
                   setBankSearch('');
                   setAccountName('');
+                  setBankError('');
                 }}
                 className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${
                   selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
@@ -460,13 +441,23 @@ export function SignupPage() {
         </label>
         <input
           type="text"
+          inputMode="numeric"
+          name="nuban-account-number"
+          autoComplete="off"
+          data-lpignore="true"
+          data-form-type="other"
           value={accountNumber}
-          onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); }}
+          onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); setBankError(''); }}
           placeholder="Enter 10-digit account number"
           className="clay-input w-full"
           maxLength={10}
         />
       </div>
+      {bankError && (
+        <p className="flex items-center gap-1.5 text-xs text-red-600">
+          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
+        </p>
+      )}
       <button
         type="button"
         onClick={handleResolveAccount}
@@ -493,133 +484,11 @@ export function SignupPage() {
     </div>
   );
 
-  const renderStep3 = () => (
-    <div className="space-y-4">
-      {/* Consent sits at the top of the final step, so it is read before the
-          account is created rather than buried under optional uploads. */}
-      <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={acceptedTerms}
-          onChange={e => setAcceptedTerms(e.target.checked)}
-          className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
-        />
-        <span className="text-sm leading-5 text-text-secondary">
-          I agree to the{' '}
-          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
-            Terms of Service
-          </a>{' '}
-          and{' '}
-          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
-            Privacy Policy
-          </a>.
-        </span>
-      </label>
-      {!isCompany ? (
-        <>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Upload ID Card
-            </label>
-            <label className="block border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light relative">
-              <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => setDocFiles(prev => ({ ...prev, idCard: e.target.files?.[0] || null }))} />
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">{docFiles.idCard ? docFiles.idCard.name : 'Click to upload or drag and drop'}</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Upload NIN
-            </label>
-            <label className="block border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light relative">
-              <input type="file" accept="image/png, image/jpeg" className="hidden" onChange={(e) => setDocFiles(prev => ({ ...prev, nin: e.target.files?.[0] || null }))} />
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">{docFiles.nin ? docFiles.nin.name : 'National ID Number Document'}</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Property Proof (Utility Bill)
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Proof of property ownership</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG, PDF up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Utility Bill
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Recent utility bill</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Live Selfie
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Camera className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Take a live selfie</p>
-              <p className="text-xs text-text-tertiary mt-1">Required for verification</p>
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              CAC Certificate
-            </label>
-            <label className="block border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light relative">
-              <input type="file" accept="application/pdf, image/png, image/jpeg" className="hidden" onChange={(e) => setDocFiles(prev => ({ ...prev, cacCertificate: e.target.files?.[0] || null }))} />
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">{docFiles.cacCertificate ? docFiles.cacCertificate.name : 'Corporate Affairs Commission Certificate'}</p>
-              <p className="text-xs text-text-tertiary mt-1">PDF up to 10MB</p>
-            </label>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Director ID Card
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Director's valid ID</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG up to 10MB</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Business Permit
-            </label>
-            <div className="border-2 border-dashed border-clay-border rounded-clay-sm p-6 text-center hover:border-mustard transition-colors cursor-pointer bg-clay-border-light">
-              <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
-              <p className="text-sm text-text-secondary">Local government business permit</p>
-              <p className="text-xs text-text-tertiary mt-1">PNG, JPG, PDF up to 10MB</p>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-
   const getStepTitle = () => {
     switch (step) {
       case 1: return 'Create Account';
       case 2: return 'Phone Number';
       case 3: return 'Bank Account Setup';
-      case 4: return 'Verification Documents';
       default: return '';
     }
   };
@@ -629,7 +498,6 @@ export function SignupPage() {
       case 1: return 'Enter your basic information';
       case 2: return 'Enter your phone number';
       case 3: return 'Link your bank for automatic rent payouts';
-      case 4: return 'Upload required documents';
       default: return '';
     }
   };
@@ -646,7 +514,7 @@ export function SignupPage() {
           </div>
         </div>
 
-        <StepIndicator currentStep={step} totalSteps={4} />
+        <StepIndicator currentStep={step} totalSteps={3} />
 
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
@@ -654,20 +522,20 @@ export function SignupPage() {
         </div>
 
         <div className="clay-card p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
+              {error}
+            </div>
+          )}
           {step === 1 && (
             <div className="mb-6">
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
-                  {error}
-                </div>
-              )}
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
                 I want to register as
               </label>
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => { setFormData(prev => ({ ...prev, role: 'agent' })); }}
+                  onClick={() => setFormData(prev => ({ ...prev, role: 'agent' }))}
                   className={clsx(
                     'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
                     !isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
@@ -678,7 +546,7 @@ export function SignupPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => { setFormData(prev => ({ ...prev, role: 'company' })); }}
+                  onClick={() => setFormData(prev => ({ ...prev, role: 'company' }))}
                   className={clsx(
                     'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
                     isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
@@ -694,7 +562,6 @@ export function SignupPage() {
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderBankStep()}
-          {step === 4 && renderStep3()}
 
           <div className="flex gap-3 mt-6">
             {step > 1 && (
@@ -702,7 +569,7 @@ export function SignupPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
-            {step < 4 ? (
+            {step < 3 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

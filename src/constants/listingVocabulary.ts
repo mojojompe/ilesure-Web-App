@@ -80,6 +80,35 @@ export const distanceOptions: Option<DistanceBucket>[] = [
   { value: 'budget_stretch', label: 'Budget Stretch' },
 ];
 
+
+/**
+ * Amenity vocabulary — mirrors `AMENITIES` / `AMENITY_LABELS` in the backend's
+ * listingVocabulary. The backend canonicalises whatever a client sends, so these tokens are
+ * what comes back on every listing and what the create forms should submit.
+ */
+export const amenityOptions = [
+  { value: 'wifi', label: 'WiFi' },
+  { value: 'air_conditioning', label: 'Air Conditioning' },
+  { value: 'kitchen', label: 'Kitchen' },
+  { value: 'water_heater', label: 'Water Heater' },
+  { value: 'tv', label: 'TV' },
+  { value: 'washing_machine', label: 'Washing Machine' },
+  { value: 'refrigerator', label: 'Refrigerator' },
+  { value: 'workspace', label: 'Workspace / Desk' },
+  { value: 'parking', label: 'Parking Space' },
+  { value: 'security', label: '24/7 Security' },
+  { value: 'cctv', label: 'CCTV' },
+  { value: 'gated_estate', label: 'Gated Estate' },
+  { value: 'balcony', label: 'Balcony' },
+  { value: 'swimming_pool', label: 'Swimming Pool' },
+  { value: 'gym', label: 'Gym' },
+  { value: 'elevator', label: 'Elevator' },
+  { value: 'prepaid_meter', label: 'Prepaid Meter' },
+  { value: 'wardrobe', label: 'Wardrobe' },
+  { value: 'ensuite_bathroom', label: 'En-suite Bathroom' },
+  { value: 'generator', label: 'Generator' },
+];
+
 const LABELS: Record<string, string> = [
   ...propertyTypeOptions,
   ...furnishingOptions,
@@ -87,6 +116,7 @@ const LABELS: Record<string, string> = [
   ...waterOptions,
   ...genderOptions,
   ...distanceOptions,
+  ...amenityOptions,
 ].reduce((map, o) => ({ ...map, [o.value]: o.label }), { shared_apartment: 'Shared Apartment' } as Record<string, string>);
 
 /**

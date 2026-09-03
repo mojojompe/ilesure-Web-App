@@ -62,6 +62,7 @@ export interface User {
   whatsapp?: string;
   bio?: string;
   avatar?: string;
+  isEmailVerified?: boolean;
   status?: 'active' | 'pending' | 'inactive';
   verificationStatus?: 'verified' | 'pending' | 'unverified';
   companyId?: string | { _id: string; name: string; tradingName?: string; logo?: string; tier?: string; };

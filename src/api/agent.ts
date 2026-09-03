@@ -270,7 +270,7 @@ export const agentApi = {
     }
   },
 
-  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string }): Promise<{ success: boolean; data?: SubaccountInfo; message?: string; error?: { message: string } }> {
+  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string; bankName?: string }): Promise<{ success: boolean; data?: SubaccountInfo; message?: string; error?: { message: string } }> {
     try {
       const response = await apiClient.post<{ success: boolean; data: SubaccountInfo; message?: string }>('/agent/subaccount', data);
       return response.data;
@@ -288,6 +288,19 @@ export const agentApi = {
       return response.data;
     } catch {
       return { success: false, error: { message: 'Failed to update booking' } };
+    }
+  },
+
+  /** Record that a scheduled viewing did not happen (agent/landlord only). */
+  async markInspectionMissed(bookingId: string): Promise<BookingResponse> {
+    try {
+      const response = await apiClient.post<BookingResponse>(`/bookings/${bookingId}/inspection/missed`);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: { message: error?.response?.data?.error?.message || 'Failed to mark the inspection as missed' },
+      };
     }
   },
 

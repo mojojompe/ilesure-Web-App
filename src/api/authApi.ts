@@ -36,6 +36,7 @@ interface RegisterData {
 interface SendOtpResponse {
   success: boolean;
   message?: string;
+  alreadyVerified?: boolean;
 }
 
 interface ForgotPasswordResponse {

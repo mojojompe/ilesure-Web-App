@@ -12,6 +12,7 @@ import { TenancyAgreementUpload } from '../../components/listing/TenancyAgreemen
 import type { TenancyAgreementDocument } from '../../api/agent';
 import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
 import {
+  amenityOptions,
   propertyTypes,
   distanceOptions,
   furnishingOptions,
@@ -284,9 +285,7 @@ interface ListingFormData {
   furnishing: Furnishing;
   power: PowerSource;
   water: WaterSource;
-  hasWifi: boolean;
-  hasParking: boolean;
-  hasSecurity: boolean;
+  amenities: string[];
   petsAllowed: boolean;
   smokingAllowed: boolean;
   studentsOnly: boolean;
@@ -325,9 +324,7 @@ const initialFormData: ListingFormData = {
   furnishing: 'unfurnished',
   power: 'constant',
   water: 'public',
-  hasWifi: false,
-  hasParking: false,
-  hasSecurity: false,
+  amenities: [],
   petsAllowed: false,
   smokingAllowed: false,
   studentsOnly: false,
@@ -381,6 +378,15 @@ export function AgentCreateListingPage() {
 
   const handleChange = (field: keyof ListingFormData, value: ListingFormData[keyof ListingFormData]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const toggleAmenity = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      amenities: prev.amenities.includes(value)
+        ? prev.amenities.filter(a => a !== value)
+        : [...prev.amenities, value],
+    }));
   };
 
   const handleToggle = (field: keyof ListingFormData) => {
@@ -485,11 +491,7 @@ export function AgentCreateListingPage() {
         furnishing: formData.furnishing,
         power: formData.power,
         water: formData.water,
-        amenities: [
-          ...(formData.hasWifi ? ['wifi'] : []),
-          ...(formData.hasParking ? ['parking'] : []),
-          ...(formData.hasSecurity ? ['security'] : []),
-        ],
+        amenities: formData.amenities,
         rules: [
           ...(formData.petsAllowed ? ['pets_allowed'] : []),
           ...(formData.smokingAllowed ? ['smoking_allowed'] : []),
@@ -812,6 +814,9 @@ export function AgentCreateListingPage() {
             </div>
           </>
         )}
+        {/* Shortlets are charged rent only — the backend zeroes caution and agency fees for them,
+            so showing these here would promise money that is never collected. */}
+        {!isShortlet && (
         <div className="border-t border-clay-border-light pt-4">
           <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
           <div className="space-y-3">
@@ -843,6 +848,7 @@ export function AgentCreateListingPage() {
             </div>
           </div>
         </div>
+        )}
       </div>
     );
   };
@@ -971,34 +977,34 @@ export function AgentCreateListingPage() {
       </div>
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Amenities</label>
-        <div className="space-y-2">
-          {[
-            { key: 'hasWifi', label: 'WiFi' },
-            { key: 'hasParking', label: 'Parking' },
-            { key: 'hasSecurity', label: '24hr Security' },
-          ].map(amenity => (
-            <button
-              key={amenity.key}
-              type="button"
-              onClick={() => handleToggle(amenity.key as keyof ListingFormData)}
-              className={clsx(
-                'w-full flex items-center justify-between p-3 rounded-clay-sm border-2 transition-all',
-                formData[amenity.key as keyof ListingFormData]
-                  ? 'border-mustard bg-mustard-pale'
-                  : 'border-clay-border'
-              )}
-            >
-              <span className="text-sm font-medium text-text-primary">{amenity.label}</span>
-              <div
+        {/* Canonical amenity tokens, shared with the guest apps' label lookup — the three
+            hard-coded booleans here used to be the whole vocabulary. */}
+        <div className="grid grid-cols-2 gap-2">
+          {amenityOptions.map(amenity => {
+            const selected = formData.amenities.includes(amenity.value);
+            return (
+              <button
+                key={amenity.value}
+                type="button"
+                onClick={() => toggleAmenity(amenity.value)}
+                aria-pressed={selected}
                 className={clsx(
-                  'w-5 h-5 rounded-full flex items-center justify-center',
-                  formData[amenity.key as keyof ListingFormData] ? 'bg-mustard' : 'bg-clay-border'
+                  'flex items-center justify-between gap-2 p-3 rounded-clay-sm border-2 transition-all text-left',
+                  selected ? 'border-mustard bg-mustard-pale' : 'border-clay-border'
                 )}
               >
-                {formData[amenity.key as keyof ListingFormData] && <Check className="w-3 h-3 text-white" />}
-              </div>
-            </button>
-          ))}
+                <span className="text-sm font-medium text-text-primary">{amenity.label}</span>
+                <div
+                  className={clsx(
+                    'w-5 h-5 rounded-full flex items-center justify-center shrink-0',
+                    selected ? 'bg-mustard' : 'bg-clay-border'
+                  )}
+                >
+                  {selected && <Check className="w-3 h-3 text-white" />}
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
     </div>

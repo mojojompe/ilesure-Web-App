@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import type { User, UserRole, AuthState } from '../types';
 import { authApi } from './authApi';
 
@@ -6,31 +6,66 @@ interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string; nextStep?: string }>;
   logout: () => void;
   updateRole: (role: UserRole) => void;
+  /**
+   * Establish a session from tokens obtained outside `login()` (registration,
+   * OTP verification). Keeps React state and the localStorage blob in sync so
+   * client-side navigation immediately sees the new user (QA-AGT-003 / QA-CO-002).
+   */
+  setSession: (user: User, accessToken: string) => void;
+  /** Merge freshly-saved profile fields into the cached user (QA-AGT-004 / QA-CO-005). */
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'ilesure_web_auth';
+/** Email of an account that registered but has not yet verified its OTP. */
+export const PENDING_EMAIL_KEY = 'ilesure_pending_email';
+
+function readStoredAuth(): { user: User; accessToken: string; role: UserRole | null } | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (!stored) return null;
+    const parsed = JSON.parse(stored);
+    if (parsed.accessToken && parsed.user) {
+      return { user: parsed.user as User, accessToken: parsed.accessToken, role: (parsed.role || parsed.user.role) as UserRole | null };
+    }
+  } catch {
+    /* corrupt blob — treat as signed out */
+  }
+  return null;
+}
+
+function writeStoredAuth(user: User, accessToken: string, role: UserRole | null) {
+  // SECURITY-FIX (W-H1): only the short-lived access token + non-sensitive profile
+  // are persisted. The refresh token stays in the backend-set httpOnly cookie.
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ user, accessToken, role, isAuthenticated: true }));
+}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AuthState>(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
+    const stored = readStoredAuth();
     if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.accessToken && parsed.user) {
-          return {
-            user: parsed.user as User,
-            isAuthenticated: true,
-            role: parsed.role as UserRole | null,
-          };
-        }
-      } catch {
-        return { user: null, isAuthenticated: false, role: null };
-      }
+      return { user: stored.user, isAuthenticated: true, role: stored.role };
     }
     return { user: null, isAuthenticated: false, role: null };
   });
+
+  const setSession = useCallback((user: User, accessToken: string) => {
+    const role = user.role as UserRole;
+    setState({ user: { ...user, role }, isAuthenticated: true, role });
+    writeStoredAuth(user, accessToken, role);
+  }, []);
+
+  const updateUser = useCallback((patch: Partial<User>) => {
+    setState(prev => {
+      if (!prev.user) return prev;
+      const user = { ...prev.user, ...patch };
+      const stored = readStoredAuth();
+      if (stored) writeStoredAuth(user, stored.accessToken, prev.role);
+      return { ...prev, user };
+    });
+  }, []);
 
   const login = async (email: string, password: string) => {
     try {
@@ -38,7 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (response.success && response.user && response.accessToken) {
         // SECURITY-FIX (W-H1): refreshToken is intentionally NOT destructured or persisted.
-        // The backend delivers it as an httpOnly cookie; it must never touch localStorage.
         const { user, accessToken } = response;
 
         // ── Role gate: only agents and companies can use the web app ──
@@ -50,25 +84,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           };
         }
 
-        setState({
-          user: {
-            ...user,
-            role: user.role as UserRole,
-          },
-          isAuthenticated: true,
-          role: user.role as UserRole,
-        });
-
-        // SECURITY-FIX (W-H1): store only the short-lived access token + non-sensitive
-        // profile. The refresh token stays in the backend-set httpOnly cookie and is
-        // deliberately omitted here.
-        // FLAG: access token remains in JS-readable localStorage short-term (XSS-exposable).
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
-          user: user,
-          accessToken,
-          role: user.role,
-          isAuthenticated: true,
-        }));
+        setSession(user, accessToken);
+        sessionStorage.removeItem(PENDING_EMAIL_KEY);
 
         return { success: true, user, nextStep: response.nextStep };
       }
@@ -99,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ ...state, login, logout, updateRole }}>
+    <AuthContext.Provider value={{ ...state, login, logout, updateRole, setSession, updateUser }}>
       {children}
     </AuthContext.Provider>
   );

@@ -101,6 +101,16 @@ export const userApi = {
     }
   },
 
+  /** Agent/landlord onboarding documents (QA-AGT-002) → POST /kyc/agent-documents. */
+  async submitAgentDocuments(formData: FormData): Promise<{ success: boolean; message?: string; data?: any; error?: { message: string } }> {
+    try {
+      const response = await apiClient.upload<{ success: boolean; message?: string; data?: any }>('/kyc/agent-documents', formData);
+      return response.data;
+    } catch (err: any) {
+      return { success: false, message: err?.response?.data?.error?.message || 'Failed to upload documents' };
+    }
+  },
+
   async getKycStatus(): Promise<{ success: boolean; data?: KycStatus; error?: { message: string } }> {
     try {
       const response = await apiClient.get<{ success: boolean; data?: KycStatus; error?: { message: string } }>('/kyc/status');

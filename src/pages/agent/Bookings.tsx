@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { agentApi } from '../../api/agent';
+import { InspectionPanel } from '../../components/bookings/InspectionPanel';
 
 export function AgentBookingsPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'shared'>('all');
@@ -14,6 +15,7 @@ export function AgentBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [markingMissed, setMarkingMissed] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -40,6 +42,21 @@ export function AgentBookingsPage() {
       console.error('Failed to fetch bookings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkMissed = async (booking: any) => {
+    setMarkingMissed(true);
+    try {
+      const response = await agentApi.markInspectionMissed(booking._id || booking.id);
+      if (response.success) {
+        fetchBookings();
+        setShowDetailModal(false);
+      } else {
+        console.error('Failed to mark inspection missed:', response.error?.message);
+      }
+    } finally {
+      setMarkingMissed(false);
     }
   };
 
@@ -428,13 +445,18 @@ export function AgentBookingsPage() {
                     <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
                       <p className="text-xs text-text-tertiary">Timeline Status</p>
                       <p className="text-sm font-semibold text-text-primary">
-                        {selectedBooking.timelineStep === 1 && 'Step 1: Booking Requested'}
-                        {selectedBooking.timelineStep === 2 && `Step 2: Inspection Scheduled (${new Date(selectedBooking.inspectionDate).toLocaleDateString()} at ${selectedBooking.inspectionTime})`}
                         {selectedBooking.timelineStep === 3 && 'Step 3: Inspection Verified (Ready for Payment)'}
                         {selectedBooking.timelineStep === 4 && 'Step 4: Paid / Completed'}
-                        {!selectedBooking.timelineStep && 'Step 1: Booking Requested'}
+                        {(!selectedBooking.timelineStep || selectedBooking.timelineStep === 1) && 'Step 1: Booking Requested'}
+                        {selectedBooking.timelineStep === 2 && 'Step 2: Inspection'}
                       </p>
                     </div>
+
+                    <InspectionPanel
+                      booking={selectedBooking}
+                      busy={markingMissed}
+                      onMarkMissed={() => handleMarkMissed(selectedBooking)}
+                    />
                   </div>
 
                   {selectedBooking.status === 'pending' && (

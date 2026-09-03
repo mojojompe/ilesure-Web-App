@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { companyApi } from '../../api/company';
+import { InspectionPanel } from '../../components/bookings/InspectionPanel';
 
 export function CompanyBookingsPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'shared'>('all');
@@ -14,6 +15,7 @@ export function CompanyBookingsPage() {
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const [markingMissed, setMarkingMissed] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -40,6 +42,21 @@ export function CompanyBookingsPage() {
       console.error('Failed to fetch bookings:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleMarkMissed = async (booking: any) => {
+    setMarkingMissed(true);
+    try {
+      const response = await companyApi.markInspectionMissed(booking._id || booking.id);
+      if (response.success) {
+        fetchBookings();
+        setShowDetailModal(false);
+      } else {
+        console.error('Failed to mark inspection missed:', response.error?.message);
+      }
+    } finally {
+      setMarkingMissed(false);
     }
   };
 
@@ -331,6 +348,12 @@ export function CompanyBookingsPage() {
                   <p className="text-xs text-text-tertiary">Move-in Date</p>
                   <p className="text-sm text-text-primary">{selectedBooking.moveInDate}</p>
                 </div>
+
+                <InspectionPanel
+                  booking={selectedBooking}
+                  busy={markingMissed}
+                  onMarkMissed={() => handleMarkMissed(selectedBooking)}
+                />
               </div>
               {selectedBooking.status === 'pending' && (
                 <div className="flex gap-2 pt-4">

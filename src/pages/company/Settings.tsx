@@ -68,12 +68,12 @@ export function CompanySettingsPage() {
     if (res.success && res.data) {
       setSubaccount(res.data);
       if (res.data.subaccountCode) {
-        setBankForm({
-          businessName: '',
-          bankCode: res.data.bankCode || '',
-          accountNumber: res.data.accountNumber || '',
-          accountName: res.data.accountName || '',
-        });
+        setBankForm(prev => ({
+          businessName: prev.businessName,
+          bankCode: res.data!.bankCode || '',
+          accountNumber: res.data!.accountNumber || '',
+          accountName: res.data!.accountName || '',
+        }));
         setResolved(true);
       }
     }
@@ -87,6 +87,7 @@ export function CompanySettingsPage() {
       setBankForm(prev => ({ ...prev, accountName: result.accountName }));
       setResolved(true);
     } catch (err: any) {
+      setResolved(false);
       showToast(err.message || 'Failed to resolve account', 'error');
     } finally {
       setResolving(false);
@@ -100,7 +101,7 @@ export function CompanySettingsPage() {
     }
     setSetupLoading(true);
     try {
-      const res = await companyApi.setupSubaccount(bankForm);
+      const res = await companyApi.setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
       if (res.success) {
         setSubaccount(res.data || null);
         showToast('Company bank account and subaccount setup successfully!');
@@ -124,6 +125,7 @@ export function CompanySettingsPage() {
 
       if (companyRes.success && companyRes.company) {
         setCompany(companyRes.company);
+        setBankForm(prev => ({ ...prev, businessName: prev.businessName || companyRes.company!.tradingName || companyRes.company!.name || '' }));
         setFormData({
           name: companyRes.company.name || '',
           phone: companyRes.company.phone || '',
@@ -425,14 +427,14 @@ export function CompanySettingsPage() {
                   <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
                   <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
                   <p className="text-xs text-text-tertiary mt-2">
-                    Rent payments are split automatically — 5% to IleSure, balance to your company account.
+                    Rent payments are split automatically — the iléSure service fee to us, the balance to your company account.
                   </p>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-text-tertiary">
-                  Set up your company bank account to receive rent payments directly. IleSure takes a 5% commission.
+                  Set up your company bank account to receive rent payments directly. iléSure deducts its service fee from each payment.
                 </p>
                 <div>
                   <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
@@ -468,6 +470,11 @@ export function CompanySettingsPage() {
                   <div className="flex gap-2">
                     <input
                       type="text"
+                      inputMode="numeric"
+                      name="nuban-account-number"
+                      autoComplete="off"
+                      data-lpignore="true"
+                      data-form-type="other"
                       value={bankForm.accountNumber}
                       onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
                       className="clay-input flex-1"
