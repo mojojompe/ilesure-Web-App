@@ -8,27 +8,7 @@ import authApi from '../api/authApi';
 import paymentsApi from '../api/payments';
 import agentApi from '../api/agent';
 import companyApi from '../api/company';
-import userApi from '../api/user';
 import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
-import { FileUploadZone, makeFileState, validateFile, IMAGE_TYPES, DOCUMENT_TYPES, type FileState } from '../components/ui/FileUploadZone';
-
-// Per-slot MIME rules (QA-AGT-002): a selfie must be a photo; everything else may be PDF/JPG/PNG.
-const DOC_SLOTS = {
-  idCard: { label: 'Upload ID Card', hint: 'Valid government ID · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-  ninDocument: { label: 'Upload NIN', hint: 'National ID Number slip · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-  propertyProof: { label: 'Property Proof', hint: 'Proof of property ownership · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-  utilityBill: { label: 'Utility Bill', hint: 'Recent utility bill · PNG, JPG or PDF up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-  liveSelfie: { label: 'Live Selfie', hint: 'Take a clear photo of your face · JPG or PNG', types: IMAGE_TYPES, accept: 'image/*' },
-  cacCertificate: { label: 'CAC Certificate', hint: 'Corporate Affairs Commission certificate · PDF, JPG or PNG up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-  directorId: { label: 'Director ID Card', hint: "Director's valid ID · PNG, JPG or PDF up to 10MB", types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-  businessPermit: { label: 'Business Permit', hint: 'Local government business permit · PDF, JPG or PNG up to 10MB', types: DOCUMENT_TYPES, accept: '.pdf,.jpg,.jpeg,.png,.webp' },
-} as const;
-type DocSlot = keyof typeof DOC_SLOTS;
-const AGENT_SLOTS: DocSlot[] = ['idCard', 'ninDocument', 'propertyProof', 'utilityBill', 'liveSelfie'];
-const COMPANY_SLOTS: DocSlot[] = ['cacCertificate', 'directorId', 'businessPermit'];
-function emptyDocs(): Record<DocSlot, FileState> {
-  return Object.fromEntries(Object.keys(DOC_SLOTS).map(k => [k, makeFileState()])) as Record<DocSlot, FileState>;
-}
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -94,8 +74,6 @@ export function SignupPage() {
 
   const [companyName, setCompanyName] = useState('');
 
-  const [documents, setDocuments] = useState<Record<DocSlot, FileState>>(emptyDocs);
-
   const [isCompany, setIsCompany] = useState(false);
 
   const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
@@ -137,38 +115,6 @@ export function SignupPage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleDocumentFile = (slot: DocSlot, file: File) => {
-    const rule = DOC_SLOTS[slot];
-    setDocuments(prev => {
-      if (prev[slot].previewUrl) URL.revokeObjectURL(prev[slot].previewUrl!);
-      return { ...prev, [slot]: validateFile(file, [...rule.types]) };
-    });
-  };
-
-  const clearDocument = (slot: DocSlot) => {
-    setDocuments(prev => {
-      if (prev[slot].previewUrl) URL.revokeObjectURL(prev[slot].previewUrl!);
-      return { ...prev, [slot]: makeFileState() };
-    });
-  };
-
-  /** Uploads whichever documents were attached. Returns a warning string on failure (signup still succeeds). */
-  const uploadDocuments = async (): Promise<string> => {
-    const slots = isCompany ? COMPANY_SLOTS : AGENT_SLOTS;
-    const attached = slots.filter(s => documents[s].file);
-    if (attached.length === 0) return '';
-    if (isCompany && !documents.cacCertificate.file) {
-      return 'Your CAC certificate is required to submit company documents. Add it from Settings → Company Documents.';
-    }
-    const formData = new FormData();
-    attached.forEach(s => formData.append(s, documents[s].file!));
-    const res = isCompany
-      ? await userApi.submitCompanyVerification(formData)
-      : await userApi.submitAgentDocuments(formData);
-    if (res.success) return '';
-    return res.message || res.error?.message || 'Your documents could not be uploaded. You can re-upload them from Settings.';
-  };
-
   const handleNext = async () => {
     if (step === 1) {
       if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) return;
@@ -182,19 +128,16 @@ export function SignupPage() {
       return;
     }
     if (step === 3) {
-      setStep(4);
-      return;
-    }
-    if (step === 4) {
       await handleSubmit();
     }
   };
 
-  const handleSkipBank = () => {
-    setStep(4);
-  };
-
-  const handleSkipDocuments = async () => {
+  /** Bank setup is optional: clear anything half-entered and create the account without a payout account. */
+  const handleSkipBank = async () => {
+    setSelectedBank(null);
+    setAccountNumber('');
+    setAccountName('');
+    setBankError('');
     await handleSubmit();
   };
 
@@ -252,14 +195,6 @@ export function SignupPage() {
           } catch (subErr: any) {
             warnings.push(subErr?.message || 'Bank account could not be saved. You can add it from Settings.');
           }
-        }
-
-        // QA-AGT-002: upload the attached documents.
-        try {
-          const docWarning = await uploadDocuments();
-          if (docWarning) warnings.push(docWarning);
-        } catch (docErr: any) {
-          warnings.push(docErr?.message || 'Your documents could not be uploaded. You can re-upload them from Settings.');
         }
 
         navigate('/create-otp', { state: { email, warnings } });
@@ -419,13 +354,32 @@ export function SignupPage() {
             required
           />
         </div>
-        <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. We'll ask you to confirm it by SMS once your account is created.</p>
+        <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. Tenants and our team use this number to reach you.</p>
       </div>
     </div>
   );
 
   const renderBankStep = () => (
     <div className="space-y-4">
+      {/* Consent sits at the top of the final step, so it is read before the account is created. */}
+      <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
+        <input
+          type="checkbox"
+          checked={acceptedTerms}
+          onChange={e => setAcceptedTerms(e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
+        />
+        <span className="text-sm leading-5 text-text-secondary">
+          I agree to the{' '}
+          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+            Terms of Service
+          </a>{' '}
+          and{' '}
+          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+            Privacy Policy
+          </a>.
+        </span>
+      </label>
       <p className="text-sm text-text-secondary">
         Set up your bank account to receive rent payments automatically with instant split settlements.
       </p>
@@ -519,54 +473,11 @@ export function SignupPage() {
     </div>
   );
 
-  const renderStep3 = () => (
-    <div className="space-y-4">
-      {/* Consent sits at the top of the final step, so it is read before the
-          account is created rather than buried under optional uploads. */}
-      <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={acceptedTerms}
-          onChange={e => setAcceptedTerms(e.target.checked)}
-          className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
-        />
-        <span className="text-sm leading-5 text-text-secondary">
-          I agree to the{' '}
-          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
-            Terms of Service
-          </a>{' '}
-          and{' '}
-          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
-            Privacy Policy
-          </a>.
-        </span>
-      </label>
-      {(isCompany ? COMPANY_SLOTS : AGENT_SLOTS).map(slot => (
-        <FileUploadZone
-          key={slot}
-          id={`signup-doc-${slot}`}
-          label={DOC_SLOTS[slot].label}
-          hint={DOC_SLOTS[slot].hint}
-          accept={DOC_SLOTS[slot].accept}
-          icon={slot === 'liveSelfie' ? 'camera' : 'upload'}
-          capture={slot === 'liveSelfie' ? 'user' : undefined}
-          fileState={documents[slot]}
-          onFile={(f) => handleDocumentFile(slot, f)}
-          onClear={() => clearDocument(slot)}
-        />
-      ))}
-      <p className="text-xs text-text-tertiary">
-        Documents are optional at this step — you can also add them later from Settings — but uploading them now speeds up verification.
-      </p>
-    </div>
-  );
-
   const getStepTitle = () => {
     switch (step) {
       case 1: return 'Create Account';
       case 2: return 'Phone Number';
       case 3: return 'Bank Account Setup';
-      case 4: return 'Verification Documents';
       default: return '';
     }
   };
@@ -576,7 +487,6 @@ export function SignupPage() {
       case 1: return 'Enter your basic information';
       case 2: return 'Enter your phone number';
       case 3: return 'Link your bank for automatic rent payouts';
-      case 4: return 'Upload required documents';
       default: return '';
     }
   };
@@ -593,7 +503,7 @@ export function SignupPage() {
           </div>
         </div>
 
-        <StepIndicator currentStep={step} totalSteps={4} />
+        <StepIndicator currentStep={step} totalSteps={3} />
 
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
@@ -601,13 +511,13 @@ export function SignupPage() {
         </div>
 
         <div className="clay-card p-6">
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
+              {error}
+            </div>
+          )}
           {step === 1 && (
             <div className="mb-6">
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
-                  {error}
-                </div>
-              )}
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
                 I want to register as
               </label>
@@ -641,7 +551,6 @@ export function SignupPage() {
           {step === 1 && renderStep1()}
           {step === 2 && renderStep2()}
           {step === 3 && renderBankStep()}
-          {step === 4 && renderStep3()}
 
           <div className="flex gap-3 mt-6">
             {step > 1 && (
@@ -649,7 +558,7 @@ export function SignupPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
-            {step < 4 ? (
+            {step < 3 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>

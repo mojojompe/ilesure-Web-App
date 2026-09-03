@@ -291,6 +291,19 @@ export const agentApi = {
     }
   },
 
+  /** Record that a scheduled viewing did not happen (agent/landlord only). */
+  async markInspectionMissed(bookingId: string): Promise<BookingResponse> {
+    try {
+      const response = await apiClient.post<BookingResponse>(`/bookings/${bookingId}/inspection/missed`);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: { message: error?.response?.data?.error?.message || 'Failed to mark the inspection as missed' },
+      };
+    }
+  },
+
   async getSharedBookings(params?: { status?: string; limit?: number; page?: number }): Promise<SharedBookingsResponse> {
     try {
       const searchParams = new URLSearchParams();

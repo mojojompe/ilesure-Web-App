@@ -5,7 +5,6 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
-import authApi from '../../api/authApi';
 import { useAuth } from '../../api/authContext';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
@@ -48,45 +47,6 @@ export function AgentSettingsPage() {
   const [resolving, setResolving] = useState(false);
   const [resolved, setResolved] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
-
-  // Phone verification by SMS (QA-AGT-006).
-  const [phoneVerified, setPhoneVerified] = useState(false);
-  const [phoneOtpSent, setPhoneOtpSent] = useState(false);
-  const [phoneOtp, setPhoneOtp] = useState('');
-  const [phoneBusy, setPhoneBusy] = useState(false);
-  const [phoneUnavailable, setPhoneUnavailable] = useState(false);
-
-  const handleSendPhoneOtp = async () => {
-    if (!formData.phone) { showToast('Enter your phone number first', 'error'); return; }
-    setPhoneBusy(true);
-    const res = await authApi.sendPhoneOtp(formData.phone);
-    setPhoneBusy(false);
-    if (res.success) {
-      setPhoneOtpSent(true);
-      showToast('We sent a 6-digit code to your phone');
-    } else if (res.code === 'SMS_NOT_CONFIGURED') {
-      setPhoneUnavailable(true);
-      showToast(res.message || 'Phone verification is temporarily unavailable', 'error');
-    } else {
-      showToast(res.message || 'Could not send the SMS code', 'error');
-    }
-  };
-
-  const handleVerifyPhoneOtp = async () => {
-    if (phoneOtp.length !== 6) return;
-    setPhoneBusy(true);
-    const res = await authApi.verifyPhoneOtp(phoneOtp);
-    setPhoneBusy(false);
-    if (res.success) {
-      setPhoneVerified(true);
-      setPhoneOtpSent(false);
-      setPhoneOtp('');
-      updateUser({ isPhoneVerified: true });
-      showToast('Phone number verified!');
-    } else {
-      showToast(res.message || 'Invalid code', 'error');
-    }
-  };
 
   useEffect(() => {
     fetchProfile();
@@ -164,7 +124,6 @@ export function AgentSettingsPage() {
           whatsapp: response.data.whatsapp || '',
           bio: response.data.bio || '',
         });
-        setPhoneVerified(Boolean(response.data.isPhoneVerified));
         // Default the payout business name to the account holder's name so the Setup button is usable.
         const holder = response.data.fullName || '';
         setBankForm(prev => ({ ...prev, businessName: prev.businessName || holder }));
@@ -192,8 +151,7 @@ export function AgentSettingsPage() {
             whatsapp: saved.whatsapp || '',
             bio: saved.bio || '',
           });
-          setPhoneVerified(Boolean(saved.isPhoneVerified));
-          updateUser({ fullName: saved.fullName, phone: saved.phone, whatsapp: saved.whatsapp, bio: saved.bio, avatar: saved.avatar, isPhoneVerified: saved.isPhoneVerified });
+          updateUser({ fullName: saved.fullName, phone: saved.phone, whatsapp: saved.whatsapp, bio: saved.bio, avatar: saved.avatar });
         }
       } else {
         showToast(response.error?.message || 'Failed to save profile', 'error');
@@ -272,46 +230,14 @@ export function AgentSettingsPage() {
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
                   Phone
-                  {phoneVerified ? (
-                    <span className="ml-2 normal-case tracking-normal text-status-success font-medium">· Verified</span>
-                  ) : (
-                    <span className="ml-2 normal-case tracking-normal text-text-tertiary font-medium">· Unverified</span>
-                  )}
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="tel"
-                    autoComplete="tel"
-                    value={formData.phone}
-                    onChange={(e) => { setFormData({ ...formData, phone: e.target.value }); setPhoneVerified(false); setPhoneOtpSent(false); }}
-                    className="clay-input flex-1"
-                  />
-                  {!phoneVerified && !phoneUnavailable && (
-                    <Button variant="secondary" size="sm" onClick={handleSendPhoneOtp} loading={phoneBusy} disabled={!formData.phone}>
-                      {phoneOtpSent ? 'Resend' : 'Verify'}
-                    </Button>
-                  )}
-                </div>
-                {phoneOtpSent && !phoneVerified && (
-                  <div className="flex gap-2 mt-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      autoComplete="one-time-code"
-                      maxLength={6}
-                      value={phoneOtp}
-                      onChange={(e) => setPhoneOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                      placeholder="Enter 6-digit SMS code"
-                      className="clay-input flex-1"
-                    />
-                    <Button variant="primary" size="sm" onClick={handleVerifyPhoneOtp} loading={phoneBusy} disabled={phoneOtp.length !== 6}>
-                      Confirm
-                    </Button>
-                  </div>
-                )}
-                {phoneUnavailable && (
-                  <p className="text-xs text-text-tertiary mt-1">SMS verification is temporarily unavailable. Your number is still saved.</p>
-                )}
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  className="clay-input w-full"
+                />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
