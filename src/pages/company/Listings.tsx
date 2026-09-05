@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Edit, Eye, Heart, Archive, Loader, MapPin, Home } from 'lucide-react';
+import { Plus, Search, Eye, Heart, Archive, Loader, MapPin, Home } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -134,11 +134,15 @@ export function CompanyListingsPage() {
                     <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
                   </div>
                   <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
+                    {/* BUGFIX (QA-CO-025): there were two buttons here — "View" and a pencil
+                        labelled as Edit — and both called handleView, opening the same
+                        read-only modal. There is no company edit-listing route to send the
+                        second one to, so the pencil was purely a false affordance: a company
+                        clicked Edit and got a viewer. Removed rather than pointed at a route
+                        that does not exist; the edit capability itself is a separate piece
+                        of work. */}
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
                       <Eye className="w-3 h-3 mr-1" /> View
-                    </Button>
-                    <Button variant="secondary" size="sm" onClick={() => handleView(listing)} disabled={isFullyBooked}>
-                      <Edit className="w-3 h-3" />
                     </Button>
                   </div>
                 </div>
