@@ -193,7 +193,21 @@ export function AgentDashboardPage() {
                 const bookingId = booking._id || booking.id;
                 const listingTitle = booking.listingId?.title || booking.listingTitle || booking.listing?.title || '—';
                 const tenantName = booking.userId?.fullName || booking.userName || '—';
-                const rent = booking.listingId?.rentAnnual || booking.price || 0;
+                // BUGFIX (QA-AGT-017): every booking rendered as "₦0/yr". Neither field
+                // was projected by the API, so this always fell through to 0, and the
+                // "/yr" suffix was hard-coded even for a one-hour shortlet.
+                const amount =
+                  booking.totalAmount ??
+                  booking.price ??
+                  booking.selectedRate?.price ??
+                  booking.listingId?.rentAnnual ??
+                  null;
+                const isShortlet = booking.listingId?.propertyType === 'shortlet' || !!booking.selectedRate;
+                const period = isShortlet ? '' : '/yr';
+                const rentLabel =
+                  typeof amount === 'number' && Number.isFinite(amount)
+                    ? `₦${amount.toLocaleString('en-NG')}${period}`
+                    : '—';
                 return (
                   <div key={bookingId} className="p-3 rounded-clay-sm bg-clay-border-light">
                     <div className="flex items-center justify-between">
@@ -209,7 +223,7 @@ export function AgentDashboardPage() {
                       </StatusBadge>
                     </div>
                     <p className="text-xs text-text-tertiary mt-1">
-                      {tenantName} • ₦{rent.toLocaleString()}/yr
+                      {tenantName} • {rentLabel}
                     </p>
                   </div>
                 );

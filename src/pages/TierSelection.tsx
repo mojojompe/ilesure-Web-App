@@ -4,6 +4,7 @@ import { Check, ArrowRight, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
+import { paymentsApi } from '../api/payments';
 import type { Tier } from '../types';
 
 export function TierSelectionPage() {
@@ -47,6 +48,22 @@ export function TierSelectionPage() {
 
   const handleContinue = async () => {
     if (!selectedTier) return;
+    // BUGFIX (QA-AGT-019): every tier was sent to the payment screen, including the
+    // free one. The API correctly activates a free tier in place and returns no
+    // authorizationUrl, so Payment.tsx then redirected to `undefined` and the user
+    // landed on /undefined. `formatPrice` above already recognises a free tier —
+    // handleContinue simply ignored it.
+    const chosen = tiers.find((t) => t.id === selectedTier);
+    const isFree = chosen ? (chosen.priceMonthly ?? chosen.price) === 0 : false;
+    if (isFree) {
+      try {
+        await paymentsApi.initialize({ tierId: selectedTier, billingCycle });
+      } catch {
+        // Activation is idempotent server-side; fall through to the dashboard either way.
+      }
+      navigate('/agent', { replace: true });
+      return;
+    }
     navigate(`/payment?tier=${selectedTier}&billing=${billingCycle}`);
   };
 
@@ -122,7 +139,11 @@ export function TierSelectionPage() {
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-text-primary">{tier.name}</h3>
                 <p className="text-2xl font-bold text-text-primary mt-1">{formatPrice(tier)}</p>
-                <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
+                {/* BUGFIX (QA-AGT-024): unguarded nested access crashed the page to blank when a
+                    tier came back without `limits` — the very next block already guards `features`. */}
+                {tier.limits?.maxListings !== undefined && (
+                  <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
+                )}
               </div>
 
               <div className="space-y-2">

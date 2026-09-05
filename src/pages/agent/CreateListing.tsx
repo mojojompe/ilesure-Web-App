@@ -349,6 +349,8 @@ export function AgentCreateListingPage() {
   const [loading, setLoading] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  // BUGFIX (QA-AGT-010): the wizard had nowhere to display a server rejection.
+  const [submitError, setSubmitError] = useState<string | null>(null);
   // Uploaded ahead of listing creation; the metadata rides along in the payload.
   const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -425,7 +427,59 @@ export function AgentCreateListingPage() {
     setPhotoFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * BUGFIX (QA-AGT-015): `handleNext` was a bare `setStep(prev => prev + 1)`, so all
+   * nine steps advanced with no input whatsoever. The wizard reached "Review & Submit"
+   * showing `Title: -`, `Rent: ₦0`, `Location: ,` and presented a NEGATIVE rent as
+   * publishable. The server did reject it, but that rejection never reached the screen
+   * (see QA-AGT-010), so the user could only click Publish forever.
+   *
+   * Returns a human-readable problem for the current step, or null when it is valid.
+   */
+  const validateStep = (current: number): string | null => {
+    const num = (v: string) => (v === '' ? NaN : Number(v));
+    switch (current) {
+      case 1:
+        if (!formData.title.trim()) return 'Please give the listing a title.';
+        if (!formData.description.trim()) return 'Please add a description.';
+        return null;
+      case 2:
+        if (!formData.address.trim()) return 'Please enter the address.';
+        if (!formData.city.trim()) return 'Please enter the city.';
+        if (!formData.area.trim()) return 'Please enter the area or cluster.';
+        return null;
+      case 3: {
+        if (formData.propertyType === 'shortlet') {
+          if (!formData.shortletRates.length) return 'Add at least one shortlet rate.';
+          return null;
+        }
+        const rent = num(formData.annualRent);
+        if (!Number.isFinite(rent)) return 'Please enter the annual rent.';
+        if (rent < 10000) return 'Annual rent must be at least ₦10,000.';
+        for (const [label, value] of [['Caution fee', formData.cautionFee], ['Agency fee', formData.agencyFee]] as const) {
+          if (value !== '' && (!Number.isFinite(num(value)) || num(value) < 0)) {
+            return `${label} cannot be negative.`;
+          }
+        }
+        return null;
+      }
+      case 4: {
+        const occupants = num(formData.maxOccupants);
+        if (!Number.isFinite(occupants) || occupants < 1) return 'Maximum occupants must be at least 1.';
+        return null;
+      }
+      default:
+        return null;
+    }
+  };
+
   const handleNext = () => {
+    const problem = validateStep(step);
+    if (problem) {
+      setSubmitError(problem);
+      return;
+    }
+    setSubmitError(null);
     setStep(prev => prev + 1);
   };
 
@@ -503,8 +557,14 @@ export function AgentCreateListingPage() {
           notes: formData.inspectionNotes || 'Inspections available Mon-Sat 9am to 4pm',
         },
         images: [],
-        tenancyAgreement,
+        // BUGFIX (QA-AGT-010): this always sent `tenancyAgreement: null` when the
+        // (optional) upload was skipped, and the server rejected null outright — so
+        // NO listing could ever be published from this wizard. The server now treats
+        // null as "use the standard template", but omitting the key entirely is the
+        // honest request: there is no custom agreement to send.
+        ...(tenancyAgreement ? { tenancyAgreement } : {}),
       };
+      setSubmitError(null);
       const response = await agentApi.createListing(apiData);
       if (response.success) {
         const listing = (response as any).data;
@@ -518,10 +578,17 @@ export function AgentCreateListingPage() {
         }
 
         navigate('/agent/listings');
+      } else {
+        // BUGFIX (QA-AGT-010): there was no `else`, and the API wrapper swallowed the
+        // axios error, so a 400 produced no toast, no error and no navigation — the
+        // button simply stopped spinning. Show what the server actually said.
+        const err: any = (response as any).error;
+        const details: string[] = err?.details || [];
+        setSubmitError([err?.message || 'Failed to create listing', ...details].filter(Boolean).join(' · '));
       }
     } catch (error: any) {
       console.error('Create listing error:', error);
-      alert(error.response?.data?.error?.message || 'Failed to create listing');
+      setSubmitError(error.response?.data?.error?.message || 'Failed to create listing');
     } finally {
       setLoading(false);
       setUploading(false);
@@ -1241,6 +1308,15 @@ export function AgentCreateListingPage() {
           {step === 7 && renderStep7()}
           {step === 8 && renderStep8()}
           {step === 9 && renderStep9()}
+
+          {/* BUGFIX (QA-AGT-010 / QA-AGT-015): the wizard had nowhere to report either a
+              per-step validation problem or a server rejection, so both failed silently. */}
+          {submitError && (
+            <div className="mt-6 flex items-start gap-2 rounded-clay-sm bg-status-error/10 p-3 text-sm text-status-error">
+              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+              <span>{submitError}</span>
+            </div>
+          )}
 
           <div className="flex gap-3 mt-6">
             {step > 1 && (

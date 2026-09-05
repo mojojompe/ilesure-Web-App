@@ -89,12 +89,19 @@ export const companyApi = {
     }
   },
 
-  async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string }> {
+  async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string; details?: string[] }> {
     try {
       const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);
       return { success: true, listing: response.data.data };
-    } catch {
-      return { success: false, message: 'Failed to create listing' };
+    } catch (err: any) {
+      // BUGFIX (QA-CO-014): see the note in api/agent.ts — the swallowed error made
+      // publishing fail with no message at all.
+      const apiError = err?.response?.data?.error;
+      return {
+        success: false,
+        message: apiError?.message || 'Failed to create listing',
+        details: apiError?.details,
+      };
     }
   },
 

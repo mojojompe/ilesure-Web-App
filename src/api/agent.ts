@@ -184,8 +184,20 @@ export const agentApi = {
     try {
       const response = await apiClient.post<ListingResponse>('/agent/listings', data);
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to create listing' } };
+    } catch (err: any) {
+      // BUGFIX (QA-AGT-010): a bare `catch {}` discarded the server's real reason and
+      // returned a generic string. Combined with the caller having no `else` branch,
+      // a 400 produced COMPLETELY silent failure — the Publish button just stopped
+      // spinning. Propagate the API's message and field details so the wizard can
+      // show the user what is actually wrong.
+      const apiError = err?.response?.data?.error;
+      return {
+        success: false,
+        error: {
+          message: apiError?.message || 'Failed to create listing',
+          details: apiError?.details,
+        },
+      } as ListingResponse;
     }
   },
 
