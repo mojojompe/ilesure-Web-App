@@ -203,19 +203,10 @@ export const authApi = {
     }
   },
 
-  async uploadDoc(file: File): Promise<{ success: boolean; data?: { url: string }; error?: { message: string } }> {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      const response = await apiClient.upload<{ success: boolean; data: { url: string } }>('/auth/upload-doc', formData);
-      return { success: true, data: response.data.data };
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return { success: false, error: { message: error.response?.data?.error?.message || 'Upload failed' } };
-      }
-      return { success: false, error: { message: 'Network error' } };
-    }
-  },
+  // REMOVED: uploadDoc() — it posted to POST /auth/upload-doc, an unauthenticated
+  // upload endpoint serving the individual-document KYC flow that Dojah's NIN/BVN
+  // verification replaced. It had no callers anywhere in the app, and the endpoint has
+  // been removed from the backend.
 
   async logout(): Promise<void> {
     try {
