@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit, Eye, Heart, Archive, Loader, MapPin, Home } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
@@ -11,7 +11,10 @@ import { companyApi } from '../../api/company';
 export function CompanyListingsPage() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<'all' | 'active' | 'archived'>('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  // BUGFIX (QA-AGT-023): the header search routes here with ?search=<term>; read it so
+  // the term is actually applied instead of the page opening unfiltered.
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showViewModal, setShowViewModal] = useState(false);

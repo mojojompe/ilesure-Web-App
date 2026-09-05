@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Search, Edit, Archive, Trash2, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
@@ -23,7 +23,10 @@ export function AgentListingsPage() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  // BUGFIX (QA-AGT-023): the header search routes here with ?search=<term>; read it so
+  // the term is actually applied instead of the page opening unfiltered.
+  const [searchParams] = useSearchParams();
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [listings, setListings] = useState<any[]>([]);
   
   const [newListing, setNewListing] = useState({
