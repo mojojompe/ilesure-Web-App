@@ -101,15 +101,9 @@ export const userApi = {
     }
   },
 
-  /** Agent/landlord onboarding documents (QA-AGT-002) → POST /kyc/agent-documents. */
-  async submitAgentDocuments(formData: FormData): Promise<{ success: boolean; message?: string; data?: any; error?: { message: string } }> {
-    try {
-      const response = await apiClient.upload<{ success: boolean; message?: string; data?: any }>('/kyc/agent-documents', formData);
-      return response.data;
-    } catch (err: any) {
-      return { success: false, message: err?.response?.data?.error?.message || 'Failed to upload documents' };
-    }
-  },
+  // RETIRED: submitAgentDocuments() — it posted to POST /kyc/agent-documents, the
+  // individual-document KYC flow superseded by Dojah NIN/BVN verification. It had no
+  // callers anywhere in the app, and the route has been withdrawn on the backend.
 
   async getKycStatus(): Promise<{ success: boolean; data?: KycStatus; error?: { message: string } }> {
     try {
