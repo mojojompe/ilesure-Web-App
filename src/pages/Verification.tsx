@@ -68,6 +68,8 @@ function FileUploadZone({
             <p className="text-xs text-text-tertiary">{fileState.size}</p>
           </div>
           <button
+          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+          aria-label="Close"
             type="button"
             onClick={onClear}
             className="p-1.5 rounded-full hover:bg-clay-border-light transition-colors flex-shrink-0"

@@ -69,6 +69,8 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <button
+          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+          aria-label="Open menu"
             onClick={onMenuClick}
             className="md:hidden p-2 rounded-clay-sm hover:bg-clay-border-light"
           >

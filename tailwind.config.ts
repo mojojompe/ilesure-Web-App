@@ -12,7 +12,15 @@ const config: Config = {
         'burnt-brown-dark':  '#6B3310',
         'burnt-brown-light': '#A0522D',
         'burnt-brown-pale':  '#F5EDE6',
-        'mustard':           '#D4821A',
+        /* A11Y-FIX (QA-A11Y-003): #D4821A is 2.99:1 on white — the worst contrast in the
+           audit, and it is what both navigational links on the login page are painted in
+           ("Forgot password?" and "Sign up"). #9A5C0D is 5.37:1, clears the 4.5:1 minimum
+           for body text, and stays in the same mustard family. The bright #F5A623 is kept
+           as mustard-light for fills, borders and gradients, where 3:1 is the relevant
+           threshold and the brighter tone is wanted.
+           This darkens ~150 `text-mustard` usages across the app at once, and also fixes
+           white-on-mustard fills, which were failing in the other direction. */
+        'mustard':           '#9A5C0D',
         'mustard-light':     '#F5A623',
         'mustard-pale':      '#FFF8E1',
         'mustard-border':    '#F0D080',
@@ -20,11 +28,12 @@ const config: Config = {
         'clay-surface':      '#FFFFFF',
         'text-primary':      '#1C0A00',
         'text-secondary':    '#6B4C3B',
-        'text-tertiary':     '#A07860',
+        /* A11Y-FIX (QA-A11Y-003): #A07860 is 3.93:1 on white. #8A6248 is 5.36:1. */
+        'text-tertiary':     '#8A6248',
         'clay-border':       '#E7DCD4',
         'clay-border-light': '#F2EDE8',
         'status-success':    '#38A169',
-        'status-warning':    '#D4821A',
+        'status-warning':    '#9A5C0D',
         'status-error':      '#E53E3E',
         'status-info':       '#3182CE',
       },
