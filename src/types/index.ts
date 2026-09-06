@@ -320,7 +320,7 @@ export interface SharedBooking {
   listingArea: string;
   rentAnnual: number;
   images: string[];
-  status: 'pending_payment' | 'partially_paid' | 'fully_paid' | 'confirmed' | 'expired' | 'refunded';
+  status: 'pending_payment' | 'partially_paid' | 'fully_paid' | 'confirmed' | 'expired' | 'refunded' | 'cancelled';
   totalRequired: number;
   totalPaid: number;
   participants: SharedBookingParticipant[];
