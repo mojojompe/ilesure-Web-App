@@ -23,8 +23,9 @@ export function AgentStorePage() {
   const fetchStoreData = async () => {
     try {
       const res: any = await agentStoreService.getStore();
-      if (res.success && res.data) {
-        setStoreData(res.data);
+      const payload = res?.data || res;
+      if (payload && (payload.products || payload.rewardPoints !== undefined || payload.points !== undefined)) {
+        setStoreData(payload);
       } else {
         setStoreData({ points: 0, products: [] });
       }

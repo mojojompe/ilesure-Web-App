@@ -30,7 +30,8 @@ export function AgentArchivedPage() {
     l.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
+  const formatCurrency = (amount?: number | null) =>
+    typeof amount === 'number' && Number.isFinite(amount) ? `₦${amount.toLocaleString('en-NG')}` : '—';
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
@@ -112,7 +113,7 @@ export function AgentArchivedPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
                   <p className="text-sm text-text-tertiary">{listing.city}, {listing.address}</p>
-                  <p className="text-lg font-bold text-mustard mt-1">{formatCurrency(listing.rentAnnual)}</p>
+                  <p className="text-lg font-bold text-mustard mt-1">{formatCurrency((listing as any).price ?? listing.rentAnnual)}</p>
                   {listing.createdAt && (
                     <p className="text-xs text-text-tertiary mt-1">Archived: {formatDate(listing.createdAt)}</p>
                   )}

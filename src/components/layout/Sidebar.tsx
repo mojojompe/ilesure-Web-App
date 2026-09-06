@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { agentApi } from '../../api/agent';
 import { companyApi } from '../../api/company';
 import { chatApi } from '../../api/chat';
@@ -47,6 +47,7 @@ const companyNavItems = [
 
 export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const currentUserRole = user?.role || role;
   const navItems = currentUserRole === 'company' 
@@ -59,6 +60,7 @@ export function Sidebar({ isOpen, onClose, role }: SidebarProps) {
   const handleLogout = () => {
     setShowLogoutModal(false);
     logout();
+    navigate('/login');
   };
 
   const [pendingBookings, setPendingBookings] = useState(0);
