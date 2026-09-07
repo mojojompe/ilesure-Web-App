@@ -165,14 +165,20 @@ export function CompanyChatsPage() {
     setSending(true);
     try {
       const response = await chatApi.sendMessage(selectedChat.id, newMessage.trim());
-      if (response.success) {
-        setMessages(prev => [...prev, response.message]);
+      if (response.success && response.message) {
+        setMessages(prev => {
+          const msgId = response.message.id || response.message._id;
+          if (prev.some(m => m.id === msgId)) return prev;
+          return [...prev, response.message];
+        });
         setChats(prev => prev.map(chat => 
           chat.id === selectedChat.id 
             ? { ...chat, lastMessage: newMessage.trim(), lastMessageAt: new Date().toISOString() }
             : chat
         ));
         setNewMessage('');
+      } else {
+        alert(response.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Failed to send message:', error);
