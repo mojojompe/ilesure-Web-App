@@ -96,6 +96,20 @@ export const authApi = {
     }
   },
 
+  /** Redeem the single-use code from a Google redirect for a session. */
+  async exchangeGoogleCode(code: string): Promise<AuthResponse> {
+    try {
+      const response = await apiClient.post<AuthResponse>('/auth/google/exchange', { code });
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        const body = error.response?.data;
+        return { success: false, error: { message: body?.error?.message || 'Sign-in failed', code: body?.error?.code } };
+      }
+      return { success: false, error: { message: 'Network error' } };
+    }
+  },
+
   async register(data: RegisterData): Promise<AuthResponse> {
     try {
       const response = await apiClient.post<AuthResponse>('/auth/register', data);

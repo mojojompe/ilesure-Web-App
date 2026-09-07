@@ -5,6 +5,12 @@ import react from '@vitejs/plugin-react'
 // builds so PII / tokens / socket internals aren't shipped to end users. Kept intact in
 // dev (command === 'serve') to preserve developer ergonomics.
 export default defineConfig(({ command }) => ({
+  // Pinned so the backend can name a real origin in CORS_ORIGIN and
+  // OAUTH_ALLOWED_ORIGINS. Vite otherwise takes 5173 and counts upward, so which app
+  // got which port depended on the order they were started in — which meant Google
+  // sign-in worked or failed by luck. strictPort fails loudly instead of drifting.
+  server: { port: 5274, strictPort: true },
+
   plugins: [react()],
   build: {
     rollupOptions: {

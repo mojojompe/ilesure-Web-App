@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../api/authContext';
-import userApi from '../api/user';
+import { authApi } from '../api/authApi';
 
 /**
  * Landing point for Google sign-in on the agent/company portal.
@@ -11,7 +11,7 @@ import userApi from '../api/user';
  *   GET {API}/auth/google/login?redirect=<this page>?intent=portal
  *     -> Google
  *     -> GET {API}/auth/google/callback
- *     -> 302 back here with either the session or ?error=<code>
+ *     -> 302 back here with ?code=<single-use code>, or ?error=<reason>
  *
  * `intent=portal` matters. Without it the server auto-creates a `student` for any Google
  * address it has never seen — which on this portal would hand an agent a renter account and
@@ -19,14 +19,12 @@ import userApi from '../api/user';
  * register properly, because an agent or company account needs a role, a company name, bank
  * details and KYC that a Google profile does not carry.
  *
- * SECURITY NOTE — not fixed here: the server returns the session in the QUERY STRING, which
- * `authController.googleCallback` flags in its own TODO ("replace token-in-URL delivery with a
- * one-time code exchanged over POST (PKCE)"). Tokens in a URL reach browser history and can
- * reach referrer headers. This page strips them via replaceState before its first await, which
- * narrows that exposure without closing it.
+ * The redirect carries a single-use code, not the session: it expires in two minutes and dies
+ * on first redemption, so a URL later recovered from history is spent. It is still stripped
+ * from the address bar via replaceState.
  *
- * The refresh token is deliberately ignored: per W-H1 this app keeps only the short-lived
- * access token, and refresh happens from the httpOnly cookie the callback already set.
+ * The refresh token in the exchange response is deliberately ignored: per W-H1 this app keeps
+ * only the short-lived access token and refreshes from the httpOnly cookie the exchange set.
  */
 const PORTAL_ROLES = ['agent', 'landlord', 'company', 'company_admin', 'sub_agent'];
 
@@ -42,7 +40,7 @@ export function GoogleCallbackPage() {
     handled.current = true;
 
     const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get('accessToken');
+    const code = params.get('code');
     const serverError = params.get('error');
 
     // Before anything else, and before any await: do not leave credentials in the address bar
@@ -60,8 +58,8 @@ export function GoogleCallbackPage() {
       return;
     }
 
-    if (!accessToken) {
-      // No token and no reason: cancelled at Google, or this origin is not in the server's
+    if (!code) {
+      // No code and no reason: cancelled at Google, or this origin is not in the server's
       // OAUTH_ALLOWED_ORIGINS allowlist so it answered with JSON instead of redirecting.
       setError('Google sign-in did not complete. Please try again, or sign in with your email.');
       return;
@@ -69,19 +67,26 @@ export function GoogleCallbackPage() {
 
     (async () => {
       try {
-        // The redirect carries no profile, so read it with the session we were just handed.
-        // `setSession` is called only after the role check passes, so a renter never gets a
-        // portal session written to storage.
-        const res = await userApi.getProfile(accessToken);
-        const user: any = res?.data;
-        if (!res?.success || !user) throw new Error('profile unavailable');
+        // Trade the code for the session. The response carries the profile too, so no second
+        // request is needed — and `setSession` still runs only after the role check, so a
+        // renter never gets a portal session written to storage.
+        const res = await authApi.exchangeGoogleCode(code);
+        const user: any = res?.user;
+        if (!res?.success || !user || !res.accessToken) {
+          setError(
+            res?.error?.code === 'INVALID_CODE'
+              ? 'That sign-in link has expired or was already used. Please try again.'
+              : res?.error?.message || 'We could not complete your sign-in. Please try again.'
+          );
+          return;
+        }
 
         if (!PORTAL_ROLES.includes(user.role)) {
           setError('This portal is for agents, landlords, and companies. Please use the mobile app.');
           return;
         }
 
-        setSession(user, accessToken);
+        setSession(user, res.accessToken);
         navigate(user.role === 'company' || user.role === 'company_admin' ? '/company' : '/agent', { replace: true });
       } catch {
         setError('We could not complete your sign-in. Please try again.');
