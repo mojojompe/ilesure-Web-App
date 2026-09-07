@@ -20,7 +20,10 @@ class ApiClient {
     this.client.interceptors.request.use(
       async (config: InternalAxiosRequestConfig) => {
         const token = this.getToken();
-        if (token && config.headers) {
+        // Do not clobber an Authorization header the caller set deliberately. The Google
+        // callback holds a freshly issued token that is not in storage yet, and a stale
+        // stored token would otherwise overwrite it and fail the request.
+        if (token && config.headers && !config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${token}`;
         }
         return config;

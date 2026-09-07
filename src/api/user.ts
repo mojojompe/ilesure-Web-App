@@ -29,9 +29,17 @@ interface UpdateProfileData {
 }
 
 export const userApi = {
-  async getProfile(): Promise<ProfileResponse> {
+  /**
+   * @param accessToken use this bearer instead of the stored one. Needed by the Google
+   * callback, which must read the profile to decide whether the account may use this portal
+   * BEFORE it writes a session to storage.
+   */
+  async getProfile(accessToken?: string): Promise<ProfileResponse> {
     try {
-      const response = await apiClient.get<ProfileResponse>('/users/profile');
+      const response = await apiClient.get<ProfileResponse>(
+        '/users/profile',
+        accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined
+      );
       return response.data;
     } catch {
       return { success: false, error: { message: 'Failed to fetch profile' } };

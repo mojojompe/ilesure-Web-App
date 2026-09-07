@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/authContext';
 import { LoginPage } from './pages/Login';
+import { GoogleCallbackPage } from './pages/GoogleCallback';
 import { SignupPage } from './pages/Signup';
 import { CreateOTPPage } from './pages/CreateOTP';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
@@ -102,6 +103,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Google sign-in returns here with the session, or ?error=<code> (P-L1). */}
+      <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/create-otp" element={<CreateOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
