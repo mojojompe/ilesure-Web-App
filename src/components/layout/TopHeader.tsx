@@ -2,6 +2,7 @@ import { Menu, Search, Bell, ChevronDown, RefreshCw } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../api/authContext';
+import { useNavigate } from 'react-router-dom';
 
 interface TopHeaderProps {
   onMenuClick: () => void;
@@ -11,6 +12,20 @@ interface TopHeaderProps {
 }
 
 export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderProps) {
+  const navigate = useNavigate();
+  // BUGFIX (QA-AGT-023): the header search box was an unbound input on every agent and
+  // company screen. Typing and pressing Enter produced no navigation, no dropdown and
+  // no request — it did nothing at all. Route the term to the listings screen, which
+  // already accepts a `search` filter.
+  const [headerSearch, setHeaderSearch] = useState('');
+
+  const submitHeaderSearch = () => {
+    const term = headerSearch.trim();
+    if (!term) return;
+    const base = window.location.pathname.startsWith('/company') ? '/company/listings' : '/agent/listings';
+    navigate(`${base}?search=${encodeURIComponent(term)}`);
+  };
+
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -54,6 +69,8 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <button
+          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+          aria-label="Open menu"
             onClick={onMenuClick}
             className="md:hidden p-2 rounded-clay-sm hover:bg-clay-border-light"
           >
@@ -80,7 +97,11 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
             <input
               type="text"
-              placeholder="Search listings, bookings..."
+              value={headerSearch}
+              onChange={(e) => setHeaderSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === 'Enter') submitHeaderSearch(); }}
+              placeholder="Search listings..."
+              aria-label="Search listings"
               className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-clay-border rounded-pill focus:border-mustard focus:ring-2 focus:ring-mustard/20 outline-none transition-all"
             />
           </div>

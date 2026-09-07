@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Bell, Mail, Phone, MessageSquare, Check, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
-import notificationsApi, { NotificationSettings } from '../../api/notifications';
+import notificationsApi, { NotificationSettings, Notification } from '../../api/notifications';
 
 interface NotificationToggleProps {
   label: string;
@@ -51,10 +51,46 @@ export function AgentNotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  // BUGFIX (QA-AGT-022): the notifications themselves were never loaded here.
+  const [inbox, setInbox] = useState<Notification[]>([]);
+  const [inboxLoading, setInboxLoading] = useState(true);
 
   useEffect(() => {
     loadSettings();
+    loadInbox();
   }, []);
+
+  const loadInbox = async () => {
+    setInboxLoading(true);
+    try {
+      const response = await notificationsApi.getNotifications(1, 20);
+      if (response.success && response.data) setInbox(response.data.notifications);
+    } catch {
+      // The preferences half of the page still works; don't block it on this.
+    } finally {
+      setInboxLoading(false);
+    }
+  };
+
+  const handleMarkRead = async (id: string) => {
+    setInbox((prev) => prev.map((n) => (n._id === id ? { ...n, read: true } : n)));
+    try {
+      await notificationsApi.markAsRead(id);
+    } catch {
+      // Put it back if the server rejected it, rather than showing a false state.
+      setInbox((prev) => prev.map((n) => (n._id === id ? { ...n, read: false } : n)));
+    }
+  };
+
+  const handleMarkAllRead = async () => {
+    const unread = inbox.filter((n) => !n.read);
+    setInbox((prev) => prev.map((n) => ({ ...n, read: true })));
+    try {
+      await Promise.all(unread.map((n) => notificationsApi.markAsRead(n._id)));
+    } catch {
+      loadInbox();
+    }
+  };
 
   const loadSettings = async () => {
     setLoading(true);
@@ -90,7 +126,64 @@ export function AgentNotificationsPage() {
   }
 
   return (
-    <AppLayout role="agent" title="Notifications" subtitle="Manage your notification preferences">
+    <AppLayout role="agent" title="Notifications" subtitle="Your notifications and preferences">
+      {/* BUGFIX (QA-AGT-022): this page contained ONLY preference switches. The actual
+          notifications — which the API returns and the header bell already shows — were
+          unreachable from the page named "Notifications". */}
+      <div className="clay-card p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-bold text-text-primary">Recent Notifications</h2>
+          {inbox.some((n) => !n.read) && (
+            <button
+              onClick={handleMarkAllRead}
+              className="text-sm font-semibold text-mustard hover:underline"
+            >
+              Mark all as read
+            </button>
+          )}
+        </div>
+
+        {inboxLoading ? (
+          <div className="flex items-center gap-2 py-6 justify-center text-text-tertiary">
+            <Loader2 className="w-4 h-4 animate-spin" /> <span className="text-sm">Loading notifications…</span>
+          </div>
+        ) : inbox.length === 0 ? (
+          <p className="py-6 text-center text-sm text-text-tertiary">You have no notifications yet.</p>
+        ) : (
+          <ul className="space-y-2">
+            {inbox.map((n) => (
+              <li
+                key={n._id}
+                className={clsx(
+                  'rounded-clay-sm p-3 transition-colors',
+                  n.read ? 'bg-clay-border-light' : 'bg-mustard-pale'
+                )}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-text-primary">{n.title}</p>
+                    <p className="text-sm text-text-secondary">{n.body}</p>
+                    <p className="mt-1 text-xs text-text-tertiary">
+                      {new Date(n.createdAt).toLocaleDateString('en-NG', {
+                        day: 'numeric', month: 'short', year: 'numeric',
+                      })}
+                    </p>
+                  </div>
+                  {!n.read && (
+                    <button
+                      onClick={() => handleMarkRead(n._id)}
+                      className="shrink-0 text-xs font-semibold text-mustard hover:underline"
+                    >
+                      Mark read
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
       <div className="clay-card p-6">
         {error && (
           <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">

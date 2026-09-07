@@ -155,6 +155,8 @@ export function CompanyCreateListingPage() {
   const [loading, setLoading] = useState(false);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
+  // BUGFIX (QA-CO-014): the wizard had nowhere to display a server rejection.
+  const [submitError, setSubmitError] = useState<string | null>(null);
   // Uploaded ahead of listing creation; the metadata rides along in the payload.
   const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -208,7 +210,51 @@ export function CompanyCreateListingPage() {
     setPhotoFiles(prev => prev.filter((_, i) => i !== index));
   };
 
+  /**
+   * BUGFIX (QA-CO-021): every step advanced with no input at all, so the wizard reached
+   * "Review & Submit" showing `Title: -`, `Rent: ₦0`, `Location: ,` — and presented a
+   * NEGATIVE rent (₦-50,000) as publishable. The server rejected it, but that never
+   * reached the screen (QA-CO-014), so the user could only click Publish forever.
+   */
+  const validateStep = (current: number): string | null => {
+    const num = (v: string) => (v === '' ? NaN : Number(v));
+    switch (current) {
+      case 1:
+        if (!formData.title.trim()) return 'Please give the listing a title.';
+        if (!formData.description.trim()) return 'Please add a description.';
+        return null;
+      case 2:
+        if (!formData.address.trim()) return 'Please enter the address.';
+        if (!formData.city.trim()) return 'Please enter the city.';
+        if (!formData.area.trim()) return 'Please enter the area or cluster.';
+        return null;
+      case 3: {
+        if (formData.propertyType === 'shortlet') {
+          if (!formData.shortletRates.length) return 'Add at least one shortlet rate.';
+          return null;
+        }
+        const rent = num(formData.annualRent);
+        if (!Number.isFinite(rent)) return 'Please enter the annual rent.';
+        if (rent < 10000) return 'Annual rent must be at least ₦10,000.';
+        return null;
+      }
+      case 4: {
+        const occupants = num(formData.maxOccupants);
+        if (!Number.isFinite(occupants) || occupants < 1) return 'Maximum occupants must be at least 1.';
+        return null;
+      }
+      default:
+        return null;
+    }
+  };
+
   const handleNext = () => {
+    const problem = validateStep(step);
+    if (problem) {
+      setSubmitError(problem);
+      return;
+    }
+    setSubmitError(null);
     setStep(prev => prev + 1);
   };
 
@@ -281,8 +327,12 @@ export function CompanyCreateListingPage() {
           ...(formData.studentsOnly ? ['students_only'] : []),
         ],
         images: [],
-        tenancyAgreement,
+        // BUGFIX (QA-CO-014): always sending `tenancyAgreement: null` was rejected by
+        // the server, so no company listing could ever be published. Omit the key when
+        // there is no custom agreement.
+        ...(tenancyAgreement ? { tenancyAgreement } : {}),
       };
+      setSubmitError(null);
       const response = await companyApi.createListing(apiData);
       if (response.success) {
         const listingId = response.listing?._id;
@@ -295,10 +345,15 @@ export function CompanyCreateListingPage() {
         }
 
         navigate('/company/listings');
+      } else {
+        // BUGFIX (QA-CO-014): no `else` existed, and the API wrapper swallowed the
+        // error, so publishing failed with no message at all.
+        const details: string[] = (response as any).details || [];
+        setSubmitError([response.message || 'Failed to create listing', ...details].filter(Boolean).join(' · '));
       }
     } catch (error: any) {
       console.error('Create listing error:', error);
-      alert(error.response?.data?.error?.message || 'Failed to create listing');
+      setSubmitError(error.response?.data?.error?.message || 'Failed to create listing');
     } finally {
       setLoading(false);
       setUploading(false);
@@ -949,6 +1004,12 @@ export function CompanyCreateListingPage() {
           {step === 7 && renderStep7()}
           {step === 8 && renderStep8()}
           {step === 9 && renderStep9()}
+
+          {submitError && (
+            <div className="mt-6 flex items-start gap-2 rounded-clay-sm bg-status-error/10 p-3 text-sm text-status-error">
+              <span>{submitError}</span>
+            </div>
+          )}
 
           <div className="flex gap-3 mt-6">
             {step > 1 && (

@@ -86,6 +86,10 @@ export function UpdatePasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowCurrent(!showCurrent)}
+                  /* A11Y-FIX (QA-A11Y-002): icon-only, so a screen reader announced it
+                     as just "button". aria-pressed carries the state as well. */
+                  aria-label={showCurrent ? 'Hide password' : 'Show password'}
+                  aria-pressed={showCurrent}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
                 >
                   {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -109,6 +113,10 @@ export function UpdatePasswordPage() {
                 <button
                   type="button"
                   onClick={() => setShowNew(!showNew)}
+                  /* A11Y-FIX (QA-A11Y-002): icon-only, so a screen reader announced it
+                     as just "button". aria-pressed carries the state as well. */
+                  aria-label={showNew ? 'Hide password' : 'Show password'}
+                  aria-pressed={showNew}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
                 >
                   {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}

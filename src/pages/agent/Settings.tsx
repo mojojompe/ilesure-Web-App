@@ -52,7 +52,23 @@ export function AgentSettingsPage() {
     fetchProfile();
     loadBanks();
     loadSubaccount();
+    loadNotificationSettings();
   }, []);
+
+  // BUGFIX (QA-AGT-008): the toggles were initialised to all-true and
+  // `getNotificationSettings()` was never called anywhere in the app, so the screen
+  // always showed every preference as ON regardless of what the server held — and a
+  // save-then-return looked like it had been discarded even when it had persisted.
+  const loadNotificationSettings = async () => {
+    try {
+      const res = await userApi.getNotificationSettings();
+      if (res.success && res.data) {
+        setNotifications((prev) => ({ ...prev, ...res.data }));
+      }
+    } catch {
+      // Leave the defaults in place; the save path reports its own failures.
+    }
+  };
 
   const loadBanks = async () => {
     const bankList = await paymentsApi.listBanks();
@@ -164,12 +180,20 @@ export function AgentSettingsPage() {
   };
 
   const handleNotificationChange = async (key: string, value: boolean) => {
+    const previous = notifications;
     const newSettings = { ...notifications, [key]: value };
     setNotifications(newSettings);
     try {
-      await userApi.updateNotificationSettings(newSettings);
+      // BUGFIX (QA-AGT-008): a failure was only ever written to console.error, so the
+      // toggle stayed flipped on screen while the server still held the old value.
+      // Roll the UI back and say so.
+      const res = await userApi.updateNotificationSettings(newSettings);
+      if (!res.success) throw new Error('rejected');
+      showToast('Notification preferences saved', 'success');
     } catch (error) {
       console.error('Failed to update notifications:', error);
+      setNotifications(previous);
+      showToast('Could not save that preference. Please try again.', 'error');
     }
   };
 

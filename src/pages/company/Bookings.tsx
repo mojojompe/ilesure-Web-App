@@ -165,7 +165,8 @@ export function CompanyBookingsPage() {
                           <StatusBadge
                             variant={
                               booking.status === 'confirmed' ? 'success' :
-                              booking.status === 'expired' || booking.status === 'refunded' ? 'error' :
+                              booking.status === 'expired' || booking.status === 'refunded' ||
+                              booking.status === 'cancelled' ? 'error' :
                               booking.status === 'fully_paid' ? 'success' :
                               'warning'
                             }
@@ -257,7 +258,8 @@ export function CompanyBookingsPage() {
                   <StatusBadge
                     variant={
                       selectedBooking.status === 'confirmed' ? 'success' :
-                      selectedBooking.status === 'expired' || selectedBooking.status === 'refunded' ? 'error' :
+                      selectedBooking.status === 'expired' || selectedBooking.status === 'refunded' ||
+                              selectedBooking.status === 'cancelled' ? 'error' :
                       'warning'
                     }
                   >

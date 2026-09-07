@@ -25,6 +25,12 @@ export function PaymentPage() {
 
     try {
       const result = await paymentsApi.initialize({ tierId, billingCycle: billing });
+      // BUGFIX (QA-AGT-019): a free tier activates in place and returns no
+      // authorizationUrl, so this used to navigate the browser to `/undefined`.
+      if (!result?.authorizationUrl) {
+        navigate('/agent', { replace: true });
+        return;
+      }
       window.location.href = result.authorizationUrl;
     } catch (err: any) {
       setError(err.message || 'Failed to initialize payment');

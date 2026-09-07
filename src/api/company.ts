@@ -89,12 +89,19 @@ export const companyApi = {
     }
   },
 
-  async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string }> {
+  async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string; details?: string[] }> {
     try {
       const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);
       return { success: true, listing: response.data.data };
-    } catch {
-      return { success: false, message: 'Failed to create listing' };
+    } catch (err: any) {
+      // BUGFIX (QA-CO-014): see the note in api/agent.ts — the swallowed error made
+      // publishing fail with no message at all.
+      const apiError = err?.response?.data?.error;
+      return {
+        success: false,
+        message: apiError?.message || 'Failed to create listing',
+        details: apiError?.details,
+      };
     }
   },
 
@@ -143,6 +150,31 @@ export const companyApi = {
       return response.data;
     } catch {
       return { success: false, message: 'Failed to remove agent' };
+    }
+  },
+
+  /**
+   * BUGFIX (LL-P0-4): archive/restore live on the agent routes, which are mounted behind
+   * `agentOrCompanyMiddleware` and have always accepted company users — the backend's ownership
+   * filter was what rejected them, and that is fixed. The path says `/agent` because one
+   * handler serves both; duplicating it under `/company` would be a second URL for the same
+   * code. They are exposed here so a company page never has to reach into agentApi.
+   */
+  async archiveListing(id: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/archive`);
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to archive listing' };
+    }
+  },
+
+  async restoreListing(id: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/restore`);
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to restore listing' };
     }
   },
 

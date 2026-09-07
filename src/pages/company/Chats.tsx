@@ -329,7 +329,9 @@ export function CompanyChatsPage() {
                   >
                     <Video className="w-5 h-5 text-text-secondary" />
                   </button>
-                  <button className="p-2 rounded-full hover:bg-clay-border-light">
+                  <button
+          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+          aria-label="More options" className="p-2 rounded-full hover:bg-clay-border-light">
                     <MoreVertical className="w-5 h-5 text-text-secondary" />
                   </button>
                 </div>
