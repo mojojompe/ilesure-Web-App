@@ -77,16 +77,10 @@ export const userApi = {
     }
   },
 
-  async submitKycReference(referenceId: string): Promise<{ success: boolean; message?: string }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; message?: string }>('/users/kyc', {
-        referenceId,
-      });
-      return response.data;
-    } catch {
-      return { success: false, message: 'Failed to submit KYC verification' };
-    }
-  },
+  // REMOVED: submitKycReference(). It posted to POST /users/kyc, which does not exist on
+  // the backend, and nothing in the UI called it — KYC goes through initializeKyc/verifyKyc
+  // against /kyc/*. A client method for a route that was never built is a trap for whoever
+  // wires it up next.
 
   async submitCompanyVerification(formData: FormData): Promise<{ success: boolean; message?: string; data?: any; error?: { message: string } }> {
     try {

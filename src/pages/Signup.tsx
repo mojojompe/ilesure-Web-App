@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { MARKETING_URL } from '../api/config';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Building2, Search, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
@@ -430,11 +431,11 @@ export function SignupPage() {
         />
         <span className="text-sm leading-5 text-text-secondary">
           I agree to the{' '}
-          <a href="/terms-of-service" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+          <a href={`${MARKETING_URL}/terms-of-service`} target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
             Terms of Service
           </a>{' '}
           and{' '}
-          <a href="/privacy-policy" target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+          <a href={`${MARKETING_URL}/privacy-policy`} target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
             Privacy Policy
           </a>.
         </span>
