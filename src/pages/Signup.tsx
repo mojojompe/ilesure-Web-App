@@ -117,15 +117,51 @@ export function SignupPage() {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleNext = async () => {
+  /**
+   * BUGFIX (QA-CO-026 / QA-AGT-028 / QA-CO-027): every one of these checks used to be a bare
+   * `return`. Clicking "Continue" with a field empty did nothing at all — no message, no
+   * highlight, no movement — so the button looked broken and the signup simply stopped. The
+   * error banner this feeds has existed above all three steps the whole time; nothing ever
+   * wrote to it.
+   *
+   * Each branch now says which field is missing, because "please fill in all fields" on a form
+   * this long is barely better than silence.
+   */
+  const validateStep = (): string | null => {
     if (step === 1) {
-      if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) return;
-      if (formData.password !== formData.confirmPassword) return;
+      if (!formData.fullName.trim()) {
+        return isCompany ? "Enter the company representative's name." : 'Enter your full name.';
+      }
+      if (!formData.email.trim()) return 'Enter your email address.';
+      // QA-CO-030: companyName was never validated anywhere, and the server falls back to
+      // `${fullName}'s Company` — so a company could finish signup with no name and never
+      // be told what it had been called.
+      if (isCompany && !companyName.trim()) return 'Enter your company name.';
+      if (!formData.password) return 'Create a password.';
+      if (!formData.confirmPassword) return 'Confirm your password.';
+      if (formData.password !== formData.confirmPassword) return 'The two passwords do not match.';
+      return null;
+    }
+    if (step === 2) {
+      if (!formData.phone.trim()) return 'Enter your phone number.';
+      return null;
+    }
+    return null;
+  };
+
+  const handleNext = async () => {
+    const problem = validateStep();
+    if (problem) {
+      setError(problem);
+      return;
+    }
+    setError('');
+
+    if (step === 1) {
       setStep(2);
       return;
     }
     if (step === 2) {
-      if (!formData.phone) return;
       setStep(3);
       return;
     }
@@ -221,6 +257,7 @@ export function SignupPage() {
           <input
             type="text"
             name="fullName"
+            autoComplete="name"
             value={formData.fullName}
             onChange={handleChange}
             placeholder="John Doe"
@@ -239,6 +276,7 @@ export function SignupPage() {
           <input
             type="email"
             name="email"
+            autoComplete="email"
             value={formData.email}
             onChange={handleChange}
             placeholder="you@example.com"
@@ -255,8 +293,20 @@ export function SignupPage() {
           </label>
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+            {/* SECURITY-FIX (QA-CO-029): this was the only input on this step carrying no
+                `name` and no `autoComplete`, and it sits between Email and Password. Browser
+                password managers infer a field's purpose from exactly that — surrounding
+                fields, plus the absence of a declared one — so Chromium/Safari could treat it
+                as the credential field and fill the saved password into it. The form then
+                submitted, and `authController.register` stores this value verbatim as
+                `Company.name`, which is public: the user's password, in cleartext, as a
+                company's display name.
+                `organization` states the real purpose, which is what stops the heuristic. */}
             <input
               type="text"
+              name="companyName"
+              id="companyName"
+              autoComplete="organization"
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
               placeholder="Your Company Name"
@@ -276,6 +326,7 @@ export function SignupPage() {
           <input
             type={showPassword ? 'text' : 'password'}
             name="password"
+            autoComplete="new-password"
             value={formData.password}
             onChange={handleChange}
             placeholder="Create a password"
@@ -321,6 +372,7 @@ export function SignupPage() {
           <input
             type={showConfirmPassword ? 'text' : 'password'}
             name="confirmPassword"
+            autoComplete="new-password"
             value={formData.confirmPassword}
             onChange={handleChange}
             placeholder="Confirm your password"
@@ -353,6 +405,7 @@ export function SignupPage() {
           <input
             type="tel"
             name="phone"
+            autoComplete="tel"
             value={formData.phone}
             onChange={handleChange}
             placeholder="08012345678"
@@ -573,12 +626,15 @@ export function SignupPage() {
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
+            {/* QA-CO-027: the Complete button was `disabled={!acceptedTerms}`, so an agent who
+                had not ticked the box clicked a dead control with nothing to explain why.
+                handleSubmit has always carried the right message — it could never run. */}
             {step < 3 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
                 Continue <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             ) : (
-              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading} disabled={!acceptedTerms}>
+              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading}>
                 Complete <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             )}

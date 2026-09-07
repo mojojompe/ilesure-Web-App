@@ -43,7 +43,17 @@ export function AgentArchivedPage() {
 
   const handleRestore = async (id: string) => {
     setRestoring(id);
-    const response = await agentApi.updateListing(id, { status: 'active' });
+    // BUGFIX (LL-P0-4): this called `updateListing(id, { status: 'active' })`. Both the agent
+    // and company update handlers whitelist editable fields and `status` is deliberately not
+    // among them — restoring through that route would let an unapproved listing launder itself
+    // live — so the request became an empty `$set: {}`, returned success, and changed nothing.
+    // The row below then vanished from the table behind a green "restored" toast while the
+    // listing stayed archived in the database, which is the worst of both: no effect, and no
+    // way for the user to tell.
+    //
+    // The dedicated endpoint exists precisely for this, and restores to `statusBeforeArchive`
+    // rather than blindly to 'active'.
+    const response = await agentApi.restoreListing(id);
     
     if (response.success) {
       setListings(prev => prev.filter(l => l._id !== id));

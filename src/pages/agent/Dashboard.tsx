@@ -22,7 +22,20 @@ export function AgentDashboardPage() {
   });
 
   const isVerified = user?.verificationStatus === 'verified';
-  const isPending = user?.verificationStatus === 'pending';
+
+  // BUGFIX (QA-AGT-032): this was `verificationStatus === 'pending'`, and the User model
+  // defaults that field to 'pending' the moment an account is created. So an agent who tapped
+  // "Skip for now" on the identity step — having submitted nothing at all — was told "Your
+  // identity documents are under review. We'll notify you once approved." They then waited for
+  // an approval that could never come, on documents that did not exist, while the one action
+  // that would unblock them was hidden behind that same branch.
+  //
+  // 'pending' means "not verified yet", not "we have something to review". What distinguishes
+  // the two is whether evidence actually exists.
+  const hasSubmittedEvidence = Boolean(
+    user?.ninVerified || user?.bvnVerified || user?.verificationSubmittedAt
+  );
+  const isPending = user?.verificationStatus === 'pending' && hasSubmittedEvidence;
   const showBanner = !isVerified && !bannerDismissed;
 
   const handleDismissBanner = () => {

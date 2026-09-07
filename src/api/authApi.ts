@@ -9,6 +9,8 @@ interface AuthResponse {
   refreshToken?: string;
   onboardingRequired?: boolean;
   nextStep?: string;
+  /** QA-AGT-031: the address to verify, echoed back on an EMAIL_NOT_VERIFIED challenge. */
+  email?: string;
   data?: {
     user: User;
     accessToken: string;
@@ -16,6 +18,8 @@ interface AuthResponse {
   };
   error?: {
     message: string;
+    /** Machine-readable reason, so callers branch on the code rather than the prose. */
+    code?: string;
   };
 }
 
@@ -69,15 +73,23 @@ export const authApi = {
 
       return {
         success: false,
-        error: { message: body.error?.message || 'Login failed' },
+        error: { message: body.error?.message || 'Login failed', code: body.error?.code },
       };
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
+        // QA-AGT-031: an unverified portal account is refused with 403 EMAIL_NOT_VERIFIED and
+        // a `verify_otp` next step. Flattening that to "Login failed" would leave the user
+        // staring at what looks like a wrong password with no way forward, so the code, the
+        // step and the address all travel with the failure.
+        const body = error.response?.data;
         return {
           success: false,
           error: {
-            message: error.response?.data?.error?.message || 'Login failed',
+            message: body?.error?.message || 'Login failed',
+            code: body?.error?.code,
           },
+          nextStep: body?.nextStep,
+          email: body?.email,
         };
       }
       return { success: false, error: { message: 'Network error' } };

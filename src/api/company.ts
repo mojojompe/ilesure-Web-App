@@ -153,6 +153,31 @@ export const companyApi = {
     }
   },
 
+  /**
+   * BUGFIX (LL-P0-4): archive/restore live on the agent routes, which are mounted behind
+   * `agentOrCompanyMiddleware` and have always accepted company users — the backend's ownership
+   * filter was what rejected them, and that is fixed. The path says `/agent` because one
+   * handler serves both; duplicating it under `/company` would be a second URL for the same
+   * code. They are exposed here so a company page never has to reach into agentApi.
+   */
+  async archiveListing(id: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/archive`);
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to archive listing' };
+    }
+  },
+
+  async restoreListing(id: string): Promise<{ success: boolean; message?: string }> {
+    try {
+      const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/restore`);
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to restore listing' };
+    }
+  },
+
   async updateListing(id: string, data: { status?: string; title?: string; description?: string; price?: number }): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await apiClient.put<{ success: boolean; message?: string }>(`/company/listings/${id}`, data);

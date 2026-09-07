@@ -42,6 +42,11 @@ export function LoginPage() {
         } else {
           navigate('/');
         }
+      } else if (result.errorCode === 'EMAIL_NOT_VERIFIED') {
+        // QA-AGT-031: the credentials were right; the address was never verified. Hand them to
+        // the OTP screen with the address prefilled — it can resend a code, so an expired
+        // original is not a dead end.
+        navigate('/create-otp', { state: { email: result.email || email } });
       } else {
         setErrors({ general: result.error || 'Invalid email or password. Try again.' });
       }
