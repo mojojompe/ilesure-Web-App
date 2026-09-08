@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Edit, Archive, Trash2, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, Loader } from 'lucide-react';
+import { Plus, Search, Edit, Archive, Trash2, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, CheckCircle, Loader } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -19,6 +19,10 @@ export function AgentListingsPage() {
   const [filter, setFilter] = useState<'all' | 'active' | 'fully_booked'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
+  const [showRentedModal, setShowRentedModal] = useState(false);
+  const [rentedTargetListing, setRentedTargetListing] = useState<any | null>(null);
+  const [rentedReason, setRentedReason] = useState<'rented_off_platform' | 'rented_on_platform' | 'temporarily_unavailable'>('rented_off_platform');
+  const [markingRented, setMarkingRented] = useState(false);
   const [selectedListing, setSelectedListing] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -132,6 +136,37 @@ export function AgentListingsPage() {
       }
     } catch {
       showToast('Failed to archive listing', 'error');
+    }
+  };
+
+  const handleOpenMarkRented = (listing: any) => {
+    setRentedTargetListing(listing);
+    setRentedReason('rented_off_platform');
+    setShowRentedModal(true);
+  };
+
+  const handleConfirmMarkRented = async () => {
+    if (!rentedTargetListing) return;
+    setMarkingRented(true);
+    try {
+      const response = await agentApi.markListingRented(rentedTargetListing._id, rentedReason);
+      if (response.success) {
+        showToast(
+          response.pointsAwarded
+            ? `Listing marked as rented! 1 listing slot freed up (+${response.pointsAwarded} reward points earned).`
+            : 'Listing marked as rented and slot released!',
+          'success'
+        );
+        setShowRentedModal(false);
+        setRentedTargetListing(null);
+        fetchListings();
+      } else {
+        showToast(response.error?.message || 'Failed to mark listing as rented', 'error');
+      }
+    } catch {
+      showToast('Failed to mark listing as rented', 'error');
+    } finally {
+      setMarkingRented(false);
     }
   };
 
@@ -275,14 +310,26 @@ export function AgentListingsPage() {
                       <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
                       <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
                     </div>
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
+                    <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light items-center">
                       <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
                         <Eye className="w-3 h-3 mr-1" /> View
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))} disabled={isFullyBooked}>
+                      {listing.status === 'active' && (
+                        <Button
+                          variant="primary"
+                          size="sm"
+                          onClick={() => handleOpenMarkRented(listing)}
+                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-2.5 py-1.5 rounded-clay-sm flex items-center gap-1 shadow-sm transition-all"
+                          title="Quick Delist: Mark as Rented to free up listing slot"
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                          <span>Rented</span>
+                        </Button>
+                      )}
+                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))} disabled={isFullyBooked} title="Archive listing">
                         <Archive className="w-3 h-3" />
                       </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleDelete(String(listingId))} disabled={isFullyBooked}>
+                      <Button variant="secondary" size="sm" onClick={() => handleDelete(String(listingId))} disabled={isFullyBooked} title="Delete listing">
                         <Trash2 className="w-3 h-3 text-red-500" />
                       </Button>
                     </div>
@@ -483,6 +530,91 @@ export function AgentListingsPage() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* Quick Mark as Rented Modal */}
+      <Modal
+        isOpen={showRentedModal}
+        onClose={() => !markingRented && setShowRentedModal(false)}
+        title="Mark Property as Rented / Taken"
+        size="md"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-text-secondary">
+            Taking down <strong className="text-text-primary">"{rentedTargetListing?.title}"</strong> immediately removes it from public search and frees up <strong>1 active listing slot</strong> on your plan. All photos and details remain saved safely in your Archive.
+          </p>
+
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+              Where was this property rented?
+            </label>
+            <div className="space-y-2">
+              {[
+                {
+                  id: 'rented_off_platform',
+                  label: 'Rented outside iléSure (Offline client / WhatsApp / Walk-in)',
+                  desc: 'Found a tenant directly outside the platform.',
+                },
+                {
+                  id: 'rented_on_platform',
+                  label: 'Rented through an iléSure tenant',
+                  desc: 'A tenant connected or booked via iléSure.',
+                },
+                {
+                  id: 'temporarily_unavailable',
+                  label: 'Temporarily unavailable / Maintenance / Withdrawn',
+                  desc: 'Pause inquiries while the property is being serviced or held.',
+                },
+              ].map((opt) => (
+                <label
+                  key={opt.id}
+                  className={`flex items-start gap-3 p-3 rounded-clay-sm border cursor-pointer transition-all ${
+                    rentedReason === opt.id
+                      ? 'border-emerald-500 bg-emerald-50/50'
+                      : 'border-clay-border-light hover:bg-clay-border-light/30'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="rentedReason"
+                    value={opt.id}
+                    checked={rentedReason === opt.id}
+                    onChange={() => setRentedReason(opt.id as any)}
+                    className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <div>
+                    <span className="text-sm font-medium text-text-primary block">{opt.label}</span>
+                    <span className="text-xs text-text-tertiary block mt-0.5">{opt.desc}</span>
+                  </div>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <div className="p-3 bg-mustard-pale/40 border border-mustard/30 rounded-clay-sm text-xs text-text-secondary flex items-center gap-2">
+            <span className="text-base">🎁</span>
+            <span>You will earn <strong>+25 reward points</strong> for promptly updating this listing!</span>
+          </div>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setShowRentedModal(false)}
+              disabled={markingRented}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={handleConfirmMarkRented}
+              loading={markingRented}
+            >
+              Confirm & Delist
+            </Button>
+          </div>
+        </div>
       </Modal>
     </AppLayout>
   );

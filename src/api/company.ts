@@ -169,6 +169,15 @@ export const companyApi = {
     }
   },
 
+  async markListingRented(id: string, reason = 'rented_off_platform'): Promise<{ success: boolean; message?: string; pointsAwarded?: number }> {
+    try {
+      const response = await apiClient.put<{ success: boolean; message?: string; pointsAwarded?: number }>(`/company/listings/${id}/mark-rented`, { reason });
+      return response.data;
+    } catch {
+      return { success: false, message: 'Failed to mark listing as rented' };
+    }
+  },
+
   async restoreListing(id: string): Promise<{ success: boolean; message?: string }> {
     try {
       const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/restore`);

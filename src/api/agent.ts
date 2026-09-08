@@ -240,6 +240,15 @@ export const agentApi = {
     }
   },
 
+  async markListingRented(id: string, reason = 'rented_off_platform'): Promise<ListingResponse & { pointsAwarded?: number }> {
+    try {
+      const response = await apiClient.put<ListingResponse & { pointsAwarded?: number }>(`/agent/listings/${id}/mark-rented`, { reason });
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to mark listing as rented' } };
+    }
+  },
+
   async restoreListing(id: string): Promise<ListingResponse> {
     try {
       const response = await apiClient.put<ListingResponse>(`/agent/listings/${id}/restore`);
