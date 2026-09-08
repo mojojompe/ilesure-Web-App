@@ -7,7 +7,7 @@ import { clsx } from 'clsx';
 import {
   LayoutDashboard, Building2, Users, BarChart3, Settings, LogOut,
   CreditCard, FileCheck, Bell, MessageCircle, Heart, Archive, Plus,
-  ShoppingCart
+  ShoppingCart, HelpCircle
 } from 'lucide-react';
 import { useAuth } from '../../api/authContext';
 import type { UserRole } from '../../types';
@@ -28,6 +28,7 @@ const agentNavItems = [
   { path: '/agent/payments', label: 'Payments', icon: CreditCard },
   { path: '/agent/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/agent/store', label: 'Agent Store', icon: ShoppingCart },
+  { path: '/agent/support', label: 'Help & Support', icon: HelpCircle },
   { path: '/agent/notifications', label: 'Notifications', icon: Bell },
 ];
 
@@ -42,6 +43,7 @@ const companyNavItems = [
   { path: '/company/payments', label: 'Payments', icon: CreditCard },
   { path: '/company/analytics', label: 'Analytics', icon: BarChart3 },
   { path: '/company/store', label: 'Agent Store', icon: ShoppingCart },
+  { path: '/company/support', label: 'Help & Support', icon: HelpCircle },
   { path: '/company/notifications', label: 'Notifications', icon: Bell },
 ];
 
