@@ -1,11 +1,55 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, ArrowRight, Loader2, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Check, X, ArrowRight, Loader2, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
 import { paymentsApi } from '../api/payments';
 import type { Tier, UserRole } from '../types';
+
+export const getWebTierBullets = (tier: Tier) => {
+  const id = tier.id?.toLowerCase() || '';
+  const slots = tier.features?.maxListings ?? (id === 'free' ? 5 : id === 'basic' ? 15 : id === 'premium' ? 30 : 50);
+
+  if (id === 'free') {
+    return [
+      { text: `Up to ${slots} active listing slots`, positive: true },
+      { text: 'In-App Chat Only (No direct WhatsApp/Calls)', positive: false },
+      { text: 'Standard Platform Visibility', positive: true },
+      { text: 'Basic View & Save Analytics', positive: true },
+      { text: 'Community & In-App Help', positive: true },
+    ];
+  }
+  if (id === 'basic') {
+    return [
+      { text: `Up to ${slots} active listing slots`, positive: true },
+      { text: 'Direct WhatsApp & Phone Call Buttons', positive: true, highlight: true },
+      { text: 'Verified Partner Badge on Listings', positive: true },
+      { text: 'Priority Listing Visibility', positive: true },
+      { text: 'Detailed Booking & Lead Analytics', positive: true },
+      { text: 'Priority Email Support', positive: true },
+    ];
+  }
+  if (id === 'premium') {
+    return [
+      { text: `Up to ${slots} active listing slots`, positive: true },
+      { text: 'Instant WhatsApp & Phone Call Buttons', positive: true, highlight: true },
+      { text: 'Gold FEATURED Ribbon in Discovery', positive: true, highlight: true },
+      { text: 'Featured Partner Checkmark Badge', positive: true },
+      { text: 'Advanced Demand & Trend Analytics', positive: true },
+      { text: 'Priority Phone + Email Support', positive: true },
+    ];
+  }
+  // Enterprise
+  return [
+    { text: `Up to ${slots} active listing slots`, positive: true },
+    { text: 'Direct WhatsApp & VIP Call Access', positive: true, highlight: true },
+    { text: 'TOP PICK Top-of-Feed Placement', positive: true, highlight: true },
+    { text: 'Diamond Partner Verified Badge', positive: true },
+    { text: 'Full Reporting & Demand Heatmap', positive: true },
+    { text: 'Dedicated Account Manager', positive: true },
+  ];
+};
 
 interface TierPageProps {
   role: UserRole;
@@ -245,30 +289,21 @@ export function TierPage({ role }: TierPageProps) {
                   )}
 
                   <div className="space-y-2.5 mb-6">
-                    {tier.features?.maxListings !== undefined && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                        <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
+                    {getWebTierBullets(tier).map((bullet, bIdx) => (
+                      <div key={bIdx} className="flex items-start gap-2 text-sm">
+                        {bullet.positive ? (
+                          <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                        ) : (
+                          <X className="w-4 h-4 text-text-tertiary flex-shrink-0 mt-0.5" />
+                        )}
+                        <span className={clsx(
+                          bullet.positive ? 'text-text-secondary' : 'text-text-tertiary opacity-70',
+                          bullet.highlight && 'font-semibold text-text-primary'
+                        )}>
+                          {bullet.text}
+                        </span>
                       </div>
-                    )}
-                    {tier.features?.analytics && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                        <span className="text-text-secondary capitalize">{tier.features.analytics} Analytics</span>
-                      </div>
-                    )}
-                    {tier.features?.support && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                        <span className="text-text-secondary capitalize">{tier.features.support} Support</span>
-                      </div>
-                    )}
-                    {tier.features?.visibility && (
-                      <div className="flex items-start gap-2 text-sm">
-                        <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                        <span className="text-text-secondary capitalize">{tier.features.visibility} Visibility</span>
-                      </div>
-                    )}
+                    ))}
                   </div>
                 </div>
 

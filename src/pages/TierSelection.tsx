@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight, Loader2 } from 'lucide-react';
+import { Check, X, ArrowRight, Loader2 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
 import { paymentsApi } from '../api/payments';
 import type { Tier } from '../types';
+import { getWebTierBullets } from './Tiers';
 
 export function TierSelectionPage() {
   const navigate = useNavigate();
@@ -183,30 +184,21 @@ export function TierSelectionPage() {
               </div>
 
               <div className="space-y-2">
-                {tier.features?.maxListings !== undefined && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
+                {getWebTierBullets(tier).map((bullet, bIdx) => (
+                  <div key={bIdx} className="flex items-start gap-2 text-sm">
+                    {bullet.positive ? (
+                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <X className="w-4 h-4 text-text-tertiary flex-shrink-0 mt-0.5" />
+                    )}
+                    <span className={clsx(
+                      bullet.positive ? 'text-text-secondary' : 'text-text-tertiary opacity-70',
+                      bullet.highlight && 'font-semibold text-text-primary'
+                    )}>
+                      {bullet.text}
+                    </span>
                   </div>
-                )}
-                {tier.features?.analytics && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">{tier.features.analytics}</span>
-                  </div>
-                )}
-                {tier.features?.support && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">{tier.features.support}</span>
-                  </div>
-                )}
-                {tier.features?.visibility && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">{tier.features.visibility}</span>
-                  </div>
-                )}
+                ))}
               </div>
             </button>
           ))}
