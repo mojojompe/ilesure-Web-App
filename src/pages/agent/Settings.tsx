@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader, Banknote, CheckCircle, Shield } from 'lucide-react';
+import { Save, Loader, Banknote, CheckCircle, Shield, Clock } from 'lucide-react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -470,28 +470,53 @@ export function AgentSettingsPage() {
         </div>
 
         <div className="space-y-6">
-          {user?.role !== 'sub_agent' && (
-            <ClayCard className="p-5">
-              <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
-              <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-                <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
-                <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-tertiary">Max Listings:</span>
-                  <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+          {user?.role !== 'sub_agent' && (() => {
+            const tierExpiresDate = user?.tier?.expiresAt ? new Date(user.tier.expiresAt) : null;
+            const isTierExpired = tierExpiresDate ? tierExpiresDate.getTime() <= Date.now() : true;
+            const tierDaysRemaining = tierExpiresDate && !isTierExpired
+              ? Math.max(0, Math.ceil((tierExpiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+              : 0;
+
+            return (
+              <ClayCard className="p-5">
+                <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
+                <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
+                  <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
+                  <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
+                  {tierExpiresDate && !isTierExpired && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-burnt-brown text-white text-xs font-semibold shadow-sm">
+                      <Clock className="w-3.5 h-3.5 text-mustard" />
+                      <span>{tierDaysRemaining} day{tierDaysRemaining === 1 ? '' : 's'} remaining</span>
+                    </div>
+                  )}
+                  {tierExpiresDate && isTierExpired && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-status-danger text-white text-xs font-semibold">
+                      <span>Expired</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-tertiary">Featured:</span>
-                  <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-tertiary">Max Listings:</span>
+                    <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-tertiary">Featured:</span>
+                    <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
+                  </div>
+                  {tierExpiresDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-tertiary">Expires On:</span>
+                      <span className="font-medium">{tierExpiresDate.toLocaleDateString('en-NG', { dateStyle: 'medium' })}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <a href="/tiers" className="block btn-secondary text-center mt-4">
-                Upgrade Plan
-              </a>
-            </ClayCard>
-          )}
+                <a href="/tiers" className="block btn-secondary text-center mt-4">
+                  {user?.tier?.name && user.tier.name.toLowerCase() !== 'free' && !isTierExpired ? 'Manage / Renew Plan' : 'Upgrade Plan'}
+                </a>
+              </ClayCard>
+            );
+          })()}
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Company</h2>

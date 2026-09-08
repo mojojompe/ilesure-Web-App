@@ -11,9 +11,15 @@ export function TierSelectionPage() {
   const navigate = useNavigate();
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selecting, setSelecting] = useState(false);
+  const [myTier, setMyTier] = useState<{
+    tierId: string;
+    name: string;
+    expiresAt: string | null;
+  } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     loadTiers();
@@ -21,11 +27,22 @@ export function TierSelectionPage() {
 
   const loadTiers = async () => {
     setLoading(true);
-    const response = await tiersApi.getTiers();
-    if (response.success && response.data) {
-      setTiers(response.data.tiers);
+    try {
+      const [tiersRes, myTierRes] = await Promise.all([
+        tiersApi.getTiers(),
+        tiersApi.getMyTier().catch(() => null),
+      ]);
+      if (tiersRes.success && tiersRes.data) {
+        setTiers(tiersRes.data.tiers);
+      }
+      if (myTierRes && myTierRes.success && myTierRes.data) {
+        setMyTier(myTierRes.data);
+      }
+    } catch (err) {
+      console.error('Failed to load tiers:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   /**
@@ -36,7 +53,9 @@ export function TierSelectionPage() {
    */
   const priceFor = (tier: Tier): number => {
     const monthly = tier.priceMonthly ?? tier.price ?? 0;
-    return billingCycle === 'annually' ? (tier.priceYearly ?? 0) : monthly;
+    return billingCycle === 'annually'
+      ? (tier.priceYearly ?? Math.round(monthly * 12 * 0.8))
+      : monthly;
   };
 
   const formatPrice = (tier: Tier) => {
@@ -48,13 +67,24 @@ export function TierSelectionPage() {
 
   const handleContinue = async () => {
     if (!selectedTier) return;
-    // BUGFIX (QA-AGT-019): every tier was sent to the payment screen, including the
-    // free one. The API correctly activates a free tier in place and returns no
-    // authorizationUrl, so Payment.tsx then redirected to `undefined` and the user
-    // landed on /undefined. `formatPrice` above already recognises a free tier —
-    // handleContinue simply ignored it.
+    setErrorMsg(null);
+
     const chosen = tiers.find((t) => t.id === selectedTier);
-    const isFree = chosen ? (chosen.priceMonthly ?? chosen.price) === 0 : false;
+    if (!chosen) return;
+
+    const expiresDate = myTier?.expiresAt ? new Date(myTier.expiresAt) : null;
+    const isExpired = expiresDate ? expiresDate.getTime() <= Date.now() : true;
+    const daysRemaining = expiresDate && !isExpired
+      ? Math.max(0, Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : 0;
+
+    const isSameTier = myTier?.tierId?.toLowerCase() === chosen.id.toLowerCase();
+    if (isSameTier && !isExpired && daysRemaining > 7) {
+      setErrorMsg(`You already have an active ${chosen.name} subscription with ${daysRemaining} day(s) remaining. Renewal is available 7 days before expiration.`);
+      return;
+    }
+
+    const isFree = (chosen.priceMonthly ?? chosen.price) === 0;
     if (isFree) {
       try {
         await paymentsApi.initialize({ tierId: selectedTier, billingCycle });
@@ -86,19 +116,14 @@ export function TierSelectionPage() {
           <p className="text-text-tertiary mt-1">Select the plan that fits your needs</p>
         </div>
 
+        {errorMsg && (
+          <div className="mb-6 p-4 rounded-clay bg-status-danger/10 border border-status-danger/20 text-status-danger text-sm text-center">
+            {errorMsg}
+          </div>
+        )}
+
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-pill p-1 border border-clay-border flex">
-            <button
-              onClick={() => setBillingCycle('annually')}
-              className={clsx(
-                'px-6 py-2 rounded-pill text-sm font-medium transition-all',
-                billingCycle === 'annually'
-                  ? 'bg-burnt-brown text-white'
-                  : 'text-text-secondary hover:text-text-primary'
-              )}
-            >
-              Yearly
-            </button>
             <button
               onClick={() => setBillingCycle('monthly')}
               className={clsx(
@@ -109,6 +134,17 @@ export function TierSelectionPage() {
               )}
             >
               Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annually')}
+              className={clsx(
+                'px-6 py-2 rounded-pill text-sm font-medium transition-all',
+                billingCycle === 'annually'
+                  ? 'bg-burnt-brown text-white'
+                  : 'text-text-secondary hover:text-text-primary'
+              )}
+            >
+              Yearly
             </button>
           </div>
         </div>
