@@ -41,11 +41,11 @@ export function AgentStorePage() {
     try {
       setBuying(productId);
       const res: any = await agentStoreService.buyProduct(productId);
-      if (res.success) {
-        showToast(res.message, 'success');
+      if (res.success || res.message === 'Purchase successful!') {
+        showToast(res.message || 'Purchase successful!', 'success');
         fetchStoreData(); // refresh points
       } else {
-        showToast(res.error?.message || 'Purchase failed', 'error');
+        showToast(res.error?.message || res.message || 'Purchase failed', 'error');
       }
     } catch (err: any) {
       showToast(err.message || 'Purchase failed', 'error');
