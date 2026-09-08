@@ -89,6 +89,15 @@ export const companyApi = {
     }
   },
 
+  async getListing(id: string): Promise<{ success: boolean; data?: { listing: any }; error?: { message: string } }> {
+    try {
+      const response = await apiClient.get<any>(`/listings/${id}`);
+      return { success: true, data: { listing: response.data.data } };
+    } catch {
+      return { success: false, error: { message: 'Failed to fetch listing' } };
+    }
+  },
+
   async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string; details?: string[] }> {
     try {
       const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);

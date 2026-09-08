@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { companyApi } from '../../api/company';
+import { propertyTypes } from '../../constants/listingVocabulary';
 
 export function CompanyListingsPage() {
   const navigate = useNavigate();
@@ -44,9 +45,21 @@ export function CompanyListingsPage() {
 
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
-  const handleView = (listing: any) => {
+  const handleView = async (listing: any) => {
     setSelectedListing(listing);
     setShowViewModal(true);
+    try {
+      const listingId = listing.id || listing._id;
+      if (listingId) {
+        const res = await companyApi.getListing(listingId);
+        if (res.success && (res.data?.listing || res.data)) {
+          const full = (res.data as any).listing || res.data;
+          setSelectedListing((prev: any) => ({ ...prev, ...full }));
+        }
+      }
+    } catch {
+      // Keep existing listing
+    }
   };
 
   return (
@@ -157,50 +170,207 @@ export function CompanyListingsPage() {
       )}
 
       <Modal isOpen={showViewModal} onClose={() => setShowViewModal(false)} title={selectedListing?.title || 'Listing Details'} size="lg">
-        {selectedListing && (
-          <div className="space-y-4">
-            {selectedListing.images?.[0] && (
-              <img src={selectedListing.images[0]} alt={selectedListing.title} className="w-full h-48 object-cover rounded-clay-sm" />
-            )}
-            <StatusBadge variant={selectedListing.status === 'active' ? 'success' : 'warning'}>
-              {selectedListing.status}
-            </StatusBadge>
-            <div>
-              {selectedListing.propertyType === 'shortlet' && selectedListing.shortletPricing ? (
-                <div className="space-y-1">
-                  {selectedListing.shortletPricing.hourly && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.hourly.toLocaleString()}/hr</p>}
-                  {selectedListing.shortletPricing.daily && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.daily.toLocaleString()}/day</p>}
-                  {selectedListing.shortletPricing.weekly && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.weekly.toLocaleString()}/wk</p>}
-                  {selectedListing.shortletPricing.monthly && <p className="text-2xl font-bold text-mustard">₦{selectedListing.shortletPricing.monthly.toLocaleString()}/mo</p>}
+        {selectedListing && (() => {
+          const loc = selectedListing.location || {};
+          const address = selectedListing.address || loc.address || '';
+          const city = selectedListing.city || loc.city || '';
+          const stateOrArea = selectedListing.areaCluster || selectedListing.state || loc.state || '';
+          const landmark = selectedListing.landmark || loc.landmark || '';
+          const fullAddress = [address, city, stateOrArea].filter(Boolean).join(', ');
+          const mapQuery = [address, city, landmark, stateOrArea].filter(Boolean).join(' ') || selectedListing.title || '';
+          
+          const rawStatus = (selectedListing.status || 'active').toLowerCase();
+          const statusText = rawStatus.replace(/_/g, ' ').toUpperCase();
+          const statusVariant = rawStatus === 'active' ? 'success' : rawStatus === 'fully_booked' ? 'default' : 'warning';
+
+          const propTypeLabel = propertyTypes.find(p => p.value === (selectedListing.propertyType || selectedListing.type))?.label 
+            || (selectedListing.propertyType || selectedListing.type || 'Residential').replace(/_/g, ' ');
+
+          return (
+            <div className="space-y-5">
+              {selectedListing.images?.length > 0 && (
+                <div className="relative w-full h-56 flex overflow-x-auto snap-x snap-mandatory rounded-clay-sm scrollbar-hide border border-clay-border bg-black/5">
+                  {selectedListing.images.map((url: string, index: number) => {
+                    const isVideo = url.match(/\.(mp4|mov|webm)$/i);
+                    return (
+                      <div key={index} className="w-full flex-none snap-center h-full">
+                        {isVideo ? (
+                          <video src={url} controls className="w-full h-full object-cover" />
+                        ) : (
+                          <img src={url} alt={`${selectedListing.title} ${index + 1}`} className="w-full h-full object-cover" />
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-              ) : (
-                <p className="text-2xl font-bold text-mustard">{formatCurrency(selectedListing.price || selectedListing.rentAnnual || 0)}</p>
               )}
-              <p className="text-sm text-text-tertiary capitalize">{selectedListing.propertyType?.replace(/_/g, ' ') || selectedListing.type}</p>
-            </div>
-            <p className="text-text-secondary">{selectedListing.description}</p>
-            <div className="flex flex-col gap-2 text-text-tertiary">
-              <div className="flex items-center gap-2">
-                <MapPin className="w-4 h-4" />
-                <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
+
+              {/* Status and Price Banner */}
+              <div className="flex items-center justify-between gap-3 p-3.5 bg-mustard-pale/30 rounded-clay-sm border border-mustard/20 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <StatusBadge variant={statusVariant}>
+                    {statusText}
+                  </StatusBadge>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-pill bg-white border border-clay-border text-text-secondary capitalize">
+                    {propTypeLabel}
+                  </span>
+                </div>
+                <div>
+                  {selectedListing.propertyType === 'shortlet' && selectedListing.shortletPricing ? (
+                    <div className="text-right space-y-0.5">
+                      {selectedListing.shortletPricing.hourly && <p className="text-lg font-bold text-mustard">₦{selectedListing.shortletPricing.hourly.toLocaleString()}/hr</p>}
+                      {selectedListing.shortletPricing.daily && <p className="text-xl font-bold text-mustard">₦{selectedListing.shortletPricing.daily.toLocaleString()}/day</p>}
+                      {selectedListing.shortletPricing.weekly && <p className="text-sm font-bold text-mustard">₦{selectedListing.shortletPricing.weekly.toLocaleString()}/wk</p>}
+                      {selectedListing.shortletPricing.monthly && <p className="text-sm font-bold text-mustard">₦{selectedListing.shortletPricing.monthly.toLocaleString()}/mo</p>}
+                    </div>
+                  ) : (
+                    <div className="text-right">
+                      <p className="text-2xl font-black text-mustard leading-none">
+                        {formatCurrency(selectedListing.price || selectedListing.rentAnnual || 0)}
+                      </p>
+                      <span className="text-[11px] font-medium text-text-tertiary">
+                        /{selectedListing.duration === 'monthly' ? 'month' : selectedListing.duration === 'weekly' ? 'week' : selectedListing.duration === 'daily' ? 'day' : 'year'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              {selectedListing.landmark && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="font-medium text-text-secondary">Landmarks:</span>
-                  <span>{selectedListing.landmark}</span>
+
+              {/* Description */}
+              <div>
+                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-1.5">Description</p>
+                <p className="text-sm text-text-secondary leading-relaxed whitespace-pre-line bg-white p-3 rounded-clay-sm border border-clay-border">
+                  {selectedListing.description || 'No description provided.'}
+                </p>
+              </div>
+
+              {/* Location Card */}
+              <div className="p-3.5 bg-clay-border-light/40 rounded-clay-sm border border-clay-border space-y-2">
+                <div className="flex items-start gap-2">
+                  <MapPin className="w-4 h-4 text-mustard shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-text-primary">
+                      {fullAddress || landmark || selectedListing.areaCluster || 'Location available on inspection'}
+                    </p>
+                    {landmark && (
+                      <p className="text-xs text-text-tertiary mt-0.5">
+                        <span className="font-medium text-text-secondary">Nearby Landmark:</span> {landmark}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              )}
-              <a 
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${selectedListing.address || ''} ${selectedListing.city || ''} ${selectedListing.landmark || ''}`.trim())}`}
-                target="_blank" 
-                rel="noreferrer"
-                className="text-mustard hover:underline text-sm inline-block mt-1"
-              >
-                View on Google Maps
-              </a>
+                {mapQuery && (
+                  <div className="pt-1 pl-6">
+                    <a 
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapQuery)}`}
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-xs font-bold text-mustard hover:underline"
+                    >
+                      <span>View on Google Maps</span>
+                      <span className="text-[10px]">↗</span>
+                    </a>
+                  </div>
+                )}
+              </div>
+
+              {/* Key Details Grid */}
+              <div>
+                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Key Specifications</p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                  <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                    <p className="text-text-tertiary text-[10px]">Furnishing</p>
+                    <p className="font-semibold text-text-primary capitalize mt-0.5">
+                      {(selectedListing.furnishing || 'unfurnished').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                    <p className="text-text-tertiary text-[10px]">Power Supply</p>
+                    <p className="font-semibold text-text-primary capitalize mt-0.5">
+                      {(selectedListing.power || 'constant').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                    <p className="text-text-tertiary text-[10px]">Water Supply</p>
+                    <p className="font-semibold text-text-primary capitalize mt-0.5">
+                      {(selectedListing.water || 'borehole').replace(/_/g, ' ')}
+                    </p>
+                  </div>
+                  <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                    <p className="text-text-tertiary text-[10px]">Max Occupants</p>
+                    <p className="font-semibold text-text-primary mt-0.5">
+                      {selectedListing.maxOccupants || 1} person{(selectedListing.maxOccupants || 1) > 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  {selectedListing.cautionFee !== undefined && Number(selectedListing.cautionFee) > 0 && (
+                    <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                      <p className="text-text-tertiary text-[10px]">Caution Fee</p>
+                      <p className="font-semibold text-text-primary mt-0.5">
+                        {formatCurrency(Number(selectedListing.cautionFee))}
+                      </p>
+                    </div>
+                  )}
+                  {selectedListing.agencyFee !== undefined && Number(selectedListing.agencyFee) > 0 && (
+                    <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                      <p className="text-text-tertiary text-[10px]">Agency Fee</p>
+                      <p className="font-semibold text-text-primary mt-0.5">
+                        {formatCurrency(Number(selectedListing.agencyFee))}
+                      </p>
+                    </div>
+                  )}
+                  {selectedListing.leaseDuration && (
+                    <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                      <p className="text-text-tertiary text-[10px]">Lease Duration</p>
+                      <p className="font-semibold text-text-primary mt-0.5 capitalize">
+                        {selectedListing.leaseDuration}
+                      </p>
+                    </div>
+                  )}
+                  {selectedListing.genderRestriction && selectedListing.genderRestriction !== 'any' && (
+                    <div className="p-2.5 rounded-clay-sm bg-white border border-clay-border">
+                      <p className="text-text-tertiary text-[10px]">Gender Preference</p>
+                      <p className="font-semibold text-text-primary capitalize mt-0.5">
+                        {selectedListing.genderRestriction.replace(/_/g, ' ')}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Amenities */}
+              <div>
+                <p className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">Amenities & Features</p>
+                {selectedListing.amenities && selectedListing.amenities.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedListing.amenities.map((a: string) => (
+                      <span key={a} className="px-3 py-1 bg-white border border-clay-border text-xs font-medium rounded-pill shadow-xs text-text-primary">
+                        {a}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-text-tertiary italic">Standard amenities included. Contact agent for custom details.</p>
+                )}
+              </div>
+
+              {/* Performance Metrics */}
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-clay-border">
+                <div className="text-center p-2 rounded-clay-sm bg-white border border-clay-border/50">
+                  <p className="text-lg font-black text-text-primary">{selectedListing.views || 0}</p>
+                  <p className="text-[11px] font-medium text-text-tertiary">Views</p>
+                </div>
+                <div className="text-center p-2 rounded-clay-sm bg-white border border-clay-border/50">
+                  <p className="text-lg font-black text-text-primary">{selectedListing.saves || 0}</p>
+                  <p className="text-[11px] font-medium text-text-tertiary">Saves</p>
+                </div>
+                <div className="text-center p-2 rounded-clay-sm bg-white border border-clay-border/50">
+                  <p className="text-lg font-black text-text-primary">{selectedListing.inquiries || 0}</p>
+                  <p className="text-[11px] font-medium text-text-tertiary">Inquiries</p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
       </Modal>
     </AppLayout>
   );
