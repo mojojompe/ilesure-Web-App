@@ -15,6 +15,7 @@ import { VerificationPendingPage } from './pages/VerificationPending';
 import { TierPage } from './pages/Tiers';
 import { PaymentPage } from './pages/Payment';
 import { PaymentCallbackPage } from './pages/PaymentCallback';
+import { LiveJourneyPublicPage } from './pages/LiveJourneyPublicPage';
 import { AgentDashboardPage } from './pages/agent/Dashboard';
 import { AgentListingsPage } from './pages/agent/Listings';
 import { AgentStorePage } from './pages/agent/AgentStore';
@@ -118,6 +119,7 @@ function AppRoutes() {
       <Route path="/tiers" element={<GenericTierRoute />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
+      <Route path="/journey/live/:shareToken" element={<LiveJourneyPublicPage />} />
       
       <Route path="/agent" element={
         <ProtectedRoute role="agent">

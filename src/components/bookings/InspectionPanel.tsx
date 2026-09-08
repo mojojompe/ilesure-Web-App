@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { CalendarClock, CheckCircle2, XCircle, AlertTriangle, Calendar, Clock } from 'lucide-react';
+import { CalendarClock, CheckCircle2, XCircle, AlertTriangle, Calendar, Clock, Navigation, MapPin } from 'lucide-react';
 import { Button } from '../ui/Button';
 
 /**
  * The agent/landlord's view of a booking's viewing step.
  *
  * Allows agents to view inspection state, record a no-show, or edit/reschedule
- * the viewing appointment date and time.
+ * the viewing appointment date and time, and track tenant arrival / journey status.
  */
 
 interface InspectionPanelBooking {
@@ -18,6 +18,7 @@ interface InspectionPanelBooking {
   isVerified?: boolean;
   inspectionVerifiedBy?: 'tenant' | 'agent';
   inspectionVerifiedAt?: string;
+  journeyStatus?: 'idle' | 'en_route' | 'arrived' | 'cancelled';
 }
 
 interface InspectionPanelProps {
@@ -120,6 +121,20 @@ export function InspectionPanel({ booking, onMarkMissed, onReschedule, busy = fa
 
       {booking.inspectorName && status !== 'pending' && !isEditing && (
         <p className="text-xs text-text-tertiary mt-1">Inspector: {booking.inspectorName}</p>
+      )}
+
+      {/* Live Journey Telemetry Badge */}
+      {booking.journeyStatus === 'en_route' && (
+        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-clay-sm bg-amber-50 border border-amber-200 text-amber-800 text-xs font-semibold">
+          <Navigation className="w-3.5 h-3.5 text-amber-600 animate-pulse" />
+          <span>Tenant is en route to viewing</span>
+        </div>
+      )}
+      {booking.journeyStatus === 'arrived' && (
+        <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-clay-sm bg-green-50 border border-green-200 text-green-800 text-xs font-semibold">
+          <MapPin className="w-3.5 h-3.5 text-green-600" />
+          <span>Tenant has arrived at property</span>
+        </div>
       )}
 
       {/* Reschedule / Edit Form */}
