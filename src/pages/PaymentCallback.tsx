@@ -14,7 +14,7 @@ export function PaymentCallbackPage() {
   const [tierName, setTierName] = useState('');
   const [paymentType, setPaymentType] = useState('');
   
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const returnUrl = localStorage.getItem('paymentReturnUrl');
 
   const handleReturn = () => {
@@ -28,7 +28,7 @@ export function PaymentCallbackPage() {
   };
 
   useEffect(() => {
-    const reference = searchParams.get('reference');
+    const reference = searchParams.get('reference') || searchParams.get('trxref');
     if (!reference) {
       setStatus('failed');
       return;
@@ -41,6 +41,15 @@ export function PaymentCallbackPage() {
           setStatus('success');
           setTierName(result.newTier || '');
           setPaymentType(result.type || '');
+          if (result.newTier) {
+            updateUser({
+              tier: {
+                name: result.newTier,
+                billingCycle: user?.tier?.billingCycle || 'monthly',
+                limits: user?.tier?.limits || { maxListings: 10, featuredListings: 2 },
+              },
+            });
+          }
         } else {
           setStatus('failed');
         }
@@ -50,7 +59,7 @@ export function PaymentCallbackPage() {
     };
 
     verify();
-  }, [searchParams]);
+  }, [searchParams, updateUser]);
 
   return (
     <div 

@@ -22,9 +22,9 @@ export function PaymentPage() {
   const handleProceed = async () => {
     setInitializing(true);
     setError('');
-
     try {
-      const result = await paymentsApi.initialize({ tierId, billingCycle: billing });
+      const callbackUrl = `${window.location.origin}/payment/callback`;
+      const result = await paymentsApi.initialize({ tierId, billingCycle: billing, callbackUrl });
       // BUGFIX (QA-AGT-019): a free tier activates in place and returns no
       // authorizationUrl, so this used to navigate the browser to `/undefined`.
       if (!result?.authorizationUrl) {
