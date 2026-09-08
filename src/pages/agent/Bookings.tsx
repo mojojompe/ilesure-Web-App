@@ -60,6 +60,22 @@ export function AgentBookingsPage() {
     }
   };
 
+  const handleReschedule = async (booking: any, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }) => {
+    setUpdating(true);
+    try {
+      const bookingId = booking._id || booking.id;
+      const response = await agentApi.scheduleInspection(bookingId, data);
+      if (response.success) {
+        fetchBookings();
+        setShowDetailModal(false);
+      } else {
+        console.error('Failed to reschedule viewing:', response.error?.message);
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
   const handleStatusChange = async (booking: any, newStatus: string) => {
@@ -456,8 +472,9 @@ export function AgentBookingsPage() {
 
                     <InspectionPanel
                       booking={selectedBooking}
-                      busy={markingMissed}
+                      busy={markingMissed || updating}
                       onMarkMissed={() => handleMarkMissed(selectedBooking)}
+                      onReschedule={(data) => handleReschedule(selectedBooking, data)}
                     />
                   </div>
 

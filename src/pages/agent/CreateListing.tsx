@@ -353,6 +353,22 @@ export function AgentCreateListingPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   // Uploaded ahead of listing creation; the metadata rides along in the payload.
   const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(null);
+  const [customSlotInput, setCustomSlotInput] = useState('');
+
+  const handleAddCustomSlot = () => {
+    const trimmed = customSlotInput.trim();
+    if (!trimmed) return;
+    const formatted = trimmed.replace(/\b(am|pm)\b/gi, match => match.toUpperCase());
+    if (!formData.availableTimeSlots.includes(formatted)) {
+      handleChange('availableTimeSlots', [...formData.availableTimeSlots, formatted]);
+    }
+    setCustomSlotInput('');
+  };
+
+  const handleRemoveSlot = (slotToRemove: string) => {
+    handleChange('availableTimeSlots', formData.availableTimeSlots.filter(s => s !== slotToRemove));
+  };
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   // Live verification check — don't rely on stale localStorage value
   const [liveVerified, setLiveVerified] = useState<boolean | null>(
@@ -1144,8 +1160,8 @@ export function AgentCreateListingPage() {
 
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1">Inspection Time Slots</label>
-        <p className="text-xs text-text-tertiary mb-3">Select time slots suitable for viewing this property:</p>
-        <div className="flex flex-wrap gap-2">
+        <p className="text-xs text-text-tertiary mb-3">Select preset time slots or add custom times suitable for viewing this property:</p>
+        <div className="flex flex-wrap gap-2 mb-2">
           {['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM'].map(slot => {
             const isSelected = formData.availableTimeSlots.includes(slot);
             return (
@@ -1169,6 +1185,53 @@ export function AgentCreateListingPage() {
               </button>
             );
           })}
+        </div>
+
+        {/* Custom added slots */}
+        {formData.availableTimeSlots.filter(s => !['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM'].includes(s)).length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {formData.availableTimeSlots.filter(s => !['09:00 AM', '11:00 AM', '01:00 PM', '03:00 PM', '05:00 PM'].includes(s)).map(slot => (
+              <span
+                key={slot}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-clay-sm bg-mustard text-white"
+              >
+                {slot}
+                <button
+                  type="button"
+                  onClick={() => handleRemoveSlot(slot)}
+                  className="hover:opacity-80 transition-opacity"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Add custom slot input */}
+        <div className="flex items-center gap-2 max-w-sm">
+          <input
+            type="text"
+            value={customSlotInput}
+            onChange={e => setCustomSlotInput(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddCustomSlot();
+              }
+            }}
+            placeholder="Add custom time (e.g. 10:00 AM)"
+            className="clay-input flex-1 text-xs py-2"
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={handleAddCustomSlot}
+            disabled={!customSlotInput.trim()}
+          >
+            + Add Time
+          </Button>
         </div>
       </div>
 

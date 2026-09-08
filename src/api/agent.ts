@@ -326,6 +326,19 @@ export const agentApi = {
     }
   },
 
+  /** Schedule or reschedule an inspection viewing. */
+  async scheduleInspection(bookingId: string, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }): Promise<BookingResponse> {
+    try {
+      const response = await apiClient.post<BookingResponse>(`/bookings/${bookingId}/inspection`, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: { message: error?.response?.data?.error?.message || 'Failed to schedule viewing' },
+      };
+    }
+  },
+
   async getSharedBookings(params?: { status?: string; limit?: number; page?: number }): Promise<SharedBookingsResponse> {
     try {
       const searchParams = new URLSearchParams();

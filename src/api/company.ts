@@ -233,6 +233,19 @@ export const companyApi = {
     }
   },
 
+  /** Schedule or reschedule an inspection viewing. */
+  async scheduleInspection(bookingId: string, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data?: any }>(`/bookings/${bookingId}/inspection`, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: { message: error?.response?.data?.error?.message || 'Failed to schedule viewing' },
+      };
+    }
+  },
+
   async getSharedBookings(params?: { status?: string; limit?: number; page?: number }): Promise<{ success: boolean; data?: { bookings: SharedBooking[]; pagination: { currentPage: number; totalPages: number; totalItems: number } }; message?: string }> {
     try {
       const searchParams = new URLSearchParams();
