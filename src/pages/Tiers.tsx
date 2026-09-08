@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Check, X, ArrowRight, Loader2, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Check, X, ArrowRight, ArrowLeft, Home, Loader2, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
 import { paymentsApi } from '../api/payments';
+import { useAuth } from '../api/authContext';
 import type { Tier, UserRole } from '../types';
 
 export const getWebTierBullets = (tier: Tier) => {
@@ -58,6 +59,18 @@ interface TierPageProps {
 export function TierPage({ role }: TierPageProps) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { isAuthenticated, role: authRole } = useAuth();
+  const effectiveRole = role || (authRole === 'company' ? 'company' : 'agent');
+  const homePath = isAuthenticated ? (effectiveRole === 'company' ? '/company' : '/agent') : '/login';
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(homePath);
+    }
+  };
+
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
@@ -73,6 +86,7 @@ export function TierPage({ role }: TierPageProps) {
   useEffect(() => {
     loadTiersAndSubscription();
   }, []);
+
 
   const loadTiersAndSubscription = async () => {
     setLoading(true);
@@ -157,6 +171,35 @@ export function TierPage({ role }: TierPageProps) {
       style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_tier.png')" }}
     >
       <div className="max-w-5xl mx-auto">
+        {/* Navigation Bar: Back to Home / Dashboard */}
+        <div className="flex items-center justify-between gap-3 mb-8 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-clay-border shadow-sm">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-pill bg-white border border-clay-border text-xs sm:text-sm font-semibold text-text-primary hover:bg-neutral-50 hover:shadow-xs transition-all active:scale-[0.98]"
+          >
+            <ArrowLeft className="w-4 h-4 text-mustard" />
+            <span>{isAuthenticated ? 'Back to Dashboard' : 'Back'}</span>
+          </button>
+
+          <Link
+            to={homePath}
+            className="flex items-center gap-2 hover:opacity-85 transition-opacity"
+          >
+            <img src="/NoBG Logo.png" alt="iléSure" className="w-7 h-7 object-contain" />
+            <span className="font-bold text-sm sm:text-base text-text-primary hidden sm:inline">iléSure</span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <Link
+              to={homePath}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-pill bg-burnt-brown text-white text-xs font-bold shadow-sm hover:bg-burnt-brown/90 transition-all active:scale-[0.98]"
+            >
+              <Home className="w-3.5 h-3.5 text-mustard" />
+              <span>{isAuthenticated ? 'Dashboard' : 'Home'}</span>
+            </Link>
+          </div>
+        </div>
+
         <div className="text-center mb-6">
           <h1 className="text-2xl md:text-3xl font-bold text-text-primary">
             Choose Your Plan
@@ -165,6 +208,7 @@ export function TierPage({ role }: TierPageProps) {
             Select the plan that best fits your business needs
           </p>
         </div>
+
 
         {/* Current Active Plan Banner */}
         {myTier && myTier.tierId !== 'free' && !isExpired && (
@@ -347,6 +391,24 @@ export function TierPage({ role }: TierPageProps) {
               </div>
             );
           })}
+        </div>
+
+        {/* Bottom Return Action */}
+        <div className="mt-10 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-white border border-clay-border text-sm font-semibold text-text-primary hover:bg-neutral-50 shadow-xs transition-all active:scale-[0.98]"
+          >
+            <ArrowLeft className="w-4 h-4 text-mustard" />
+            <span>{isAuthenticated ? 'Return to Dashboard' : 'Back to Home'}</span>
+          </button>
+          <Link
+            to={homePath}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-burnt-brown text-white text-sm font-bold shadow-xs hover:bg-burnt-brown/90 transition-all active:scale-[0.98]"
+          >
+            <Home className="w-4 h-4 text-mustard" />
+            <span>{isAuthenticated ? 'Go to Dashboard' : 'Home'}</span>
+          </Link>
         </div>
       </div>
     </div>
