@@ -5,17 +5,18 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
+import { tiersApi } from '../../api/tiers';
 import { useAuth } from '../../api/authContext';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 
 export function AgentSettingsPage() {
-  const { updateUser } = useAuth();
+  const { user: authUser, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(authUser);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -131,17 +132,47 @@ export function AgentSettingsPage() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await userApi.getProfile();
-      if (response.success && response.data) {
-        setUser(response.data);
+      const [profileRes, tierRes] = await Promise.all([
+        userApi.getProfile(),
+        tiersApi.getMyTier(),
+      ]);
+      if (profileRes.success && profileRes.data) {
+        const profileData: any = { ...profileRes.data };
+
+        if (tierRes.success && tierRes.data) {
+          const tId = tierRes.data.tierId || 'free';
+          const tName = tierRes.data.name || (tId ? tId.charAt(0).toUpperCase() + tId.slice(1) : 'Free');
+          profileData.tier = {
+            name: tName,
+            billingCycle: profileData.tier?.billingCycle || 'monthly',
+            limits: {
+              maxListings: tierRes.data.listingsLimit ?? (tId === 'premium' ? 10 : tId === 'enterprise' ? 50 : 3),
+              featuredListings: tId === 'premium' ? 2 : tId === 'enterprise' ? 10 : (profileData.tier?.limits?.featuredListings || 0),
+            },
+          };
+        } else if (profileData.tier && typeof profileData.tier === 'string') {
+          const tId = profileData.tier;
+          const tName = tId.charAt(0).toUpperCase() + tId.slice(1);
+          profileData.tier = {
+            name: tName,
+            billingCycle: 'monthly',
+            limits: {
+              maxListings: tId === 'premium' ? 10 : tId === 'enterprise' ? 50 : 3,
+              featuredListings: tId === 'premium' ? 2 : tId === 'enterprise' ? 10 : 0,
+            },
+          };
+        }
+
+        setUser(profileData);
+        updateUser(profileData);
         setFormData({
-          fullName: response.data.fullName || '',
-          phone: response.data.phone || '',
-          whatsapp: response.data.whatsapp || '',
-          bio: response.data.bio || '',
+          fullName: profileData.fullName || '',
+          phone: profileData.phone || '',
+          whatsapp: profileData.whatsapp || '',
+          bio: profileData.bio || '',
         });
         // Default the payout business name to the account holder's name so the Setup button is usable.
-        const holder = response.data.fullName || '';
+        const holder = profileData.fullName || '';
         setBankForm(prev => ({ ...prev, businessName: prev.businessName || holder }));
       }
     } catch (error) {
