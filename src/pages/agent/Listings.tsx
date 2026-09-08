@@ -16,10 +16,13 @@ export function AgentListingsPage() {
   const navigate = useNavigate();
   // 'fully_booked' is the real status value; the tab used to send 'occupied',
   // which is in no enum, so the Occupied tab was always empty.
-  const [filter, setFilter] = useState<'all' | 'active' | 'fully_booked'>('all');
+  const [filter, setFilter] = useState<'all' | 'active' | 'fully_booked' | 'archived'>('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showViewModal, setShowViewModal] = useState(false);
   const [showRentedModal, setShowRentedModal] = useState(false);
+  const [showPermanentDeleteModal, setShowPermanentDeleteModal] = useState(false);
+  const [targetPermanentDeleteListing, setTargetPermanentDeleteListing] = useState<any | null>(null);
+  const [deletingPermanently, setDeletingPermanently] = useState(false);
   const [rentedTargetListing, setRentedTargetListing] = useState<any | null>(null);
   const [rentedReason, setRentedReason] = useState<'rented_off_platform' | 'rented_on_platform' | 'temporarily_unavailable'>('rented_off_platform');
   const [markingRented, setMarkingRented] = useState(false);
@@ -171,12 +174,12 @@ export function AgentListingsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!window.confirm('Are you sure you want to delete this listing? This action cannot be undone.')) return;
     setSubmitting(true);
     try {
-      const response = await agentApi.deleteListing(id);
+      // Safe soft delete: moves to archive so agent retains property details & photos
+      const response = await agentApi.deleteListing(id, false);
       if (response.success) {
-        showToast('Listing deleted successfully', 'success');
+        showToast('Listing moved to your Archive. You can view or restore it anytime.', 'success');
         fetchListings();
       } else {
         showToast(response.message || 'Failed to delete listing', 'error');
@@ -185,6 +188,45 @@ export function AgentListingsPage() {
       showToast('Failed to delete listing', 'error');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleOpenPermanentDelete = (listing: any) => {
+    setTargetPermanentDeleteListing(listing);
+    setShowPermanentDeleteModal(true);
+  };
+
+  const handleConfirmPermanentDelete = async () => {
+    if (!targetPermanentDeleteListing) return;
+    setDeletingPermanently(true);
+    try {
+      const response = await agentApi.deleteListing(targetPermanentDeleteListing._id || targetPermanentDeleteListing.id, true);
+      if (response.success) {
+        showToast('Listing permanently deleted.', 'success');
+        setShowPermanentDeleteModal(false);
+        setTargetPermanentDeleteListing(null);
+        fetchListings();
+      } else {
+        showToast(response.message || 'Failed to permanently delete listing', 'error');
+      }
+    } catch {
+      showToast('Failed to permanently delete listing', 'error');
+    } finally {
+      setDeletingPermanently(false);
+    }
+  };
+
+  const handleRestore = async (id: string) => {
+    try {
+      const response = await agentApi.restoreListing(id);
+      if (response.success) {
+        showToast('Listing restored and published back online!', 'success');
+        fetchListings();
+      } else {
+        showToast(response.error?.message || 'Failed to restore listing', 'error');
+      }
+    } catch {
+      showToast('Failed to restore listing', 'error');
     }
   };
 
@@ -240,7 +282,7 @@ export function AgentListingsPage() {
       </div>
 
       <div className="flex gap-2 mb-6">
-        {(['all', 'active', 'fully_booked'] as const).map(f => (
+        {(['all', 'active', 'fully_booked', 'archived'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -250,7 +292,7 @@ export function AgentListingsPage() {
                 : 'bg-white text-text-secondary hover:bg-clay-border-light'
             }`}
           >
-            {f === 'fully_booked' ? 'Occupied' : f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'fully_booked' ? 'Occupied' : f === 'archived' ? 'Archived / Inactive' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
@@ -311,7 +353,7 @@ export function AgentListingsPage() {
                       <span className="flex items-center gap-1"><Heart className="w-3 h-3" /> {listing.saves || 0}</span>
                     </div>
                     <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light items-center">
-                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
+                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
                         <Eye className="w-3 h-3 mr-1" /> View
                       </Button>
                       {listing.status === 'active' && (
@@ -326,12 +368,37 @@ export function AgentListingsPage() {
                           <span>Rented</span>
                         </Button>
                       )}
-                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))} disabled={isFullyBooked} title="Archive listing">
-                        <Archive className="w-3 h-3" />
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleDelete(String(listingId))} disabled={isFullyBooked} title="Delete listing">
-                        <Trash2 className="w-3 h-3 text-red-500" />
-                      </Button>
+                      {listing.status === 'archived' ? (
+                        <>
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() => handleRestore(String(listingId))}
+                            className="bg-burnt-brown hover:bg-burnt-brown/90 text-white text-xs px-2.5 py-1.5 rounded-clay-sm"
+                            title="Restore and relist this property"
+                          >
+                            Restore
+                          </Button>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={() => handleOpenPermanentDelete(listing)}
+                            className="text-red-500 hover:bg-red-50 border border-red-200"
+                            title="Delete Permanently (Irreversible)"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => handleDelete(String(listingId))}
+                          title="Move to Archive (Safe Delete)"
+                        >
+                          <Trash2 className="w-3.5 h-3.5 text-text-tertiary hover:text-red-500" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </ClayCard>
@@ -612,6 +679,49 @@ export function AgentListingsPage() {
               loading={markingRented}
             >
               Confirm & Delist
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Permanent Deletion Danger Modal */}
+      <Modal
+        isOpen={showPermanentDeleteModal}
+        onClose={() => !deletingPermanently && setShowPermanentDeleteModal(false)}
+        title="Permanently Delete Property?"
+        size="md"
+      >
+        <div className="space-y-4">
+          <div className="p-3.5 bg-red-50 border border-red-200 rounded-clay-sm flex items-start gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="text-sm font-bold text-red-700">This action cannot be undone!</p>
+              <p className="text-xs text-red-600 mt-0.5">
+                Permanently deleting this property will completely erase its details, photos, and view records from your account. It cannot be recovered.
+              </p>
+            </div>
+          </div>
+
+          <p className="text-sm text-text-secondary">
+            Are you sure you want to permanently delete <strong className="text-text-primary">"{targetPermanentDeleteListing?.title}"</strong>?
+          </p>
+
+          <div className="flex gap-2 pt-2">
+            <Button
+              variant="secondary"
+              className="flex-1"
+              onClick={() => setShowPermanentDeleteModal(false)}
+              disabled={deletingPermanently}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              onClick={handleConfirmPermanentDelete}
+              loading={deletingPermanently}
+            >
+              Yes, Delete Permanently
             </Button>
           </div>
         </div>

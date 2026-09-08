@@ -258,9 +258,10 @@ export const agentApi = {
     }
   },
 
-  async deleteListing(id: string): Promise<{ success: boolean; message?: string }> {
+  async deleteListing(id: string, permanent = false): Promise<{ success: boolean; permanent?: boolean; message?: string }> {
     try {
-      const response = await apiClient.delete<{ success: boolean; message?: string }>(`/agent/listings/${id}`);
+      const url = permanent ? `/agent/listings/${id}?permanent=true` : `/agent/listings/${id}`;
+      const response = await apiClient.delete<{ success: boolean; permanent?: boolean; message?: string }>(url);
       return response.data;
     } catch {
       return { success: false, message: 'Failed to delete listing' };
