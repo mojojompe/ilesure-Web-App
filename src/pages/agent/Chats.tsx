@@ -89,12 +89,23 @@ export function AgentChatsPage() {
         };
 
         const handleMessage = (data: { chatId: string; message: any }) => {
-          if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
-            setMessages(prev => [...prev, data.message]);
+          const isCurrentChat = selectedChatRef.current && data.chatId === selectedChatRef.current.id;
+          if (isCurrentChat) {
+            setMessages(prev => {
+              const msgId = data.message.id || data.message._id;
+              if (prev.some(m => m.id === msgId)) return prev;
+              return [...prev, data.message];
+            });
+            chatApi.markAsRead(data.chatId);
           }
           setChats(prev => prev.map(chat => 
             chat.id === data.chatId 
-              ? { ...chat, lastMessage: data.message.text, lastMessageAt: data.message.createdAt }
+              ? { 
+                  ...chat, 
+                  lastMessage: data.message.text, 
+                  lastMessageAt: data.message.createdAt,
+                  unreadCount: isCurrentChat ? 0 : (chat.unreadCount || 0) + 1,
+                }
               : chat
           ));
         };
@@ -105,10 +116,10 @@ export function AgentChatsPage() {
           }
         };
 
-        const handleRead = (data: { chatId: string; messageId: string; userId: string }) => {
+        const handleRead = (data: { chatId: string; messageId?: string; readerId?: string; userId?: string }) => {
           if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
             setMessages(prev => prev.map(msg => 
-              msg.id === data.messageId ? { ...msg, readBy: data.userId } : msg
+              (!data.messageId || msg.id === data.messageId) ? { ...msg, readAt: new Date().toISOString() } : msg
             ));
           }
         };
@@ -136,7 +147,12 @@ export function AgentChatsPage() {
     if (selectedChat) {
       fetchMessages(selectedChat.id);
       chatApi.joinChat(selectedChat.id);
+      chatApi.markAsRead(selectedChat.id);
       setPartnerTyping(false);
+      // Immediately clear the unread badge in state
+      setChats(prev => prev.map(chat =>
+        chat.id === selectedChat.id ? { ...chat, unreadCount: 0 } : chat
+      ));
     }
   }, [selectedChat?.id]);
 

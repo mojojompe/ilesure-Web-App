@@ -106,9 +106,9 @@ export const chatApi = {
     return { success: false, error: 'Failed to send message. Please check your connection.' };
   },
 
-  async markAsRead(chatId: string, messageId: string): Promise<{ success: boolean }> {
+  async markAsRead(chatId: string, messageId?: string): Promise<{ success: boolean }> {
     try {
-      await apiClient.patch(`/chats/${chatId}/read`, { messageId });
+      await apiClient.patch(`/chats/${chatId}/read`, messageId ? { messageId } : {});
       socketService.markAsRead(chatId, messageId);
       return { success: true };
     } catch {
