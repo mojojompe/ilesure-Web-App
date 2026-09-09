@@ -31,7 +31,7 @@ function readStoredAuth(): { user: User; accessToken: string; role: UserRole | n
       return { user: parsed.user as User, accessToken: parsed.accessToken, role: (parsed.role || parsed.user.role) as UserRole | null };
     }
   } catch {
-    /* corrupt blob — treat as signed out */
+    /* corrupt blob, treat as signed out */
   }
   return null;
 }
@@ -115,7 +115,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (existing) {
         try {
           localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...JSON.parse(existing), ...newState }));
-        } catch {}
+        } catch { }
       }
       return newState;
     });

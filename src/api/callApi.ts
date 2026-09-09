@@ -49,7 +49,7 @@ export interface CallAvailability {
  * Used until the server's ICE configuration arrives, and if that request fails.
  *
  * STUN alone cannot connect peers behind symmetric NAT, so this is a floor rather than a
- * working default — the server supplies TURN when it is configured.
+ * working default, the server supplies TURN when it is configured.
  */
 export const FALLBACK_ICE: RTCConfiguration = {
   iceServers: [

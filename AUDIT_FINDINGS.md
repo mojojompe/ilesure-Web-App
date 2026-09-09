@@ -1,4 +1,4 @@
-# ilesure-Web-App (Agent/Company Web App) — Detailed Audit Findings
+# ilesure-Web-App (Agent/Company Web App), Detailed Audit Findings
 
 **Date:** 2026-08-12 · Vite/React (@paystack/inline-js, socket.io-client, @tanstack/react-table) · Read-only, no code modified.
 See the root [PROJECT_AUDIT.md](../PROJECT_AUDIT.md) for the cross-layer summary.
@@ -11,7 +11,7 @@ See the root [PROJECT_AUDIT.md](../PROJECT_AUDIT.md) for the cross-layer summary
 
 ## HIGH
 
-### W-H1. Access **and refresh** JWTs stored in localStorage — XSS-stealable, persistent takeover *(shared with PWA)*
+### W-H1. Access **and refresh** JWTs stored in localStorage, XSS-stealable, persistent takeover *(shared with PWA)*
 - **Category:** Token-storage / XSS · **Location:** `src/api/client.ts:69-107`, `src/api/authContext.tsx:60-66` (key `ilesure_web_auth`)
 - **Defect:** `localStorage.getItem('ilesure_web_auth')` → `parsed.accessToken` (refresh token in the same blob).
 - **Impact:** Any XSS / malicious dependency / extension exfiltrates both tokens in one line; the refresh token gives durable, renewable access that survives victim logout.
@@ -24,7 +24,7 @@ See the root [PROJECT_AUDIT.md](../PROJECT_AUDIT.md) for the cross-layer summary
 ### W-M1. Role used for route authorization is read from client-controlled storage *(shared with PWA)*
 - **Category:** Route-protection / Client-trust · **Location:** `src/App.tsx:44-62` (`ProtectedRoute` reads `role` from `useAuth()` → localStorage)
 - **Defect:** `isAuthenticated`/`role` originate from the localStorage auth blob the user fully controls (`if (!isAuthenticated) return <Navigate to="/login"/>; if (effectiveRole !== role) …`).
-- **Impact:** A user can hand-craft `localStorage.ilesure_web_auth = {accessToken:'x', user:{role:'company'}, isAuthenticated:true}` and render the company/agent dashboard shell. Data stays protected **only** because API calls carry the invalid token and 401 — i.e. this is acceptable *only if the backend enforces role on every endpoint*.
+- **Impact:** A user can hand-craft `localStorage.ilesure_web_auth = {accessToken:'x', user:{role:'company'}, isAuthenticated:true}` and render the company/agent dashboard shell. Data stays protected **only** because API calls carry the invalid token and 401, i.e. this is acceptable *only if the backend enforces role on every endpoint*.
 - **Fix:** Treat client role as UI-only; ensure the backend authorizes every `/agent/*`, `/company/*`, admin, and booking route server-side.
 
 ### W-M2. Login/token response shape in code disagrees with the documented API contract

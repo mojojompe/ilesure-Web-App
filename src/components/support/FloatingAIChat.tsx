@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Sparkles, X, Bot, Maximize2, Minimize2 } from 'lucide-react';
+import { SparklesIcon as Sparkles, Cancel02Icon as X, BotIcon as Bot, ArrowExpand01Icon as Maximize2, ArrowShrink01Icon as Minimize2 } from '@hugeicons/react';
 
 export function FloatingAIChat() {
   const [isOpen, setIsOpen] = useState(false);

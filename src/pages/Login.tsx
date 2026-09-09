@@ -12,10 +12,10 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{email?: string; password?: string; general?: string}>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
 
   const validate = () => {
-    const e: {email?: string; password?: string} = {};
+    const e: { email?: string; password?: string } = {};
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email';
     if (!password) e.password = 'Password is required';
     setErrors(e);
@@ -45,7 +45,7 @@ export function LoginPage() {
         }
       } else if (result.errorCode === 'EMAIL_NOT_VERIFIED') {
         // QA-AGT-031: the credentials were right; the address was never verified. Hand them to
-        // the OTP screen with the address prefilled — it can resend a code, so an expired
+        // the OTP screen with the address prefilled, it can resend a code, so an expired
         // original is not a dead end.
         navigate('/create-otp', { state: { email: result.email || email } });
       } else {
@@ -59,7 +59,7 @@ export function LoginPage() {
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat flex items-center justify-center p-4"
       style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_login.png')" }}
     >

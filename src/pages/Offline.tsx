@@ -37,7 +37,7 @@ export function Offline() {
               />
             ))}
 
-            {/* WiFi icon — broken */}
+            {/* WiFi icon, broken */}
             <path d="M75 170 Q120 140 165 170" stroke="#C9962A" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.5" />
             <path d="M88 183 Q120 162 152 183" stroke="#C9962A" strokeWidth="3.5" strokeLinecap="round" fill="none" opacity="0.5" />
             <circle cx="120" cy="197" r="6" fill="#C9962A" opacity="0.5" />

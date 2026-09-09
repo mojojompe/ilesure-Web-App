@@ -86,7 +86,7 @@ export const userApi = {
   },
 
   // REMOVED: submitKycReference(). It posted to POST /users/kyc, which does not exist on
-  // the backend, and nothing in the UI called it — KYC goes through initializeKyc/verifyKyc
+  // the backend, and nothing in the UI called it, KYC goes through initializeKyc/verifyKyc
   // against /kyc/*. A client method for a route that was never built is a trap for whoever
   // wires it up next.
 
@@ -103,7 +103,7 @@ export const userApi = {
     }
   },
 
-  // RETIRED: submitAgentDocuments() — it posted to POST /kyc/agent-documents, the
+  // RETIRED: submitAgentDocuments(), it posted to POST /kyc/agent-documents, the
   // individual-document KYC flow superseded by Dojah NIN/BVN verification. It had no
   // callers anywhere in the app, and the route has been withdrawn on the backend.
 

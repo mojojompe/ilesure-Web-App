@@ -7,7 +7,7 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ command }) => ({
   // Pinned so the backend can name a real origin in CORS_ORIGIN and
   // OAUTH_ALLOWED_ORIGINS. Vite otherwise takes 5173 and counts upward, so which app
-  // got which port depended on the order they were started in — which meant Google
+  // got which port depended on the order they were started in, which meant Google
   // sign-in worked or failed by luck. strictPort fails loudly instead of drifting.
   server: { port: 5274, strictPort: true },
 
@@ -16,12 +16,12 @@ export default defineConfig(({ command }) => ({
     rollupOptions: {
       output: {
         // PERF-FIX (QA-PERF-001): this app shipped as ONE monolithic JS chunk, so every
-        // user downloaded and parsed the entire application — every role's screens —
+        // user downloaded and parsed the entire application, every role's screens,
         // before first render. Split vendors out, mirroring ilesure-home, which already
         // does this correctly.
         // PERF-FIX (QA-PERF-001): only LEAF packages are split out. Splitting react
         // itself created a `vendor -> vendor-react -> vendor` cycle, because other
-        // vendor code imports react — Rollup warns and chunk load order gets fragile.
+        // vendor code imports react, Rollup warns and chunk load order gets fragile.
         // Icon packs must be matched before anything containing "react", since they
         // live at @hugeicons/react and react-icons.
         manualChunks(id: string) {

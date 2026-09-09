@@ -1,5 +1,5 @@
 /**
- * Canonical listing vocabulary — mirrors
+ * Canonical listing vocabulary, mirrors
  * `IleSure_Backend/src/constants/listingVocabulary.ts`.
  *
  * This portal used to define its own compact values (`selfcon`, `2bedroom`,
@@ -82,7 +82,7 @@ export const distanceOptions: Option<DistanceBucket>[] = [
 
 
 /**
- * Amenity vocabulary — mirrors `AMENITIES` / `AMENITY_LABELS` in the backend's
+ * Amenity vocabulary, mirrors `AMENITIES` / `AMENITY_LABELS` in the backend's
  * listingVocabulary. The backend canonicalises whatever a client sends, so these tokens are
  * what comes back on every listing and what the create forms should submit.
  */

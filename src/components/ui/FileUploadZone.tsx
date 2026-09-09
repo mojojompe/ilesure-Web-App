@@ -56,7 +56,7 @@ interface FileUploadZoneProps {
   onFile: (file: File) => void;
   onClear: () => void;
   accept: string;
-  /** Use the device camera (mobile) — for live selfies. */
+  /** Use the device camera (mobile), for live selfies. */
   capture?: 'user' | 'environment';
   icon?: 'upload' | 'camera';
 }
@@ -107,13 +107,12 @@ export function FileUploadZone({
         <div
           role="button"
           tabIndex={0}
-          className={`border-2 border-dashed rounded-clay-sm p-6 text-center cursor-pointer transition-all ${
-            dragging
+          className={`border-2 border-dashed rounded-clay-sm p-6 text-center cursor-pointer transition-all ${dragging
               ? 'border-mustard bg-mustard-pale'
               : fileState.error
-              ? 'border-red-400 bg-red-50'
-              : 'border-clay-border bg-clay-border-light hover:border-mustard hover:bg-mustard-pale/40'
-          }`}
+                ? 'border-red-400 bg-red-50'
+                : 'border-clay-border bg-clay-border-light hover:border-mustard hover:bg-mustard-pale/40'
+            }`}
           onClick={() => inputRef.current?.click()}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click(); } }}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}

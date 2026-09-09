@@ -25,7 +25,7 @@ export function AgentDashboardPage() {
 
   // BUGFIX (QA-AGT-032): this was `verificationStatus === 'pending'`, and the User model
   // defaults that field to 'pending' the moment an account is created. So an agent who tapped
-  // "Skip for now" on the identity step — having submitted nothing at all — was told "Your
+  // "Skip for now" on the identity step, having submitted nothing at all, was told "Your
   // identity documents are under review. We'll notify you once approved." They then waited for
   // an approval that could never come, on documents that did not exist, while the one action
   // that would unblock them was hidden behind that same branch.
@@ -79,16 +79,14 @@ export function AgentDashboardPage() {
       {/* ── Verification Banner ── */}
       {showBanner && (
         <div
-          className={`relative flex items-start gap-4 p-4 rounded-clay mb-6 border animate-fade-in ${
-            isPending
+          className={`relative flex items-start gap-4 p-4 rounded-clay mb-6 border animate-fade-in ${isPending
               ? 'bg-amber-50 border-amber-200'
               : 'bg-gradient-to-r from-mustard/10 via-burnt-brown-pale/30 to-mustard/5 border-mustard/30'
-          }`}
+            }`}
         >
           {/* Icon */}
-          <div className={`flex-shrink-0 w-10 h-10 rounded-clay-sm flex items-center justify-center ${
-            isPending ? 'bg-amber-100' : 'bg-mustard-pale'
-          }`}>
+          <div className={`flex-shrink-0 w-10 h-10 rounded-clay-sm flex items-center justify-center ${isPending ? 'bg-amber-100' : 'bg-mustard-pale'
+            }`}>
             <Alert01Icon className={`w-5 h-5 ${isPending ? 'text-amber-600' : 'text-mustard'}`} />
           </div>
 
@@ -228,8 +226,8 @@ export function AgentDashboardPage() {
                       <StatusBadge
                         variant={
                           booking.status === 'confirmed' ? 'success' :
-                          booking.status === 'pending' ? 'warning' :
-                          booking.status === 'cancelled' ? 'error' : 'default'
+                            booking.status === 'pending' ? 'warning' :
+                              booking.status === 'cancelled' ? 'error' : 'default'
                         }
                       >
                         {booking.status}

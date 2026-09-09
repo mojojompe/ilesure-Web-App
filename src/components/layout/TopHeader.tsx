@@ -12,25 +12,16 @@ interface TopHeaderProps {
   isCollapsed?: boolean;
 }
 
-<<<<<<< HEAD
 export function TopHeader({ onMenuClick, title, subtitle, onReload, isCollapsed }: TopHeaderProps) {
-=======
-export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderProps) {
   const navigate = useNavigate();
-  // BUGFIX (QA-AGT-023): the header search box was an unbound input on every agent and
-  // company screen. Typing and pressing Enter produced no navigation, no dropdown and
-  // no request — it did nothing at all. Route the term to the listings screen, which
-  // already accepts a `search` filter.
   const [headerSearch, setHeaderSearch] = useState('');
 
   const submitHeaderSearch = () => {
     const term = headerSearch.trim();
     if (!term) return;
-    const base = window.location.pathname.startsWith('/company') ? '/company/listings' : '/agent/listings';
-    navigate(`${base}?search=${encodeURIComponent(term)}`);
+    const pathBase = window.location.pathname.startsWith('/company') ? '/company/listings' : '/agent/listings';
+    navigate(`${pathBase}?search=${encodeURIComponent(term)}`);
   };
-
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -52,7 +43,7 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
           notificationsApi.getNotifications(1, 5),
           notificationsApi.getUnreadCount()
         ]);
-        
+
         if (notifsRes.success && notifsRes.data) {
           setNotifications(notifsRes.data.notifications);
         }
@@ -63,7 +54,7 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
         console.error('Failed to load notifications', err);
       }
     };
-    
+
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 60000); // Poll every minute
     return () => clearInterval(interval);
@@ -77,8 +68,8 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <button
-          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
-          aria-label="Open menu"
+            /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+            aria-label="Open menu"
             onClick={onMenuClick}
             className="md:hidden p-2 rounded-clay-sm hover:bg-clay-border-light"
           >
@@ -105,17 +96,12 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
             <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
             <input
               type="text"
-<<<<<<< HEAD
-              placeholder="Search listings, bookings..."
-              className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-clay-border rounded-xl focus:border-mustard focus:ring-2 focus:ring-mustard/20 outline-none transition-all"
-=======
               value={headerSearch}
               onChange={(e) => setHeaderSearch(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') submitHeaderSearch(); }}
               placeholder="Search listings..."
               aria-label="Search listings"
-              className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-clay-border rounded-pill focus:border-mustard focus:ring-2 focus:ring-mustard/20 outline-none transition-all"
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+              className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-clay-border rounded-xl focus:border-mustard focus:ring-2 focus:ring-mustard/20 outline-none transition-all"
             />
           </div>
         </div>

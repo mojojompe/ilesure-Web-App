@@ -188,9 +188,8 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
   return (
     <>
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
-          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+          }`}>
           {toast.type === 'success' ? <CheckmarkBadge02Icon className="w-4 h-4" /> : <Alert01Icon className="w-4 h-4" />}
           {toast.message}
         </div>
@@ -287,7 +286,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
             <CheckmarkBadge02Icon className="w-4 h-4 text-status-success flex-shrink-0" />
             <p className="text-sm font-medium text-status-success">
-              {isFullyVerified ? 'Your identity is fully verified' : 'Verification submitted — pending review'}
+              {isFullyVerified ? 'Your identity is fully verified' : 'Verification submitted, pending review'}
             </p>
           </div>
         )}

@@ -8,7 +8,7 @@ import { apiClient } from './client';
  * best-guess geocode of free text. The coordinates travel with the listing
  * payload and take precedence over the server's own geocoding.
  *
- * These proxy Google through our backend — authenticated and rate-limited — so
+ * These proxy Google through our backend, authenticated and rate-limited, so
  * debounce input rather than calling per keystroke.
  */
 

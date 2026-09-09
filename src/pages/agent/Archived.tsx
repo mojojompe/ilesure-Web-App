@@ -11,7 +11,7 @@ export function AgentArchivedPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [restoring, setRestoring] = useState<string | null>(null);
-  const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   useEffect(() => {
     loadArchivedListings();
@@ -26,7 +26,7 @@ export function AgentArchivedPage() {
     setLoading(false);
   };
 
-  const filteredListings = listings.filter(l => 
+  const filteredListings = listings.filter(l =>
     l.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -45,8 +45,8 @@ export function AgentArchivedPage() {
     setRestoring(id);
     // BUGFIX (LL-P0-4): this called `updateListing(id, { status: 'active' })`. Both the agent
     // and company update handlers whitelist editable fields and `status` is deliberately not
-    // among them — restoring through that route would let an unapproved listing launder itself
-    // live — so the request became an empty `$set: {}`, returned success, and changed nothing.
+    // among them, restoring through that route would let an unapproved listing launder itself
+    // live, so the request became an empty `$set: {}`, returned success, and changed nothing.
     // The row below then vanished from the table behind a green "restored" toast while the
     // listing stayed archived in the database, which is the worst of both: no effect, and no
     // way for the user to tell.
@@ -54,7 +54,7 @@ export function AgentArchivedPage() {
     // The dedicated endpoint exists precisely for this, and restores to `statusBeforeArchive`
     // rather than blindly to 'active'.
     const response = await agentApi.restoreListing(id);
-    
+
     if (response.success) {
       setListings(prev => prev.filter(l => l._id !== id));
       setToast({ message: 'Listing restored successfully', type: 'success' });
@@ -78,9 +78,8 @@ export function AgentArchivedPage() {
   return (
     <AppLayout role="agent" title="Archived Listings" subtitle="Previously archived properties">
       {toast && (
-        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${
-          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+          }`}>
           {toast.message}
         </div>
       )}
@@ -129,14 +128,14 @@ export function AgentArchivedPage() {
                   )}
                 </div>
                 <div className="flex gap-2">
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => handleRestore(listing._id)}
                     disabled={restoring === listing._id}
                     loading={restoring === listing._id}
                   >
-                    <ReloadIcon className="w-4 h-4 mr-1" /> 
+                    <ReloadIcon className="w-4 h-4 mr-1" />
                     {restoring === listing._id ? 'Restoring...' : 'Restore'}
                   </Button>
                 </div>

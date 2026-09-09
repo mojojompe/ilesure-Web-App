@@ -103,7 +103,7 @@ export const companyApi = {
       const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);
       return { success: true, listing: response.data.data };
     } catch (err: any) {
-      // BUGFIX (QA-CO-014): see the note in api/agent.ts — the swallowed error made
+      // BUGFIX (QA-CO-014): see the note in api/agent.ts, the swallowed error made
       // publishing fail with no message at all.
       const apiError = err?.response?.data?.error;
       return {
@@ -164,7 +164,7 @@ export const companyApi = {
 
   /**
    * BUGFIX (LL-P0-4): archive/restore live on the agent routes, which are mounted behind
-   * `agentOrCompanyMiddleware` and have always accepted company users — the backend's ownership
+   * `agentOrCompanyMiddleware` and have always accepted company users, the backend's ownership
    * filter was what rejected them, and that is fixed. The path says `/agent` because one
    * handler serves both; duplicating it under `/company` would be a second URL for the same
    * code. They are exposed here so a company page never has to reach into agentApi.

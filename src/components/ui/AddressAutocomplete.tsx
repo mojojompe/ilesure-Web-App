@@ -17,7 +17,7 @@ interface AddressAutocompleteProps {
  * Address field with Google-backed suggestions.
  *
  * Picking a suggestion pins the property exactly. Typing free text and moving on
- * still works — the backend geocodes the address on save — so this never blocks
+ * still works, the backend geocodes the address on save, so this never blocks
  * the wizard, it just produces a better pin when used.
  */
 export function AddressAutocomplete({
@@ -63,7 +63,7 @@ export function AddressAutocomplete({
       ignore = true;
       clearTimeout(timer);
     };
-    // onSelectCoordinates is intentionally excluded — the parent recreates it on
+    // onSelectCoordinates is intentionally excluded, the parent recreates it on
     // every render, which would restart the debounce on every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
@@ -108,7 +108,7 @@ export function AddressAutocomplete({
 
       {pinned && (
         <p className="mt-1 text-xs text-text-tertiary">
-          Exact location pinned — renters searching near a campus will find this listing.
+          Exact location pinned, renters searching near a campus will find this listing.
         </p>
       )}
 

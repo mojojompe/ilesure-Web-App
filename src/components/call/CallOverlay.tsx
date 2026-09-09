@@ -127,7 +127,7 @@ export function CallOverlay() {
           {mediaError === 'denied' && (
             <p className="max-w-xs text-center text-xs text-amber-300">
               {isVideo
-                ? 'Camera unavailable — continuing with voice only.'
+                ? 'Camera unavailable, continuing with voice only.'
                 : 'Microphone unavailable. Check your browser permissions.'}
             </p>
           )}

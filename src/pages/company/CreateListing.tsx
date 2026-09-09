@@ -48,7 +48,7 @@ function StepIndicator({ currentStep, totalSteps }: StepIndicatorProps) {
 }
 
 // Enumerated values come from the shared canonical vocabulary rather than
-// being redeclared per form — see constants/listingVocabulary.
+// being redeclared per form, see constants/listingVocabulary.
 type GenderPreference = GenderRestriction;
 type DistanceFromSchool = DistanceBucket;
 type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
@@ -214,7 +214,7 @@ export function CompanyCreateListingPage() {
 
   /**
    * BUGFIX (QA-CO-021): every step advanced with no input at all, so the wizard reached
-   * "Review & Submit" showing `Title: -`, `Rent: ₦0`, `Location: ,` — and presented a
+   * "Review & Submit" showing `Title: -`, `Rent: ₦0`, `Location: ,`, and presented a
    * NEGATIVE rent (₦-50,000) as publishable. The server rejected it, but that never
    * reached the screen (QA-CO-014), so the user could only click Publish forever.
    */
@@ -298,13 +298,13 @@ export function CompanyCreateListingPage() {
         // Flexible custom shortlet tiers
         shortletRates: formData.propertyType === 'shortlet'
           ? formData.shortletRates
-              .filter(r => r.label.trim() && Number(r.price) > 0 && Number(r.durationValue) >= 1)
-              .map(r => ({
-                label: r.label.trim(),
-                durationValue: Number(r.durationValue),
-                durationUnit: r.durationUnit,
-                price: Number(r.price),
-              }))
+            .filter(r => r.label.trim() && Number(r.price) > 0 && Number(r.durationValue) >= 1)
+            .map(r => ({
+              label: r.label.trim(),
+              durationValue: Number(r.durationValue),
+              durationUnit: r.durationUnit,
+              price: Number(r.price),
+            }))
           : undefined,
         minStay: formData.minStay ? Number(formData.minStay) : undefined,
         minStayUnit: formData.minStay ? formData.minStayUnit : undefined,
@@ -481,221 +481,221 @@ export function CompanyCreateListingPage() {
   const renderStep3 = () => {
     const isShortlet = formData.propertyType === 'shortlet';
     return (
-    <div className="space-y-4">
-      {isShortlet ? (
-        <>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing Tiers</p>
-            <button type="button" onClick={addShortletRate} className="text-xs font-semibold text-mustard hover:underline">+ Add tier</button>
-          </div>
-          <p className="text-xs text-text-tertiary -mt-2">Define your priced packages, e.g. "1 Hour" ₦20,000, "Full Day" ₦100,000, "Weekend" ₦180,000. Guests pick a tier and quantity when booking.</p>
-          {formData.shortletRates.length === 0 && (
-            <div className="text-center py-4 border-2 border-dashed border-clay-border rounded-clay-sm text-xs text-text-tertiary">
-              No pricing tiers yet. Tap "+ Add tier" to create one.
+      <div className="space-y-4">
+        {isShortlet ? (
+          <>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Shortlet Pricing Tiers</p>
+              <button type="button" onClick={addShortletRate} className="text-xs font-semibold text-mustard hover:underline">+ Add tier</button>
             </div>
-          )}
-          <div className="space-y-3">
-            {formData.shortletRates.map((rate, index) => (
-              <div key={index} className="p-3 border-2 border-clay-border rounded-clay-sm space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={rate.label}
-                    onChange={e => updateShortletRate(index, 'label', e.target.value)}
-                    placeholder="Tier name (e.g. Full Day)"
-                    className="clay-input flex-1"
-                  />
-                  <button type="button" onClick={() => removeShortletRate(index)} className="text-xs font-semibold text-red-500 hover:underline flex-shrink-0">Remove</button>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Every</label>
-                    <input type="number" min="1" value={rate.durationValue} onChange={e => updateShortletRate(index, 'durationValue', e.target.value)} placeholder="1" className="clay-input w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Unit</label>
-                    <select value={rate.durationUnit} onChange={e => updateShortletRate(index, 'durationUnit', e.target.value)} className="clay-input w-full">
-                      <option value="hour">Hour(s)</option>
-                      <option value="day">Day(s)</option>
-                      <option value="week">Week(s)</option>
-                      <option value="month">Month(s)</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Price (₦)</label>
-                    <input type="number" value={rate.price} onChange={e => updateShortletRate(index, 'price', e.target.value)} placeholder="100000" className="clay-input w-full" />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Min Stay</label>
-              <div className="flex gap-2">
-                <input type="number" value={formData.minStay} onChange={e => handleChange('minStay', e.target.value)} placeholder="1" className="clay-input w-20 flex-shrink-0" />
-                <select value={formData.minStayUnit} onChange={e => handleChange('minStayUnit', e.target.value)} className="clay-input flex-1">
-                  <option value="hour">Hours</option>
-                  <option value="day">Days</option>
-                  <option value="week">Weeks</option>
-                  <option value="month">Months</option>
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Max Stay</label>
-              <div className="flex gap-2">
-                <input type="number" value={formData.maxStay} onChange={e => handleChange('maxStay', e.target.value)} placeholder="12" className="clay-input w-20 flex-shrink-0" />
-                <select value={formData.maxStayUnit} onChange={e => handleChange('maxStayUnit', e.target.value)} className="clay-input flex-1">
-                  <option value="hour">Hours</option>
-                  <option value="day">Days</option>
-                  <option value="week">Weeks</option>
-                  <option value="month">Months</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
-            <div className="relative">
-              <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-              <input
-                type="number"
-                value={formData.annualRent}
-                onChange={e => handleChange('annualRent', e.target.value)}
-                placeholder="250000"
-                className="clay-input w-full pl-11"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Duration</label>
-            <input
-              type="text"
-              value={formData.rentDuration || ''}
-              onChange={e => handleChange('rentDuration', e.target.value)}
-              placeholder="e.g. 1 Year, 6 Months"
-              className="clay-input w-full mb-4"
-            />
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Lease Duration</label>
-            <div className="grid grid-cols-4 gap-2">
-              {['1', '2', '3', '5'].map(yrs => (
-                <button
-                  key={yrs}
-                  type="button"
-                  onClick={() => { handleChange('leaseDurationValue', yrs); handleChange('leaseDurationUnit', 'year'); }}
-                  className={clsx(
-                    'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
-                    formData.leaseDurationUnit === 'year' && formData.leaseDurationValue === yrs
-                      ? 'border-mustard bg-mustard-pale text-mustard'
-                      : 'border-clay-border text-text-secondary hover:border-mustard'
-                  )}
-                >
-                  {yrs} yr{Number(yrs) > 1 ? 's' : ''}
-                </button>
-              ))}
-            </div>
-            <div className="flex gap-2 mt-2">
-              <input
-                type="number"
-                min="1"
-                value={formData.leaseDurationValue}
-                onChange={e => handleChange('leaseDurationValue', e.target.value)}
-                placeholder="Custom"
-                className="clay-input w-24 flex-shrink-0"
-              />
-              <select value={formData.leaseDurationUnit} onChange={e => handleChange('leaseDurationUnit', e.target.value)} className="clay-input flex-1">
-                <option value="year">Year(s)</option>
-                <option value="month">Month(s)</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
-            <div className="grid grid-cols-2 gap-2">
-              {paymentFrequencyOptions.map(option => (
-                <button
-                  key={option.value}
-                  type="button"
-                  onClick={() => handleChange('paymentFrequency', option.value)}
-                  className={clsx(
-                    'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
-                    formData.paymentFrequency === option.value
-                      ? 'border-mustard bg-mustard-pale text-mustard'
-                      : 'border-clay-border text-text-secondary hover:border-mustard'
-                  )}
-                >
-                  {option.label}
-                </button>
-              ))}
-            </div>
-            {formData.paymentFrequency === 'custom' && (
-              <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
-                <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
-                    <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-text-secondary mb-1">Interval</label>
-                    <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
-                      <option value="monthly">Monthly</option>
-                      <option value="bi-monthly">Bi-monthly</option>
-                    </select>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
-                  <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
-                </div>
+            <p className="text-xs text-text-tertiary -mt-2">Define your priced packages, e.g. "1 Hour" ₦20,000, "Full Day" ₦100,000, "Weekend" ₦180,000. Guests pick a tier and quantity when booking.</p>
+            {formData.shortletRates.length === 0 && (
+              <div className="text-center py-4 border-2 border-dashed border-clay-border rounded-clay-sm text-xs text-text-tertiary">
+                No pricing tiers yet. Tap "+ Add tier" to create one.
               </div>
             )}
-          </div>
-        </>
-      )}
-      {/* Shortlets are charged rent only — the backend zeroes caution and agency fees for them,
+            <div className="space-y-3">
+              {formData.shortletRates.map((rate, index) => (
+                <div key={index} className="p-3 border-2 border-clay-border rounded-clay-sm space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={rate.label}
+                      onChange={e => updateShortletRate(index, 'label', e.target.value)}
+                      placeholder="Tier name (e.g. Full Day)"
+                      className="clay-input flex-1"
+                    />
+                    <button type="button" onClick={() => removeShortletRate(index)} className="text-xs font-semibold text-red-500 hover:underline flex-shrink-0">Remove</button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Every</label>
+                      <input type="number" min="1" value={rate.durationValue} onChange={e => updateShortletRate(index, 'durationValue', e.target.value)} placeholder="1" className="clay-input w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Unit</label>
+                      <select value={rate.durationUnit} onChange={e => updateShortletRate(index, 'durationUnit', e.target.value)} className="clay-input w-full">
+                        <option value="hour">Hour(s)</option>
+                        <option value="day">Day(s)</option>
+                        <option value="week">Week(s)</option>
+                        <option value="month">Month(s)</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Price (₦)</label>
+                      <input type="number" value={rate.price} onChange={e => updateShortletRate(index, 'price', e.target.value)} placeholder="100000" className="clay-input w-full" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Min Stay</label>
+                <div className="flex gap-2">
+                  <input type="number" value={formData.minStay} onChange={e => handleChange('minStay', e.target.value)} placeholder="1" className="clay-input w-20 flex-shrink-0" />
+                  <select value={formData.minStayUnit} onChange={e => handleChange('minStayUnit', e.target.value)} className="clay-input flex-1">
+                    <option value="hour">Hours</option>
+                    <option value="day">Days</option>
+                    <option value="week">Weeks</option>
+                    <option value="month">Months</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Max Stay</label>
+                <div className="flex gap-2">
+                  <input type="number" value={formData.maxStay} onChange={e => handleChange('maxStay', e.target.value)} placeholder="12" className="clay-input w-20 flex-shrink-0" />
+                  <select value={formData.maxStayUnit} onChange={e => handleChange('maxStayUnit', e.target.value)} className="clay-input flex-1">
+                    <option value="hour">Hours</option>
+                    <option value="day">Days</option>
+                    <option value="week">Weeks</option>
+                    <option value="month">Months</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
+              <div className="relative">
+                <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <input
+                  type="number"
+                  value={formData.annualRent}
+                  onChange={e => handleChange('annualRent', e.target.value)}
+                  placeholder="250000"
+                  className="clay-input w-full pl-11"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Duration</label>
+              <input
+                type="text"
+                value={formData.rentDuration || ''}
+                onChange={e => handleChange('rentDuration', e.target.value)}
+                placeholder="e.g. 1 Year, 6 Months"
+                className="clay-input w-full mb-4"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Lease Duration</label>
+              <div className="grid grid-cols-4 gap-2">
+                {['1', '2', '3', '5'].map(yrs => (
+                  <button
+                    key={yrs}
+                    type="button"
+                    onClick={() => { handleChange('leaseDurationValue', yrs); handleChange('leaseDurationUnit', 'year'); }}
+                    className={clsx(
+                      'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                      formData.leaseDurationUnit === 'year' && formData.leaseDurationValue === yrs
+                        ? 'border-mustard bg-mustard-pale text-mustard'
+                        : 'border-clay-border text-text-secondary hover:border-mustard'
+                    )}
+                  >
+                    {yrs} yr{Number(yrs) > 1 ? 's' : ''}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2 mt-2">
+                <input
+                  type="number"
+                  min="1"
+                  value={formData.leaseDurationValue}
+                  onChange={e => handleChange('leaseDurationValue', e.target.value)}
+                  placeholder="Custom"
+                  className="clay-input w-24 flex-shrink-0"
+                />
+                <select value={formData.leaseDurationUnit} onChange={e => handleChange('leaseDurationUnit', e.target.value)} className="clay-input flex-1">
+                  <option value="year">Year(s)</option>
+                  <option value="month">Month(s)</option>
+                </select>
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Payment Frequency</label>
+              <div className="grid grid-cols-2 gap-2">
+                {paymentFrequencyOptions.map(option => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => handleChange('paymentFrequency', option.value)}
+                    className={clsx(
+                      'py-3 rounded-clay-sm border-2 text-sm font-medium transition-all',
+                      formData.paymentFrequency === option.value
+                        ? 'border-mustard bg-mustard-pale text-mustard'
+                        : 'border-clay-border text-text-secondary hover:border-mustard'
+                    )}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {formData.paymentFrequency === 'custom' && (
+                <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
+                  <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider">Custom Payment Plan</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Number of Installments</label>
+                      <input type="number" value={formData.customInstallments} onChange={e => handleChange('customInstallments', e.target.value)} placeholder="6" className="clay-input w-full" />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-text-secondary mb-1">Interval</label>
+                      <select value={formData.customInterval} onChange={e => handleChange('customInterval', e.target.value)} className="clay-input w-full">
+                        <option value="monthly">Monthly</option>
+                        <option value="bi-monthly">Bi-monthly</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-text-secondary mb-1">Amount per Installment (₦)</label>
+                    <input type="number" value={formData.customAmountPerInstallment} onChange={e => handleChange('customAmountPerInstallment', e.target.value)} placeholder="50000" className="clay-input w-full" />
+                  </div>
+                </div>
+              )}
+            </div>
+          </>
+        )}
+        {/* Shortlets are charged rent only, the backend zeroes caution and agency fees for them,
           so showing these here would promise money that is never collected. */}
-      {!isShortlet && (
-      <div className="border-t border-clay-border-light pt-4">
-        <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
-            <div className="relative">
-              <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-              <input
-                type="number"
-                value={formData.cautionFee}
-                onChange={e => handleChange('cautionFee', e.target.value)}
-                placeholder="50000"
-                className="clay-input w-full pl-11"
-              />
+        {!isShortlet && (
+          <div className="border-t border-clay-border-light pt-4">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
+                <div className="relative">
+                  <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    type="number"
+                    value={formData.cautionFee}
+                    onChange={e => handleChange('cautionFee', e.target.value)}
+                    placeholder="50000"
+                    className="clay-input w-full pl-11"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
+                <div className="relative">
+                  <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    type="number"
+                    value={formData.agencyFee}
+                    onChange={e => handleChange('agencyFee', e.target.value)}
+                    placeholder="25000"
+                    className="clay-input w-full pl-11"
+                  />
+                </div>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
-            <div className="relative">
-              <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-              <input
-                type="number"
-                value={formData.agencyFee}
-                onChange={e => handleChange('agencyFee', e.target.value)}
-                placeholder="25000"
-                className="clay-input w-full pl-11"
-              />
-            </div>
-          </div>
-        </div>
+        )}
       </div>
-      )}
-    </div>
-  );
+    );
   };
 
   const renderStep4 = () => (
@@ -822,7 +822,7 @@ export function CompanyCreateListingPage() {
       </div>
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Amenities</label>
-        {/* Canonical amenity tokens, shared with the guest apps' label lookup — the three
+        {/* Canonical amenity tokens, shared with the guest apps' label lookup, the three
             hard-coded booleans here used to be the whole vocabulary. */}
         <div className="grid grid-cols-2 gap-2">
           {amenityOptions.map(amenity => {
@@ -952,7 +952,7 @@ export function CompanyCreateListingPage() {
       <div className="clay-card p-4 bg-clay-surface mb-4">
         <h3 className="font-bold text-text-primary mb-2">Review Your Listing</h3>
         <p className="text-sm text-text-secondary mb-4">Please review the details below before publishing.</p>
-        
+
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
@@ -972,7 +972,7 @@ export function CompanyCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Gender:</span> <span className="font-medium capitalize">{formData.gender}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Power:</span> <span className="font-medium capitalize">{formData.power}</span></div>
           {formData.additionalNotes && (
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
+            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
           )}
           <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
           <div className="flex justify-between border-t border-clay-border-light pt-2 mt-2"><span className="text-text-tertiary">Tenancy Agreement:</span> <span className="font-medium text-right max-w-[60%] truncate">{tenancyAgreement ? tenancyAgreement.fileName : 'Standard iléSure template'}</span></div>

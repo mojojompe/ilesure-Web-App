@@ -15,13 +15,13 @@ export function CompanyAgentsPage() {
   const [selectedAgent, setSelectedAgent] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
   // BUGFIX (QA-CO-010): the edit modal's inputs were uncontrolled `defaultValue`s and
-  // the Save button only fired a toast — companyApi.updateAgent existed but had zero
+  // the Save button only fired a toast, companyApi.updateAgent existed but had zero
   // call sites, so nothing was ever written and `updatedAt` never moved.
   const [editForm, setEditForm] = useState({ fullName: '', phone: '', status: 'active' });
   const [savingAgent, setSavingAgent] = useState(false);
@@ -128,9 +128,8 @@ export function CompanyAgentsPage() {
   return (
     <AppLayout role="company" title="Agents" subtitle="Manage your team">
       {toast && (
-        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${
-          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+          }`}>
           {toast.message}
         </div>
       )}
@@ -300,14 +299,9 @@ export function CompanyAgentsPage() {
               <input type="email" value={selectedAgent.email} readOnly disabled className="clay-input w-full opacity-70" />
             </div>
             <div>
-<<<<<<< HEAD
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">TelephoneIcon</label>
-              <input type="tel" defaultValue={selectedAgent.phone || ''} className="clay-input w-full" />
-=======
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Phone</label>
               <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="clay-input w-full" />
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
-            </div>
+            </div >
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Status</label>
               <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="clay-input w-full">
@@ -324,24 +318,25 @@ export function CompanyAgentsPage() {
                 {savingAgent ? 'Saving…' : 'Save Changes'}
               </Button>
             </div>
-          </div>
-        )}
-      </Modal>
+          </div >
+        )
+}
+      </Modal >
 
-      <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="Invitation Sent!">
-        <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
-          <div className="w-16 h-16 bg-status-success/20 rounded-full flex items-center justify-center mb-2">
-            <Mail01Icon className="w-8 h-8 text-status-success" />
-          </div>
-          <h3 className="text-xl font-bold text-text-primary">Invitation Sent Successfully</h3>
-          <p className="text-sm text-text-secondary">
-            An email with an invitation link has been sent to the agent. They can use this link to sign up and automatically join your company's team.
-          </p>
-          <Button variant="primary" className="w-full mt-6" onClick={() => setShowSuccessModal(false)}>
-            Close
-          </Button>
-        </div>
-      </Modal>
-    </AppLayout>
+  <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="Invitation Sent!">
+    <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
+      <div className="w-16 h-16 bg-status-success/20 rounded-full flex items-center justify-center mb-2">
+        <Mail01Icon className="w-8 h-8 text-status-success" />
+      </div>
+      <h3 className="text-xl font-bold text-text-primary">Invitation Sent Successfully</h3>
+      <p className="text-sm text-text-secondary">
+        An email with an invitation link has been sent to the agent. They can use this link to sign up and automatically join your company's team.
+      </p>
+      <Button variant="primary" className="w-full mt-6" onClick={() => setShowSuccessModal(false)}>
+        Close
+      </Button>
+    </div>
+  </Modal>
+    </AppLayout >
   );
 }

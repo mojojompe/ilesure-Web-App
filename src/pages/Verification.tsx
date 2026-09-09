@@ -68,8 +68,8 @@ function FileUploadZone({
             <p className="text-xs text-text-tertiary">{fileState.size}</p>
           </div>
           <button
-          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
-          aria-label="Close"
+            /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+            aria-label="Close"
             type="button"
             onClick={onClear}
             className="p-1.5 rounded-full hover:bg-clay-border-light transition-colors flex-shrink-0"
@@ -79,13 +79,12 @@ function FileUploadZone({
         </div>
       ) : (
         <div
-          className={`border-2 border-dashed rounded-clay-sm p-6 text-center cursor-pointer transition-all ${
-            dragging
+          className={`border-2 border-dashed rounded-clay-sm p-6 text-center cursor-pointer transition-all ${dragging
               ? 'border-mustard bg-mustard-pale'
               : fileState.error
-              ? 'border-red-400 bg-red-50'
-              : 'border-clay-border hover:border-mustard hover:bg-mustard-pale/40'
-          }`}
+                ? 'border-red-400 bg-red-50'
+                : 'border-clay-border hover:border-mustard hover:bg-mustard-pale/40'
+            }`}
           onClick={() => inputRef.current?.click()}
           onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
           onDragLeave={() => setDragging(false)}
@@ -324,7 +323,7 @@ export function VerificationPage({ role }: VerificationProps) {
                  backend refuses listing creation unless an agent or landlord has BOTH
                  ninVerified and bvnVerified (listingController). An agent who verified here got
                  BVN only and then met 403 VERIFICATION_REQUIRED on every attempt to publish,
-                 with nothing on this screen offering the step they were missing — the portal
+                 with nothing on this screen offering the step they were missing, the portal
                  could not satisfy its own prerequisite. Both checks are offered, each showing
                  whether it is already done. */
               <div className="space-y-4">
@@ -341,7 +340,7 @@ export function VerificationPage({ role }: VerificationProps) {
                         </p>
                       </div>
                       {done ? (
-                        <CheckCircle className="w-5 h-5 text-status-success flex-shrink-0" />
+                        <CheckmarkBadge02Icon className="w-5 h-5 text-status-success flex-shrink-0" />
                       ) : (
                         <Button
                           onClick={() => runKycCheck(type)}
@@ -358,7 +357,7 @@ export function VerificationPage({ role }: VerificationProps) {
 
                 {ninDone && bvnDone && (
                   <p className="text-center text-xs text-status-success font-semibold">
-                    Both checks complete — you can publish listings.
+                    Both checks complete, you can publish listings.
                   </p>
                 )}
 

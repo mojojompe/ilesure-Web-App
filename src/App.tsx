@@ -50,7 +50,7 @@ import chatApi from './api/chat';
 
 function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role?: 'agent' | 'company'; excludeRole?: string }) {
   // DECISION (W-M1): `isAuthenticated` and `role` originate from the client-controlled
-  // localStorage auth blob, so this guard is UI-ONLY — it decides which shell/redirect to
+  // localStorage auth blob, so this guard is UI-ONLY, it decides which shell/redirect to
   // render, NOT authorization. It is NOT a security boundary. The backend MUST enforce
   // role and permissions server-side on every /agent/*, /company/*, admin, and booking
   // endpoint; tampered roles are caught there because API calls carry the JWT and 401/403.
@@ -71,7 +71,7 @@ function ProtectedRoute({ children, role, excludeRole }: { children: React.React
   if (excludeRole && userRole === excludeRole) {
     return <Navigate to={`/${effectiveRole}`} replace />;
   }
-  
+
   return <>{children}</>;
 }
 
@@ -91,14 +91,14 @@ function GenericTierRoute() {
 
 function AppRoutes() {
   const { role } = useAuth();
-  
+
   useEffect(() => {
     if (role === 'company') {
-      document.title = 'iléSure Company — Oversee your Agents and Listings';
+      document.title = 'iléSure Company, Oversee your Agents and Listings';
     } else if (role === 'agent' || role === 'landlord') {
-      document.title = 'iléSure Agent — Manage your Listings';
+      document.title = 'iléSure Agent, Manage your Listings';
     } else {
-      document.title = 'iléSure — Your Sure Home Anywhere';
+      document.title = 'iléSure, Your Sure Home Anywhere';
     }
   }, [role]);
 
@@ -120,7 +120,7 @@ function AppRoutes() {
       <Route path="/tiers" element={<GenericTierRoute />} />
       <Route path="/payment" element={<PaymentPage />} />
       <Route path="/payment/callback" element={<PaymentCallbackPage />} />
-      
+
       <Route path="/agent" element={
         <ProtectedRoute role="agent">
           <AgentDashboardPage />
@@ -186,7 +186,7 @@ function AppRoutes() {
           <AgentSettingsPage />
         </ProtectedRoute>
       } />
-      
+
       <Route path="/company" element={
         <ProtectedRoute role="company">
           <CompanyDashboardPage />
@@ -257,7 +257,7 @@ function AppRoutes() {
           <CompanySettingsPage />
         </ProtectedRoute>
       } />
-      
+
       {/* Roommate Matching (Students) */}
       {/* SECURITY-FIX (W-L1): wrapped in ProtectedRoute for parity with the other authed
           routes. No `role` prop is passed, so these require authentication only (no
@@ -273,7 +273,7 @@ function AppRoutes() {
           <RoommateMatchesPage />
         </ProtectedRoute>
       } />
-      
+
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="*" element={<NotFound />} />
     </Routes>

@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { useNavigate } from 'react-router-dom';
-import { Tick02Icon, ArrowRight01Icon, Loading02Icon } from '@hugeicons/react';
-=======
 import { useNavigate, Link } from 'react-router-dom';
-import { Check, X, ArrowRight, ArrowLeft, Home, Loader2 } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { Tick02Icon as Check, Cancel01Icon as X, ArrowRight01Icon, ArrowLeft01Icon as ArrowLeft, Home01Icon as Home, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
@@ -66,7 +61,7 @@ export function TierSelectionPage() {
   /**
    * Both prices are set per tier on the backend. This previously rendered the
    * MONTHLY price with a "/yr" suffix on the annual toggle, while checkout
-   * charged price * 12 * 0.8 — so the quoted figure was roughly a tenth of what
+   * charged price * 12 * 0.8, so the quoted figure was roughly a tenth of what
    * the customer was actually billed.
    */
   const priceFor = (tier: Tier): number => {
@@ -124,7 +119,7 @@ export function TierSelectionPage() {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat py-8 px-4"
       style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_tier.png')" }}
     >
@@ -223,39 +218,13 @@ export function TierSelectionPage() {
                 <h3 className="text-lg font-bold text-text-primary">{tier.name}</h3>
                 <p className="text-2xl font-bold text-text-primary mt-1">{formatPrice(tier)}</p>
                 {/* BUGFIX (QA-AGT-024): unguarded nested access crashed the page to blank when a
-                    tier came back without `limits` — the very next block already guards `features`. */}
+                    tier came back without `limits`, the very next block already guards `features`. */}
                 {tier.limits?.maxListings !== undefined && (
                   <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
                 )}
               </div>
 
               <div className="space-y-2">
-<<<<<<< HEAD
-                {tier.features?.maxListings !== undefined && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
-                  </div>
-                )}
-                {tier.features?.analytics && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">{tier.features.analytics}</span>
-                  </div>
-                )}
-                {tier.features?.support && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">{tier.features.support}</span>
-                  </div>
-                )}
-                {tier.features?.visibility && (
-                  <div className="flex items-start gap-2 text-sm">
-                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                    <span className="text-text-secondary">{tier.features.visibility}</span>
-                  </div>
-                )}
-=======
                 {getWebTierBullets(tier).map((bullet, bIdx) => (
                   <div key={bIdx} className="flex items-start gap-2 text-sm">
                     {bullet.positive ? (
@@ -271,32 +240,32 @@ export function TierSelectionPage() {
                     </span>
                   </div>
                 ))}
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
-              </div>
-            </button>
-          ))}
-        </div>
+              </div >
+            </button >
+          ))
+}
+        </div >
 
-        <Button
-          variant="primary"
-          className="w-full max-w-md mx-auto"
-          disabled={!selectedTier || selecting}
-          onClick={handleContinue}
-        >
-          Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
-        </Button>
+  <Button
+    variant="primary"
+    className="w-full max-w-md mx-auto"
+    disabled={!selectedTier || selecting}
+    onClick={handleContinue}
+  >
+    Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
+  </Button>
 
-        {/* Bottom Return Action */}
-        <div className="mt-8 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
-          <button
-            onClick={handleBack}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-white border border-clay-border text-xs sm:text-sm font-semibold text-text-primary hover:bg-neutral-50 shadow-xs transition-all active:scale-[0.98]"
-          >
-            <ArrowLeft className="w-4 h-4 text-mustard" />
-            <span>{isAuthenticated ? 'Return to Dashboard' : 'Back to Home'}</span>
-          </button>
-        </div>
-      </div>
-    </div>
+{/* Bottom Return Action */ }
+<div className="mt-8 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+  <button
+    onClick={handleBack}
+    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-white border border-clay-border text-xs sm:text-sm font-semibold text-text-primary hover:bg-neutral-50 shadow-xs transition-all active:scale-[0.98]"
+  >
+    <ArrowLeft className="w-4 h-4 text-mustard" />
+    <span>{isAuthenticated ? 'Return to Dashboard' : 'Back to Home'}</span>
+  </button>
+</div>
+      </div >
+    </div >
   );
 }

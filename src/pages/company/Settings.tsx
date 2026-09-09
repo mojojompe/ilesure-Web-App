@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon } from '@hugeicons/react';
-=======
-import { Save, Loader, Banknote, CheckCircle, Shield, FileText, Upload, X, AlertCircle, Clock } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -215,9 +211,8 @@ export function CompanySettingsPage() {
 
       {/* Toast notification overlay */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
-          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+          }`}>
           {toast.type === 'success' ? '✓' : '✕'} {toast.message}
         </div>
       )}
@@ -300,7 +295,7 @@ export function CompanySettingsPage() {
             ) : company?.documentsSubmitted || docSubmitted ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-mustard/10 border border-mustard/20">
                 <Alert01Icon className="w-4 h-4 text-mustard" />
-                <p className="text-sm font-medium text-mustard">Documents submitted — under review</p>
+                <p className="text-sm font-medium text-mustard">Documents submitted, under review</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -431,7 +426,7 @@ export function CompanySettingsPage() {
                   <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
                   <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
                   <p className="text-xs text-text-tertiary mt-2">
-                    Rent payments are split automatically — the iléSure service fee to us, the balance to your company account.
+                    Rent payments are split automatically, the iléSure service fee to us, the balance to your company account.
                   </p>
                 </div>
               </div>

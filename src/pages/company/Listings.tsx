@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { useNavigate } from 'react-router-dom';
-import { PlusSignIcon, Search01Icon, PencilEdit01Icon, ViewIcon, FavouriteIcon, Archive01Icon, Loading02Icon, Location01Icon, Home01Icon } from '@hugeicons/react';
-=======
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Eye, Heart, Archive, Loader, MapPin, Home, Edit } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { PlusSignIcon, Search01Icon, PencilEdit01Icon as Edit, Archive01Icon, Delete02Icon as Trash2, ViewIcon as Eye, FavouriteIcon, Cancel02Icon as X, Location01Icon as MapPin, Home01Icon, Money01Icon, Image01Icon, Tick02Icon, CheckmarkBadge02Icon as CheckCircle, Loading02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -284,20 +279,15 @@ export function CompanyListingsPage() {
                   </div>
                   <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
                   <div className="flex items-center gap-4 text-xs text-text-tertiary mt-2">
-                    <span className="flex items-center gap-1"><ViewIcon className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
+                    <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
                     <span className="flex items-center gap-1"><FavouriteIcon className="w-3 h-3" /> {listing.saves || 0}</span>
                   </div>
                   <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light items-center">
                     <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
-                      <ViewIcon className="w-3 h-3 mr-1" /> View
+                      <Eye className="w-3 h-3 mr-1" /> View
                     </Button>
-<<<<<<< HEAD
-                    <Button variant="secondary" size="sm" onClick={() => handleView(listing)} disabled={isFullyBooked}>
-                      <PencilEdit01Icon className="w-3 h-3" />
-=======
                     <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(listing)} disabled={isFullyBooked} title="Edit listing details and pricing">
                       <Edit className="w-3.5 h-3.5 mr-1" /> Edit
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
                     </Button>
                   </div>
                 </div>
@@ -346,15 +336,7 @@ export function CompanyListingsPage() {
                   })}
                 </div>
               )}
-<<<<<<< HEAD
-              <p className="text-sm text-text-tertiary capitalize">{selectedListing.propertyType?.replace(/_/g, ' ') || selectedListing.type}</p>
-            </div>
-            <p className="text-text-secondary">{selectedListing.description}</p>
-            <div className="flex flex-col gap-2 text-text-tertiary">
-              <div className="flex items-center gap-2">
-                <Location01Icon className="w-4 h-4" />
-                <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
-=======
+
 
               {/* Status and Price Banner */}
               <div className="flex items-center justify-between gap-3 p-3.5 bg-mustard-pale/30 rounded-clay-sm border border-mustard/20 flex-wrap">
@@ -385,7 +367,6 @@ export function CompanyListingsPage() {
                     </div>
                   )}
                 </div>
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
               </div>
 
               {/* Description */}

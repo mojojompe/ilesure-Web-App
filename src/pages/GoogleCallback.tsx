@@ -14,7 +14,7 @@ import { authApi } from '../api/authApi';
  *     -> 302 back here with ?code=<single-use code>, or ?error=<reason>
  *
  * `intent=portal` matters. Without it the server auto-creates a `student` for any Google
- * address it has never seen — which on this portal would hand an agent a renter account and
+ * address it has never seen, which on this portal would hand an agent a renter account and
  * then bounce them off their own dashboard. With it, an unknown address is refused and told to
  * register properly, because an agent or company account needs a role, a company name, bank
  * details and KYC that a Google profile does not carry.
@@ -50,7 +50,7 @@ export function GoogleCallbackPage() {
     if (serverError) {
       setError(
         serverError === 'no_account'
-          ? 'No account found for that Google address. Please create an account first — agents and companies need a few extra details we cannot take from Google.'
+          ? 'No account found for that Google address. Please create an account first, agents and companies need a few extra details we cannot take from Google.'
           : serverError === 'password_account'
             ? 'This email is already registered with a password. Please sign in with your email and password.'
             : 'Google sign-in did not complete. Please try again, or sign in with your email.'
@@ -68,7 +68,7 @@ export function GoogleCallbackPage() {
     (async () => {
       try {
         // Trade the code for the session. The response carries the profile too, so no second
-        // request is needed — and `setSession` still runs only after the role check, so a
+        // request is needed, and `setSession` still runs only after the role check, so a
         // renter never gets a portal session written to storage.
         const res = await authApi.exchangeGoogleCode(code);
         const user: any = res?.user;

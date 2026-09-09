@@ -1,9 +1,5 @@
 import { useState } from 'react';
-<<<<<<< HEAD
-import { Calendar02Icon, CheckmarkBadge02Icon, Cancel02Icon, Alert01Icon } from '@hugeicons/react';
-=======
-import { CalendarClock, CheckCircle2, XCircle, AlertTriangle, Calendar, Clock } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { Calendar02Icon, CheckmarkBadge02Icon, Cancel02Icon, Alert01Icon, Clock01Icon } from '@hugeicons/react';
 import { Button } from '../ui/Button';
 
 /**
@@ -74,13 +70,8 @@ export function InspectionPanel({ booking, onMarkMissed, onReschedule, busy = fa
     };
   } else if (status === 'missed') {
     summary = {
-<<<<<<< HEAD
       icon: <Alert01Icon className="w-4 h-4 text-status-warning shrink-0" />,
-      text: 'The viewing was marked as missed. The tenant can schedule another.',
-=======
-      icon: <AlertTriangle className="w-4 h-4 text-status-warning shrink-0" />,
       text: 'The viewing was marked as missed. You or the tenant can reschedule.',
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
     };
   } else if (status === 'scheduled') {
     summary = {
@@ -222,7 +213,7 @@ export function InspectionPanel({ booking, onMarkMissed, onReschedule, busy = fa
               }}
               disabled={busy}
             >
-              <Calendar className="w-3.5 h-3.5 mr-1" />
+              <Calendar02Icon className="w-3.5 h-3.5 mr-1" />
               {status === 'scheduled' ? 'Edit / Reschedule' : 'Set Viewing Time'}
             </Button>
           )}

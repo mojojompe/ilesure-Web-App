@@ -4,53 +4,53 @@ export type UserRole = 'student' | 'landlord' | 'agent' | 'company' | 'company_a
 
 export interface RoommateProfile {
   // Lifestyle preferences (categorical)
-  sleepSchedule?:    'early_bird' | 'night_owl' | 'flexible';
-  noiseTolerance?:  'very_quiet' | 'moderate' | 'noisy_ok';
-  cleanliness?:      'neat_freak' | 'organized' | 'casual' | 'messy';
+  sleepSchedule?: 'early_bird' | 'night_owl' | 'flexible';
+  noiseTolerance?: 'very_quiet' | 'moderate' | 'noisy_ok';
+  cleanliness?: 'neat_freak' | 'organized' | 'casual' | 'messy';
   cookingFrequency?: 'daily' | 'few_times_week' | 'rarely' | 'never';
-  studySchedule?:   'morning' | 'afternoon' | 'evening' | 'late_night' | 'distributed';
-  socialActivity?:  'very_social' | 'moderate' | 'private' | 'hermit';
-  guestComfort?:   'love_guests' | 'ok_with_notice' | 'rare_guests' | 'no_guests';
-  smokingAlcohol?:  'no' | 'socially' | 'yes';
-  powerUsage?:      'low' | 'medium' | 'high';
+  studySchedule?: 'morning' | 'afternoon' | 'evening' | 'late_night' | 'distributed';
+  socialActivity?: 'very_social' | 'moderate' | 'private' | 'hermit';
+  guestComfort?: 'love_guests' | 'ok_with_notice' | 'rare_guests' | 'no_guests';
+  smokingAlcohol?: 'no' | 'socially' | 'yes';
+  powerUsage?: 'low' | 'medium' | 'high';
 
   // Numeric preferences
-  openness?:         number;  // 1-5 scale
+  openness?: number;  // 1-5 scale
   religionImportance?: number;  // 1-5 scale
-  budgetMin?:        number;
-  budgetMax?:        number;
-  age?:             number;
-  preferredGender?:  'male' | 'female' | 'any';
-  preferredZone?:    string;  // Campus area preference
+  budgetMin?: number;
+  budgetMax?: number;
+  age?: number;
+  preferredGender?: 'male' | 'female' | 'any';
+  preferredZone?: string;  // Campus area preference
 
   // Meta
-  bio?:             string;
-  courseOfStudy?:   string;
-  yearOfStudy?:     string;
-  updatedAt?:        string;
+  bio?: string;
+  courseOfStudy?: string;
+  yearOfStudy?: string;
+  updatedAt?: string;
 }
 
 export interface CategoryScores {
-  lifestyle:  number;  // 0-100
-  numeric:    number;  // 0-100
+  lifestyle: number;  // 0-100
+  numeric: number;  // 0-100
   preference: number;  // 0-100
 }
 
 export interface MatchResult {
-  userId:           string;
-  fullName?:       string;
-  avatar?:          string;
-  overallScore:     number;  // 0-100
-  confidence:        number;  // 0-1 (how reliable is this match)
-  categoryScores:   CategoryScores;
-  strengths:        string[];
-  concerns:         string[];
-  recommendation:    'excellent' | 'good' | 'fair' | 'poor';
-  aInterested?:    boolean;
-  bInterested?:    boolean;
+  userId: string;
+  fullName?: string;
+  avatar?: string;
+  overallScore: number;  // 0-100
+  confidence: number;  // 0-1 (how reliable is this match)
+  categoryScores: CategoryScores;
+  strengths: string[];
+  concerns: string[];
+  recommendation: 'excellent' | 'good' | 'fair' | 'poor';
+  aInterested?: boolean;
+  bInterested?: boolean;
   contactReleasedAt?: string;
-  createdAt:        string;
-  aiPowered?:       boolean;
+  createdAt: string;
+  aiPowered?: boolean;
 }
 
 export interface User {
@@ -69,7 +69,7 @@ export interface User {
   bvnVerified?: boolean;
   /**
    * QA-AGT-032: when identity documents were actually submitted, or null if they never were.
-   * `verificationStatus` alone cannot tell those apart — it defaults to 'pending' at signup.
+   * `verificationStatus` alone cannot tell those apart, it defaults to 'pending' at signup.
    */
   verificationSubmittedAt?: string | null;
   companyId?: string | { _id: string; name: string; tradingName?: string; logo?: string; tier?: string; };
@@ -159,7 +159,7 @@ export interface TierDetails {
 export interface Tier {
   /** Price for one month, in naira. */
   priceMonthly?: number;
-  /** Price for one year, in naira — set per tier, not derived from the monthly price. */
+  /** Price for one year, in naira, set per tier, not derived from the monthly price. */
   priceYearly?: number;
   id: string;
   name: string;

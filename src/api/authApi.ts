@@ -229,7 +229,7 @@ export const authApi = {
     }
   },
 
-  // REMOVED: uploadDoc() — it posted to POST /auth/upload-doc, an unauthenticated
+  // REMOVED: uploadDoc(), it posted to POST /auth/upload-doc, an unauthenticated
   // upload endpoint serving the individual-document KYC flow that Dojah's NIN/BVN
   // verification replaced. It had no callers anywhere in the app, and the endpoint has
   // been removed from the backend.

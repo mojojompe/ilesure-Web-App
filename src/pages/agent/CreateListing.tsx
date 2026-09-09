@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home01Icon, Location01Icon, Money01Icon, Building01Icon, Sofa01Icon, FlashIcon, Wifi01Icon, SecurityIcon, Camera01Icon, ArrowRight01Icon, ArrowLeft01Icon, Tick02Icon, Upload01Icon, Cancel02Icon, Loading02Icon, Alert01Icon, CheckmarkBadge02Icon, Clock02Icon } from '@hugeicons/react';
+import { Home01Icon, Location01Icon, Money01Icon, Building01Icon, Sofa01Icon, FlashIcon, Wifi01Icon, SecurityIcon, Camera01Icon, ArrowRight01Icon, ArrowLeft01Icon, Tick02Icon, Upload01Icon, Cancel02Icon, Cancel02Icon as X, Loading02Icon, Alert01Icon, Alert01Icon as AlertCircle, CheckmarkBadge02Icon, Clock02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -80,7 +80,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
     try {
       const res = await userApi.getKycStatus();
       if (res.success && res.data) setKycStatus(res.data);
-    } catch {} finally { setLoading(false); }
+    } catch { } finally { setLoading(false); }
   };
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -116,7 +116,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
         onSuccess: async (response: any) => {
           try {
             const refId = response.reference_id || referenceId;
-            try { await userApi.verifyKyc(refId, type); } catch {}
+            try { await userApi.verifyKyc(refId, type); } catch { }
             showToast(`${type.toUpperCase()} verified successfully!`);
             const res = await userApi.getKycStatus();
             if (res.success && res.data) setKycStatus(res.data);
@@ -236,7 +236,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
 }
 
 // Enumerated values come from the shared canonical vocabulary rather than
-// being redeclared per form — see constants/listingVocabulary.
+// being redeclared per form, see constants/listingVocabulary.
 type GenderPreference = GenderRestriction;
 type DistanceFromSchool = DistanceBucket;
 type PaymentFrequency = 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
@@ -372,7 +372,7 @@ export function AgentCreateListingPage() {
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Live verification check — don't rely on stale localStorage value
+  // Live verification check, don't rely on stale localStorage value
   const [liveVerified, setLiveVerified] = useState<boolean | null>(
     user?.verificationStatus === 'verified' ? true : null
   );
@@ -539,13 +539,13 @@ export function AgentCreateListingPage() {
         // Flexible custom shortlet tiers
         shortletRates: formData.propertyType === 'shortlet'
           ? formData.shortletRates
-              .filter(r => r.label.trim() && Number(r.price) > 0 && Number(r.durationValue) >= 1)
-              .map(r => ({
-                label: r.label.trim(),
-                durationValue: Number(r.durationValue),
-                durationUnit: r.durationUnit,
-                price: Number(r.price),
-              }))
+            .filter(r => r.label.trim() && Number(r.price) > 0 && Number(r.durationValue) >= 1)
+            .map(r => ({
+              label: r.label.trim(),
+              durationValue: Number(r.durationValue),
+              durationUnit: r.durationUnit,
+              price: Number(r.price),
+            }))
           : undefined,
         minStay: formData.minStay ? Number(formData.minStay) : undefined,
         minStayUnit: formData.minStay ? formData.minStayUnit : undefined,
@@ -577,7 +577,7 @@ export function AgentCreateListingPage() {
         },
         images: [],
         // BUGFIX (QA-AGT-010): this always sent `tenancyAgreement: null` when the
-        // (optional) upload was skipped, and the server rejected null outright — so
+        // (optional) upload was skipped, and the server rejected null outright, so
         // NO listing could ever be published from this wizard. The server now treats
         // null as "use the standard template", but omitting the key entirely is the
         // honest request: there is no custom agreement to send.
@@ -599,7 +599,7 @@ export function AgentCreateListingPage() {
         navigate('/agent/listings');
       } else {
         // BUGFIX (QA-AGT-010): there was no `else`, and the API wrapper swallowed the
-        // axios error, so a 400 produced no toast, no error and no navigation — the
+        // axios error, so a 400 produced no toast, no error and no navigation, the
         // button simply stopped spinning. Show what the server actually said.
         const err: any = (response as any).error;
         const details: string[] = err?.details || [];
@@ -910,40 +910,40 @@ export function AgentCreateListingPage() {
             </div>
           </>
         )}
-        {/* Shortlets are charged rent only — the backend zeroes caution and agency fees for them,
+        {/* Shortlets are charged rent only, the backend zeroes caution and agency fees for them,
             so showing these here would promise money that is never collected. */}
         {!isShortlet && (
-        <div className="border-t border-clay-border-light pt-4">
-          <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
-          <div className="space-y-3">
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
-              <div className="relative">
-                <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  type="number"
-                  value={formData.cautionFee}
-                  onChange={e => handleChange('cautionFee', e.target.value)}
-                  placeholder="50000"
-                  className="clay-input w-full pl-11"
-                />
+          <div className="border-t border-clay-border-light pt-4">
+            <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
+                <div className="relative">
+                  <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    type="number"
+                    value={formData.cautionFee}
+                    onChange={e => handleChange('cautionFee', e.target.value)}
+                    placeholder="50000"
+                    className="clay-input w-full pl-11"
+                  />
+                </div>
               </div>
-            </div>
-            <div>
-              <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
-              <div className="relative">
-                <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-                <input
-                  type="number"
-                  value={formData.agencyFee}
-                  onChange={e => handleChange('agencyFee', e.target.value)}
-                  placeholder="25000"
-                  className="clay-input w-full pl-11"
-                />
+              <div>
+                <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
+                <div className="relative">
+                  <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    type="number"
+                    value={formData.agencyFee}
+                    onChange={e => handleChange('agencyFee', e.target.value)}
+                    placeholder="25000"
+                    className="clay-input w-full pl-11"
+                  />
+                </div>
               </div>
             </div>
           </div>
-        </div>
         )}
       </div>
     );
@@ -1073,7 +1073,7 @@ export function AgentCreateListingPage() {
       </div>
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Amenities</label>
-        {/* Canonical amenity tokens, shared with the guest apps' label lookup — the three
+        {/* Canonical amenity tokens, shared with the guest apps' label lookup, the three
             hard-coded booleans here used to be the whole vocabulary. */}
         <div className="grid grid-cols-2 gap-2">
           {amenityOptions.map(amenity => {
@@ -1321,7 +1321,7 @@ export function AgentCreateListingPage() {
       <div className="clay-card p-4 bg-clay-surface mb-4">
         <h3 className="font-bold text-text-primary mb-2">Review Your Listing</h3>
         <p className="text-sm text-text-secondary mb-4">Please review the details below before publishing.</p>
-        
+
         <div className="space-y-3 text-sm">
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Title:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.title || '-'}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Type:</span> <span className="font-medium capitalize">{formData.propertyType}</span></div>
@@ -1341,7 +1341,7 @@ export function AgentCreateListingPage() {
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Gender:</span> <span className="font-medium capitalize">{formData.gender}</span></div>
           <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Power:</span> <span className="font-medium capitalize">{formData.power}</span></div>
           {formData.additionalNotes && (
-          <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
+            <div className="flex justify-between border-b border-clay-border-light pb-2"><span className="text-text-tertiary">Notes:</span> <span className="font-medium text-right max-w-[60%] truncate">{formData.additionalNotes}</span></div>
           )}
           <div className="flex justify-between"><span className="text-text-tertiary">Photos:</span> <span className="font-medium">{photoFiles.length} Added</span></div>
           <div className="flex justify-between border-t border-clay-border-light pt-2 mt-2"><span className="text-text-tertiary">Tenancy Agreement:</span> <span className="font-medium text-right max-w-[60%] truncate">{tenancyAgreement ? tenancyAgreement.fileName : 'Standard iléSure template'}</span></div>

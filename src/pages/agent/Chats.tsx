@@ -361,15 +361,8 @@ export function AgentChatsPage() {
                   >
                     <Video01Icon className="w-5 h-5 text-text-secondary" />
                   </button>
-<<<<<<< HEAD
-                  <button className="p-2 rounded-full hover:bg-clay-border-light">
+                  <button aria-label="More options" className="p-2 rounded-full hover:bg-clay-border-light">
                     <MoreVerticalIcon className="w-5 h-5 text-text-secondary" />
-=======
-                  <button
-          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
-          aria-label="More options" className="p-2 rounded-full hover:bg-clay-border-light">
-                    <MoreVertical className="w-5 h-5 text-text-secondary" />
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
                   </button>
                 </div>
               </div>

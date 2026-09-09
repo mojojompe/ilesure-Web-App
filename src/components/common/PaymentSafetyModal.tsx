@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Check } from 'lucide-react';
+import { Cancel02Icon as X, Tick02Icon as Check } from '@hugeicons/react';
 
 export interface PaymentSafetyModalProps {
   visible: boolean;

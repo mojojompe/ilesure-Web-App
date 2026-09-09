@@ -28,7 +28,7 @@ export function CreateOTPPage() {
     const fromState = (location.state as { email?: string } | null)?.email;
     return fromState || user?.email || sessionStorage.getItem(PENDING_EMAIL_KEY) || '';
   }, [location.state, user?.email]);
-  // Non-fatal problems from signup (bank save / document upload) — the account exists, so
+  // Non-fatal problems from signup (bank save / document upload), the account exists, so
   // tell the user what to redo in Settings instead of hiding it.
   const signupWarnings = ((location.state as { warnings?: string[] } | null)?.warnings) || [];
 

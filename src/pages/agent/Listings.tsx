@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { useNavigate } from 'react-router-dom';
-import { PlusSignIcon, Search01Icon, PencilEdit01Icon, Archive01Icon, Delete02Icon, ViewIcon, FavouriteIcon, Cancel02Icon, Location01Icon, Home01Icon, Money01Icon, Image01Icon, Tick02Icon, Loading02Icon } from '@hugeicons/react';
-=======
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Search, Edit, Archive, Trash2, Eye, Heart, X, MapPin, Home, DollarSign, Image, Check, CheckCircle, Loader } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { PlusSignIcon, Search01Icon, PencilEdit01Icon as Edit, Archive01Icon, Delete02Icon as Trash2, ViewIcon as Eye, FavouriteIcon, Cancel02Icon as X, Location01Icon as MapPin, Home01Icon, Money01Icon, Image01Icon, Tick02Icon, CheckmarkBadge02Icon as CheckCircle, Loading02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -58,13 +53,13 @@ export function AgentListingsPage() {
   const [selectedListing, setSelectedListing] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{message: string; type: 'success' | 'error'} | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   // BUGFIX (QA-AGT-023): the header search routes here with ?search=<term>; read it so
   // the term is actually applied instead of the page opening unfiltered.
   const [searchParams] = useSearchParams();
   const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const [listings, setListings] = useState<any[]>([]);
-  
+
   const [newListing, setNewListing] = useState({
     title: '',
     description: '',
@@ -124,7 +119,7 @@ export function AgentListingsPage() {
         amenities: newListing.amenities,
         areaCluster: newListing.city,
         // Required fields with sensible defaults (user can edit later via full form).
-        // These must be canonical values from constants/listingVocabulary —
+        // These must be canonical values from constants/listingVocabulary,
         // 'within_5km' and 'irregular' were in no enum and failed validation.
         distanceBucket: 'close',
         maxOccupants: 1,
@@ -385,9 +380,8 @@ export function AgentListingsPage() {
   return (
     <AppLayout role="agent" title="My Listings" subtitle="Manage your properties">
       {toast && (
-        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${
-          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+          }`}>
           {toast.message}
         </div>
       )}
@@ -404,7 +398,7 @@ export function AgentListingsPage() {
           />
         </div>
         <div className="flex gap-2">
-          {/* NOTE: this type selector is still unwired — agentApi.getListings
+          {/* NOTE: this type selector is still unwired, agentApi.getListings
               takes no propertyType param. Its options are canonical now so it
               stops advertising types that do not exist. */}
           <select className="clay-input">
@@ -424,11 +418,10 @@ export function AgentListingsPage() {
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-pill text-sm font-medium transition-all ${
-              filter === f
+            className={`px-4 py-2 rounded-pill text-sm font-medium transition-all ${filter === f
                 ? 'bg-burnt-brown text-white'
                 : 'bg-white text-text-secondary hover:bg-clay-border-light'
-            }`}
+              }`}
           >
             {f === 'fully_booked' ? 'Occupied' : f === 'archived' ? 'Archived / Inactive' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
@@ -461,7 +454,7 @@ export function AgentListingsPage() {
                     )}
                     {/* Progressive Gradient Fade to White */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent z-0"></div>
-                    
+
                     <div className="absolute top-3 right-3 z-10">
                       <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>
                         {listing.status}
@@ -487,82 +480,70 @@ export function AgentListingsPage() {
                     </div>
                     <p className="text-sm text-text-secondary line-clamp-2 mb-3">{listing.description}</p>
                     <div className="flex items-center gap-4 text-xs text-text-tertiary">
-                      <span className="flex items-center gap-1"><ViewIcon className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
+                      <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {listing.views || listing.interestCount || 0}</span>
                       <span className="flex items-center gap-1"><FavouriteIcon className="w-3 h-3" /> {listing.saves || 0}</span>
                     </div>
-<<<<<<< HEAD
-                    <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light">
-                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)} disabled={isFullyBooked}>
-                        <ViewIcon className="w-3 h-3 mr-1" /> View
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleArchive(String(listingId))} disabled={isFullyBooked}>
-                        <Archive01Icon className="w-3 h-3" />
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleDelete(String(listingId))} disabled={isFullyBooked}>
-                        <Delete02Icon className="w-3 h-3 text-red-500" />
-=======
                     <div className="flex gap-2 mt-4 pt-4 border-t border-clay-border-light items-center">
-                      <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
-                        <Eye className="w-3 h-3 mr-1" /> View
-                      </Button>
-                      <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(listing)} title="Edit listing details and pricing">
-                        <Edit className="w-3.5 h-3.5 mr-1" /> Edit
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
-                      </Button>
-                      {listing.status === 'active' && (
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleOpenMarkRented(listing)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-2.5 py-1.5 rounded-clay-sm flex items-center gap-1 shadow-sm transition-all"
-                          title="Quick Delist: Mark as Rented to free up listing slot"
-                        >
-                          <CheckCircle className="w-3.5 h-3.5" />
-                          <span>Rented</span>
-                        </Button>
-                      )}
-                      {listing.status === 'archived' ? (
-                        <>
-                          <Button
-                            variant="primary"
-                            size="sm"
-                            onClick={() => handleRestore(String(listingId))}
-                            className="bg-burnt-brown hover:bg-burnt-brown/90 text-white text-xs px-2.5 py-1.5 rounded-clay-sm"
-                            title="Restore and relist this property"
-                          >
-                            Restore
-                          </Button>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleOpenPermanentDelete(listing)}
-                            className="text-red-500 hover:bg-red-50 border border-red-200"
-                            title="Delete Permanently (Irreversible)"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={() => handleDelete(String(listingId))}
-                          title="Move to Archive (Safe Delete)"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-text-tertiary hover:text-red-500" />
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </ClayCard>
+        <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(listing)}>
+          <Eye className="w-3 h-3 mr-1" /> View
+        </Button>
+        <Button variant="secondary" size="sm" onClick={() => handleOpenEdit(listing)} title="Edit listing details and pricing">
+          <Edit className="w-3.5 h-3.5 mr-1" /> Edit
+        </Button>
+        {listing.status === 'active' && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => handleOpenMarkRented(listing)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs px-2.5 py-1.5 rounded-clay-sm flex items-center gap-1 shadow-sm transition-all"
+            title="Quick Delist: Mark as Rented to free up listing slot"
+          >
+            <CheckCircle className="w-3.5 h-3.5" />
+            <span>Rented</span>
+          </Button>
+        )}
+        {listing.status === 'archived' ? (
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => handleRestore(String(listingId))}
+              className="bg-burnt-brown hover:bg-burnt-brown/90 text-white text-xs px-2.5 py-1.5 rounded-clay-sm"
+              title="Restore and relist this property"
+            >
+              Restore
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => handleOpenPermanentDelete(listing)}
+              className="text-red-500 hover:bg-red-50 border border-red-200"
+              title="Delete Permanently (Irreversible)"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </>
+        ) : (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleDelete(String(listingId))}
+            title="Move to Archive (Safe Delete)"
+          >
+            <Trash2 className="w-3.5 h-3.5 text-text-tertiary hover:text-red-500" />
+          </Button>
+        )}
+      </div>
+  </div>
+                </ClayCard >
               );
-            })
+})
           ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-text-tertiary">No listings found</p>
-            </div>
-          )}
-        </div>
+  <div className="col-span-full text-center py-12">
+    <p className="text-text-tertiary">No listings found</p>
+  </div>
+)}
+        </div >
       )}
 
       <Modal isOpen={showAddModal} onClose={() => setShowAddModal(false)} title="Add New Listing" size="lg">
@@ -735,19 +716,7 @@ export function AgentListingsPage() {
                     </div>
                   )}
                 </div>
-<<<<<<< HEAD
-              ) : (
-                <p className="text-2xl font-bold text-mustard">{formatCurrency(selectedListing.price || selectedListing.rentAnnual || 0)}</p>
-              )}
-              <p className="text-sm text-text-tertiary capitalize">{selectedListing.propertyType?.replace(/_/g, ' ') || selectedListing.type}</p>
-            </div>
-            <p className="text-text-secondary">{selectedListing.description}</p>
-            <div className="flex flex-col gap-2 text-text-tertiary">
-              <div className="flex items-center gap-2">
-                <Location01Icon className="w-4 h-4" />
-                <span>{selectedListing.address}, {selectedListing.city}, {selectedListing.state}</span>
-=======
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+
               </div>
 
               {/* Description */}
@@ -902,400 +871,398 @@ export function AgentListingsPage() {
               </div>
             </div>
           );
-        })()}
-      </Modal>
+        }) ()}
+      </Modal >
 
-      {/* Quick Mark as Rented Modal */}
-      <Modal
-        isOpen={showRentedModal}
-        onClose={() => !markingRented && setShowRentedModal(false)}
-        title="Mark Property as Rented / Taken"
-        size="md"
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-text-secondary">
-            Taking down <strong className="text-text-primary">"{rentedTargetListing?.title}"</strong> immediately removes it from public search and frees up <strong>1 active listing slot</strong> on your plan. All photos and details remain saved safely in your Archive.
-          </p>
+  {/* Quick Mark as Rented Modal */ }
+  < Modal
+isOpen = { showRentedModal }
+onClose = {() => !markingRented && setShowRentedModal(false)}
+title = "Mark Property as Rented / Taken"
+size = "md"
+  >
+  <div className="space-y-4">
+    <p className="text-sm text-text-secondary">
+      Taking down <strong className="text-text-primary">"{rentedTargetListing?.title}"</strong> immediately removes it from public search and frees up <strong>1 active listing slot</strong> on your plan. All photos and details remain saved safely in your Archive.
+    </p>
 
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-              Where was this property rented?
-            </label>
-            <div className="space-y-2">
-              {[
-                {
-                  id: 'rented_off_platform',
-                  label: 'Rented outside iléSure (Offline client / WhatsApp / Walk-in)',
-                  desc: 'Found a tenant directly outside the platform.',
-                },
-                {
-                  id: 'rented_on_platform',
-                  label: 'Rented through an iléSure tenant',
-                  desc: 'A tenant connected or booked via iléSure.',
-                },
-                {
-                  id: 'temporarily_unavailable',
-                  label: 'Temporarily unavailable / Maintenance / Withdrawn',
-                  desc: 'Pause inquiries while the property is being serviced or held.',
-                },
-              ].map((opt) => (
-                <label
-                  key={opt.id}
-                  className={`flex items-start gap-3 p-3 rounded-clay-sm border cursor-pointer transition-all ${
-                    rentedReason === opt.id
-                      ? 'border-emerald-500 bg-emerald-50/50'
-                      : 'border-clay-border-light hover:bg-clay-border-light/30'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="rentedReason"
-                    value={opt.id}
-                    checked={rentedReason === opt.id}
-                    onChange={() => setRentedReason(opt.id as any)}
-                    className="mt-1 text-emerald-600 focus:ring-emerald-500"
-                  />
-                  <div>
-                    <span className="text-sm font-medium text-text-primary block">{opt.label}</span>
-                    <span className="text-xs text-text-tertiary block mt-0.5">{opt.desc}</span>
-                  </div>
-                </label>
-              ))}
-            </div>
-          </div>
-
-          <div className="p-3 bg-mustard-pale/40 border border-mustard/30 rounded-clay-sm text-xs text-text-secondary flex items-center gap-2">
-            <span className="text-base">🎁</span>
-            <span>You will earn <strong>+25 reward points</strong> for promptly updating this listing!</span>
-          </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() => setShowRentedModal(false)}
-              disabled={markingRented}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
-              onClick={handleConfirmMarkRented}
-              loading={markingRented}
-            >
-              Confirm & Delist
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Permanent Deletion Danger Modal */}
-      <Modal
-        isOpen={showPermanentDeleteModal}
-        onClose={() => !deletingPermanently && setShowPermanentDeleteModal(false)}
-        title="Permanently Delete Property?"
-        size="md"
-      >
-        <div className="space-y-4">
-          <div className="p-3.5 bg-red-50 border border-red-200 rounded-clay-sm flex items-start gap-3">
-            <span className="text-xl">⚠️</span>
-            <div>
-              <p className="text-sm font-bold text-red-700">This action cannot be undone!</p>
-              <p className="text-xs text-red-600 mt-0.5">
-                Permanently deleting this property will completely erase its details, photos, and view records from your account. It cannot be recovered.
-              </p>
-            </div>
-          </div>
-
-          <p className="text-sm text-text-secondary">
-            Are you sure you want to permanently delete <strong className="text-text-primary">"{targetPermanentDeleteListing?.title}"</strong>?
-          </p>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() => setShowPermanentDeleteModal(false)}
-              disabled={deletingPermanently}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-              onClick={handleConfirmPermanentDelete}
-              loading={deletingPermanently}
-            >
-              Yes, Delete Permanently
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Edit Listing Modal */}
-      <Modal
-        isOpen={showEditModal}
-        onClose={() => !savingEdit && setShowEditModal(false)}
-        title="Edit Listing & Pricing"
-        size="lg"
-      >
-        <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-          {/* Legal / Policy Note */}
-          <div className="p-3 bg-amber-50 border border-amber-200 rounded-clay-sm text-xs text-amber-800 space-y-1">
-            <p className="font-bold flex items-center gap-1.5 text-amber-900">
-              <span>⚖️</span>
-              <span>Pricing & Listing Update Policy</span>
-            </p>
-            <p className="text-[11px] leading-relaxed">
-              You are legally and commercially permitted to adjust asking rent and fees for vacant or relisted properties. Price updates immediately apply to public searches and new applicants. Under Nigerian tenancy regulations, price increases cannot alter active, binding leases without tenant consent.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Property Title</label>
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+        Where was this property rented?
+      </label>
+      <div className="space-y-2">
+        {[
+          {
+            id: 'rented_off_platform',
+            label: 'Rented outside iléSure (Offline client / WhatsApp / Walk-in)',
+            desc: 'Found a tenant directly outside the platform.',
+          },
+          {
+            id: 'rented_on_platform',
+            label: 'Rented through an iléSure tenant',
+            desc: 'A tenant connected or booked via iléSure.',
+          },
+          {
+            id: 'temporarily_unavailable',
+            label: 'Temporarily unavailable / Maintenance / Withdrawn',
+            desc: 'Pause inquiries while the property is being serviced or held.',
+          },
+        ].map((opt) => (
+          <label
+            key={opt.id}
+            className={`flex items-start gap-3 p-3 rounded-clay-sm border cursor-pointer transition-all ${rentedReason === opt.id
+                ? 'border-emerald-500 bg-emerald-50/50'
+                : 'border-clay-border-light hover:bg-clay-border-light/30'
+              }`}
+          >
             <input
-              type="text"
-              value={editForm.title}
-              onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
-              placeholder="e.g., Spacious 2-Bedroom Flat with Generator Backup"
-              className="clay-input w-full"
+              type="radio"
+              name="rentedReason"
+              value={opt.id}
+              checked={rentedReason === opt.id}
+              onChange={() => setRentedReason(opt.id as any)}
+              className="mt-1 text-emerald-600 focus:ring-emerald-500"
             />
-          </div>
+            <div>
+              <span className="text-sm font-medium text-text-primary block">{opt.label}</span>
+              <span className="text-xs text-text-tertiary block mt-0.5">{opt.desc}</span>
+            </div>
+          </label>
+        ))}
+      </div>
+    </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Property Type</label>
-              <select
-                value={editForm.propertyType}
-                onChange={(e) => setEditForm({ ...editForm, propertyType: e.target.value })}
-                className="clay-input w-full"
-              >
-                {propertyTypes.map(opt => (
-                  <option key={opt.value} value={opt.value}>{opt.label}</option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Annual Rent (₦) *</label>
-              <input
-                type="number"
-                value={editForm.rentAnnual}
-                onChange={(e) => setEditForm({ ...editForm, rentAnnual: e.target.value })}
-                placeholder="400000"
-                className="clay-input w-full font-bold text-mustard"
-              />
-            </div>
-          </div>
+    <div className="p-3 bg-mustard-pale/40 border border-mustard/30 rounded-clay-sm text-xs text-text-secondary flex items-center gap-2">
+      <span className="text-base">🎁</span>
+      <span>You will earn <strong>+25 reward points</strong> for promptly updating this listing!</span>
+    </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Caution Fee (₦)</label>
-              <input
-                type="number"
-                value={editForm.cautionFee}
-                onChange={(e) => setEditForm({ ...editForm, cautionFee: e.target.value })}
-                placeholder="50000"
-                className="clay-input w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Agency Fee (₦)</label>
-              <input
-                type="number"
-                value={editForm.agencyFee}
-                onChange={(e) => setEditForm({ ...editForm, agencyFee: e.target.value })}
-                placeholder="40000"
-                className="clay-input w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Service Charge (₦)</label>
-              <input
-                type="number"
-                value={editForm.serviceCharge}
-                onChange={(e) => setEditForm({ ...editForm, serviceCharge: e.target.value })}
-                placeholder="0"
-                className="clay-input w-full"
-              />
-            </div>
-          </div>
+    <div className="flex gap-2 pt-2">
+      <Button
+        variant="secondary"
+        className="flex-1"
+        onClick={() => setShowRentedModal(false)}
+        disabled={markingRented}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white"
+        onClick={handleConfirmMarkRented}
+        loading={markingRented}
+      >
+        Confirm & Delist
+      </Button>
+    </div>
+  </div>
+      </Modal >
 
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Description</label>
-            <textarea
-              value={editForm.description}
-              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-              placeholder="Describe the property highlights, layout, and nearby attractions..."
-              className="clay-input w-full h-24 resize-none"
-            />
-          </div>
+  {/* Permanent Deletion Danger Modal */ }
+  < Modal
+isOpen = { showPermanentDeleteModal }
+onClose = {() => !deletingPermanently && setShowPermanentDeleteModal(false)}
+title = "Permanently Delete Property?"
+size = "md"
+  >
+  <div className="space-y-4">
+    <div className="p-3.5 bg-red-50 border border-red-200 rounded-clay-sm flex items-start gap-3">
+      <span className="text-xl">⚠️</span>
+      <div>
+        <p className="text-sm font-bold text-red-700">This action cannot be undone!</p>
+        <p className="text-xs text-red-600 mt-0.5">
+          Permanently deleting this property will completely erase its details, photos, and view records from your account. It cannot be recovered.
+        </p>
+      </div>
+    </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Street Address</label>
-            <input
-              type="text"
-              value={editForm.address}
-              onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-              placeholder="e.g., 45 Commercial Avenue, Sabo"
-              className="clay-input w-full"
-            />
-          </div>
+    <p className="text-sm text-text-secondary">
+      Are you sure you want to permanently delete <strong className="text-text-primary">"{targetPermanentDeleteListing?.title}"</strong>?
+    </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">City</label>
-              <input
-                type="text"
-                value={editForm.city}
-                onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                placeholder="Ibadan"
-                className="clay-input w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">State / Area</label>
-              <input
-                type="text"
-                value={editForm.state}
-                onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
-                placeholder="Oyo"
-                className="clay-input w-full"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Landmark</label>
-              <input
-                type="text"
-                value={editForm.landmark}
-                onChange={(e) => setEditForm({ ...editForm, landmark: e.target.value })}
-                placeholder="e.g. Opposite Sabo Market"
-                className="clay-input w-full"
-              />
-            </div>
-          </div>
+    <div className="flex gap-2 pt-2">
+      <Button
+        variant="secondary"
+        className="flex-1"
+        onClick={() => setShowPermanentDeleteModal(false)}
+        disabled={deletingPermanently}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+        onClick={handleConfirmPermanentDelete}
+        loading={deletingPermanently}
+      >
+        Yes, Delete Permanently
+      </Button>
+    </div>
+  </div>
+      </Modal >
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Furnishing</label>
-              <select
-                value={editForm.furnishing}
-                onChange={(e) => setEditForm({ ...editForm, furnishing: e.target.value })}
-                className="clay-input w-full"
-              >
-                <option value="unfurnished">Unfurnished</option>
-                <option value="semi_furnished">Semi Furnished</option>
-                <option value="fully_furnished">Fully Furnished</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Power Supply</label>
-              <select
-                value={editForm.power}
-                onChange={(e) => setEditForm({ ...editForm, power: e.target.value })}
-                className="clay-input w-full"
-              >
-                <option value="constant">Constant (24/7)</option>
-                <option value="gen_dependent">Gen Dependent</option>
-                <option value="solar_backed">Solar Backed</option>
-                <option value="hybrid">Hybrid</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Water Source</label>
-              <select
-                value={editForm.water}
-                onChange={(e) => setEditForm({ ...editForm, water: e.target.value })}
-                className="clay-input w-full"
-              >
-                <option value="borehole">Borehole</option>
-                <option value="public">Public Water</option>
-                <option value="tank">Water Tank</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Max Occupants</label>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                value={editForm.maxOccupants}
-                onChange={(e) => setEditForm({ ...editForm, maxOccupants: e.target.value })}
-                className="clay-input w-full"
-              />
-            </div>
-          </div>
+  {/* Edit Listing Modal */ }
+  < Modal
+isOpen = { showEditModal }
+onClose = {() => !savingEdit && setShowEditModal(false)}
+title = "Edit Listing & Pricing"
+size = "lg"
+  >
+  <div className="space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+    {/* Legal / Policy Note */}
+    <div className="p-3 bg-amber-50 border border-amber-200 rounded-clay-sm text-xs text-amber-800 space-y-1">
+      <p className="font-bold flex items-center gap-1.5 text-amber-900">
+        <span>⚖️</span>
+        <span>Pricing & Listing Update Policy</span>
+      </p>
+      <p className="text-[11px] leading-relaxed">
+        You are legally and commercially permitted to adjust asking rent and fees for vacant or relisted properties. Price updates immediately apply to public searches and new applicants. Under Nigerian tenancy regulations, price increases cannot alter active, binding leases without tenant consent.
+      </p>
+    </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Amenities</label>
-            <div className="flex flex-wrap gap-2">
-              {amenityOptions.map(amenity => (
-                <button
-                  key={amenity}
-                  type="button"
-                  onClick={() => toggleEditAmenity(amenity)}
-                  className={`px-3 py-1.5 rounded-pill text-xs font-medium transition-all ${
-                    editForm.amenities.includes(amenity)
-                      ? 'bg-mustard text-white shadow-sm font-semibold'
-                      : 'bg-clay-border-light text-text-secondary hover:bg-mustard-pale'
-                  }`}
-                >
-                  {editForm.amenities.includes(amenity) ? `✓ ${amenity}` : `+ ${amenity}`}
-                </button>
-              ))}
-            </div>
-          </div>
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Property Title</label>
+      <input
+        type="text"
+        value={editForm.title}
+        onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+        placeholder="e.g., Spacious 2-Bedroom Flat with Generator Backup"
+        className="clay-input w-full"
+      />
+    </div>
 
-          <div className="flex items-center gap-6 pt-2 border-t border-clay-border">
-            <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editForm.petsAllowed}
-                onChange={(e) => setEditForm({ ...editForm, petsAllowed: e.target.checked })}
-                className="rounded text-mustard focus:ring-mustard"
-              />
-              <span>Pets Allowed</span>
-            </label>
-            <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editForm.smokingAllowed}
-                onChange={(e) => setEditForm({ ...editForm, smokingAllowed: e.target.checked })}
-                className="rounded text-mustard focus:ring-mustard"
-              />
-              <span>Smoking Allowed</span>
-            </label>
-            <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer">
-              <input
-                type="checkbox"
-                checked={editForm.studentsOnly}
-                onChange={(e) => setEditForm({ ...editForm, studentsOnly: e.target.checked })}
-                className="rounded text-mustard focus:ring-mustard"
-              />
-              <span>Students Only</span>
-            </label>
-          </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Property Type</label>
+        <select
+          value={editForm.propertyType}
+          onChange={(e) => setEditForm({ ...editForm, propertyType: e.target.value })}
+          className="clay-input w-full"
+        >
+          {propertyTypes.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Annual Rent (₦) *</label>
+        <input
+          type="number"
+          value={editForm.rentAnnual}
+          onChange={(e) => setEditForm({ ...editForm, rentAnnual: e.target.value })}
+          placeholder="400000"
+          className="clay-input w-full font-bold text-mustard"
+        />
+      </div>
+    </div>
 
-          <div className="flex gap-3 pt-3 border-t border-clay-border">
-            <Button
-              variant="secondary"
-              className="flex-1"
-              onClick={() => setShowEditModal(false)}
-              disabled={savingEdit}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              className="flex-1"
-              onClick={handleSaveEdit}
-              loading={savingEdit}
-            >
-              {savingEdit ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </div>
-      </Modal>
-    </AppLayout>
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Caution Fee (₦)</label>
+        <input
+          type="number"
+          value={editForm.cautionFee}
+          onChange={(e) => setEditForm({ ...editForm, cautionFee: e.target.value })}
+          placeholder="50000"
+          className="clay-input w-full"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Agency Fee (₦)</label>
+        <input
+          type="number"
+          value={editForm.agencyFee}
+          onChange={(e) => setEditForm({ ...editForm, agencyFee: e.target.value })}
+          placeholder="40000"
+          className="clay-input w-full"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Service Charge (₦)</label>
+        <input
+          type="number"
+          value={editForm.serviceCharge}
+          onChange={(e) => setEditForm({ ...editForm, serviceCharge: e.target.value })}
+          placeholder="0"
+          className="clay-input w-full"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Description</label>
+      <textarea
+        value={editForm.description}
+        onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+        placeholder="Describe the property highlights, layout, and nearby attractions..."
+        className="clay-input w-full h-24 resize-none"
+      />
+    </div>
+
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Street Address</label>
+      <input
+        type="text"
+        value={editForm.address}
+        onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+        placeholder="e.g., 45 Commercial Avenue, Sabo"
+        className="clay-input w-full"
+      />
+    </div>
+
+    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">City</label>
+        <input
+          type="text"
+          value={editForm.city}
+          onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+          placeholder="Ibadan"
+          className="clay-input w-full"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">State / Area</label>
+        <input
+          type="text"
+          value={editForm.state}
+          onChange={(e) => setEditForm({ ...editForm, state: e.target.value })}
+          placeholder="Oyo"
+          className="clay-input w-full"
+        />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Landmark</label>
+        <input
+          type="text"
+          value={editForm.landmark}
+          onChange={(e) => setEditForm({ ...editForm, landmark: e.target.value })}
+          placeholder="e.g. Opposite Sabo Market"
+          className="clay-input w-full"
+        />
+      </div>
+    </div>
+
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Furnishing</label>
+        <select
+          value={editForm.furnishing}
+          onChange={(e) => setEditForm({ ...editForm, furnishing: e.target.value })}
+          className="clay-input w-full"
+        >
+          <option value="unfurnished">Unfurnished</option>
+          <option value="semi_furnished">Semi Furnished</option>
+          <option value="fully_furnished">Fully Furnished</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Power Supply</label>
+        <select
+          value={editForm.power}
+          onChange={(e) => setEditForm({ ...editForm, power: e.target.value })}
+          className="clay-input w-full"
+        >
+          <option value="constant">Constant (24/7)</option>
+          <option value="gen_dependent">Gen Dependent</option>
+          <option value="solar_backed">Solar Backed</option>
+          <option value="hybrid">Hybrid</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Water Source</label>
+        <select
+          value={editForm.water}
+          onChange={(e) => setEditForm({ ...editForm, water: e.target.value })}
+          className="clay-input w-full"
+        >
+          <option value="borehole">Borehole</option>
+          <option value="public">Public Water</option>
+          <option value="tank">Water Tank</option>
+        </select>
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-1.5">Max Occupants</label>
+        <input
+          type="number"
+          min="1"
+          max="20"
+          value={editForm.maxOccupants}
+          onChange={(e) => setEditForm({ ...editForm, maxOccupants: e.target.value })}
+          className="clay-input w-full"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Amenities</label>
+      <div className="flex flex-wrap gap-2">
+        {amenityOptions.map(amenity => (
+          <button
+            key={amenity}
+            type="button"
+            onClick={() => toggleEditAmenity(amenity)}
+            className={`px-3 py-1.5 rounded-pill text-xs font-medium transition-all ${editForm.amenities.includes(amenity)
+                ? 'bg-mustard text-white shadow-sm font-semibold'
+                : 'bg-clay-border-light text-text-secondary hover:bg-mustard-pale'
+              }`}
+          >
+            {editForm.amenities.includes(amenity) ? `✓ ${amenity}` : `+ ${amenity}`}
+          </button>
+        ))}
+      </div>
+    </div>
+
+    <div className="flex items-center gap-6 pt-2 border-t border-clay-border">
+      <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer">
+        <input
+          type="checkbox"
+          checked={editForm.petsAllowed}
+          onChange={(e) => setEditForm({ ...editForm, petsAllowed: e.target.checked })}
+          className="rounded text-mustard focus:ring-mustard"
+        />
+        <span>Pets Allowed</span>
+      </label>
+      <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer">
+        <input
+          type="checkbox"
+          checked={editForm.smokingAllowed}
+          onChange={(e) => setEditForm({ ...editForm, smokingAllowed: e.target.checked })}
+          className="rounded text-mustard focus:ring-mustard"
+        />
+        <span>Smoking Allowed</span>
+      </label>
+      <label className="flex items-center gap-2 text-xs font-medium text-text-secondary cursor-pointer">
+        <input
+          type="checkbox"
+          checked={editForm.studentsOnly}
+          onChange={(e) => setEditForm({ ...editForm, studentsOnly: e.target.checked })}
+          className="rounded text-mustard focus:ring-mustard"
+        />
+        <span>Students Only</span>
+      </label>
+    </div>
+
+    <div className="flex gap-3 pt-3 border-t border-clay-border">
+      <Button
+        variant="secondary"
+        className="flex-1"
+        onClick={() => setShowEditModal(false)}
+        disabled={savingEdit}
+      >
+        Cancel
+      </Button>
+      <Button
+        variant="primary"
+        className="flex-1"
+        onClick={handleSaveEdit}
+        loading={savingEdit}
+      >
+        {savingEdit ? 'Saving...' : 'Save Changes'}
+      </Button>
+    </div>
+  </div>
+      </Modal >
+    </AppLayout >
   );
 }

@@ -18,7 +18,7 @@ function getPasswordStrength(password: string): { label: string; color: string; 
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
   if (/\d/.test(password)) score += 1;
   if (/[^a-zA-Z0-9]/.test(password)) score += 1;
-  
+
   if (score <= 1) return { label: 'Weak', color: 'bg-status-error', progress: 25 };
   if (score <= 2) return { label: 'Medium', color: 'bg-mustard', progress: 50 };
   if (score <= 3) return { label: 'Medium', color: 'bg-mustard', progress: 75 };
@@ -63,7 +63,7 @@ export function SignupPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState<SignupData>({
     fullName: '',
     email: '',
@@ -121,8 +121,8 @@ export function SignupPage() {
 
   /**
    * BUGFIX (QA-CO-026 / QA-AGT-028 / QA-CO-027): every one of these checks used to be a bare
-   * `return`. Clicking "Continue" with a field empty did nothing at all — no message, no
-   * highlight, no movement — so the button looked broken and the signup simply stopped. The
+   * `return`. Clicking "Continue" with a field empty did nothing at all, no message, no
+   * highlight, no movement, so the button looked broken and the signup simply stopped. The
    * error banner this feeds has existed above all three steps the whole time; nothing ever
    * wrote to it.
    *
@@ -136,7 +136,7 @@ export function SignupPage() {
       }
       if (!formData.email.trim()) return 'Enter your email address.';
       // QA-CO-030: companyName was never validated anywhere, and the server falls back to
-      // `${fullName}'s Company` — so a company could finish signup with no name and never
+      // `${fullName}'s Company`, so a company could finish signup with no name and never
       // be told what it had been called.
       if (isCompany && !companyName.trim()) return 'Enter your company name.';
       if (!formData.password) return 'Create a password.';
@@ -194,7 +194,7 @@ export function SignupPage() {
     }
     setLoading(true);
     setError('');
-    
+
     try {
       const registerData = {
         fullName: formData.fullName,
@@ -205,7 +205,7 @@ export function SignupPage() {
         ...(isCompany && companyName ? { companyName } : {}),
         ...(isCompany && companyWebsite ? { companyWebsite } : {}),
       };
-      
+
       const response = await authApi.register(registerData);
 
       if (response.success && response.user && response.accessToken) {
@@ -295,20 +295,8 @@ export function SignupPage() {
             Company Name
           </label>
           <div className="relative">
-<<<<<<< HEAD
             <Building04Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-=======
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-            {/* SECURITY-FIX (QA-CO-029): this was the only input on this step carrying no
-                `name` and no `autoComplete`, and it sits between Email and Password. Browser
-                password managers infer a field's purpose from exactly that — surrounding
-                fields, plus the absence of a declared one — so Chromium/Safari could treat it
-                as the credential field and fill the saved password into it. The form then
-                submitted, and `authController.register` stores this value verbatim as
-                `Company.name`, which is public: the user's password, in cleartext, as a
-                company's display name.
-                `organization` states the real purpose, which is what stops the heuristic. */}
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+            {/* SECURITY-FIX: Added autoComplete and name for organization */}
             <input
               type="text"
               name="companyName"
@@ -320,27 +308,30 @@ export function SignupPage() {
               className="clay-input w-full pl-11"
               required
             />
-          </div>
-        </div>
-      )}
+          </div >
+        </div >
+      )
+}
 
-      {isCompany && (
-        <div>
-          <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-            Company Website <span className="font-normal text-text-tertiary">(Optional)</span>
-          </label>
-          <div className="relative">
-            <GlobeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-            <input
-              type="url"
-              value={companyWebsite}
-              onChange={(e) => setCompanyWebsite(e.target.value)}
-              placeholder="https://yourcompany.com"
-              className="clay-input w-full pl-11"
-            />
-          </div>
-        </div>
-      )}
+{
+  isCompany && (
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+        Company Website <span className="font-normal text-text-tertiary">(Optional)</span>
+      </label>
+      <div className="relative">
+        <GlobeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+        <input
+          type="url"
+          value={companyWebsite}
+          onChange={(e) => setCompanyWebsite(e.target.value)}
+          placeholder="https://yourcompany.com"
+          className="clay-input w-full pl-11"
+        />
+      </div>
+    </div>
+  )
+}
 
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
@@ -416,259 +407,253 @@ export function SignupPage() {
           <p className="text-xs text-status-error mt-1">Passwords do not match</p>
         )}
       </div>
-    </div>
+    </div >
   );
 
-  const renderStep2 = () => (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-          TelephoneIcon Number
-        </label>
-        <div className="relative">
-          <TelephoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input
-            type="tel"
-            name="phone"
-            autoComplete="tel"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="08012345678"
-            className="clay-input w-full pl-11"
-            required
-          />
-        </div>
-        <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. Tenants and our team use this number to reach you.</p>
-      </div>
-    </div>
-  );
-
-  const renderBankStep = () => (
-    <div className="space-y-4">
-      {/* Consent sits at the top of the final step, so it is read before the account is created. */}
-      <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
-        <input
-          type="checkbox"
-          checked={acceptedTerms}
-          onChange={e => setAcceptedTerms(e.target.checked)}
-          className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
-        />
-        <span className="text-sm leading-5 text-text-secondary">
-          I agree to the{' '}
-          <a href={`${MARKETING_URL}/terms-of-service`} target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
-            Terms of Service
-          </a>{' '}
-          and{' '}
-          <a href={`${MARKETING_URL}/privacy-policy`} target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
-            Privacy Policy
-          </a>.
-        </span>
+const renderStep2 = () => (
+  <div className="space-y-4">
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+        TelephoneIcon Number
       </label>
-      <p className="text-sm text-text-secondary">
-        Set up your bank account to receive rent payments automatically with instant split settlements.
-      </p>
       <div className="relative">
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-          Select Bank
-        </label>
-        <button
-          type="button"
-          onClick={() => setShowBankList(!showBankList)}
-          className="clay-input w-full text-left flex items-center justify-between"
-        >
-          <span className={selectedBank ? '' : 'text-text-tertiary'}>
-            {selectedBank?.name || 'Choose your bank'}
-          </span>
-          <Search01Icon className="w-4 h-4 text-text-tertiary" />
-        </button>
-        {showBankList && (
-          <div className="absolute z-10 mt-1 w-full bg-white border border-clay-border rounded-clay-sm shadow-clay max-h-48 overflow-y-auto">
-            <div className="sticky top-0 bg-white p-2 border-b border-clay-border">
-              <input
-                type="text"
-                value={bankSearch}
-                onChange={(e) => setBankSearch(e.target.value)}
-                placeholder="Search01Icon banks..."
-                className="clay-input w-full text-sm py-1.5"
-                autoFocus
-              />
-            </div>
-            {filteredBanks.slice(0, 30).map((bank) => (
-              <button
-                key={bank.code}
-                type="button"
-                onClick={(e) => {
-                  // The list sits inside a form; without these the click submits it.
-                  e.preventDefault();
-                  e.stopPropagation();
-                  setSelectedBank(bank);
-                  setShowBankList(false);
-                  setBankSearch('');
-                  setAccountName('');
-                  setBankError('');
-                }}
-                className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${
-                  selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
-                }`}
-              >
-                {bank.name}
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-      <div>
-        <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-          Account Number
-        </label>
+        <TelephoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
         <input
-          type="text"
-          inputMode="numeric"
-          name="nuban-account-number"
-          autoComplete="off"
-          data-lpignore="true"
-          data-form-type="other"
-          value={accountNumber}
-          onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); setBankError(''); }}
-          placeholder="Enter 10-digit account number"
-          className="clay-input w-full"
-          maxLength={10}
+          type="tel"
+          name="phone"
+          autoComplete="tel"
+          value={formData.phone}
+          onChange={handleChange}
+          placeholder="08012345678"
+          className="clay-input w-full pl-11"
+          required
         />
       </div>
-      {bankError && (
-        <p className="flex items-center gap-1.5 text-xs text-red-600">
-          <Alert01Icon className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
-        </p>
-      )}
+      <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. Tenants and our team use this number to reach you.</p>
+    </div>
+  </div>
+);
+
+const renderBankStep = () => (
+  <div className="space-y-4">
+    {/* Consent sits at the top of the final step, so it is read before the account is created. */}
+    <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
+      <input
+        type="checkbox"
+        checked={acceptedTerms}
+        onChange={e => setAcceptedTerms(e.target.checked)}
+        className="mt-0.5 h-5 w-5 shrink-0 accent-mustard cursor-pointer"
+      />
+      <span className="text-sm leading-5 text-text-secondary">
+        I agree to the{' '}
+        <a href={`${MARKETING_URL}/terms-of-service`} target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+          Terms of Service
+        </a>{' '}
+        and{' '}
+        <a href={`${MARKETING_URL}/privacy-policy`} target="_blank" rel="noopener noreferrer" className="font-bold text-mustard underline">
+          Privacy Policy
+        </a>.
+      </span>
+    </label>
+    <p className="text-sm text-text-secondary">
+      Set up your bank account to receive rent payments automatically with instant split settlements.
+    </p>
+    <div className="relative">
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+        Select Bank
+      </label>
       <button
         type="button"
-        onClick={handleResolveAccount}
-        disabled={!selectedBank || accountNumber.length < 10 || bankLoading}
-        className="clay-input w-full text-center text-sm font-semibold py-2 bg-mustard-pale border-mustard disabled:opacity-50"
+        onClick={() => setShowBankList(!showBankList)}
+        className="clay-input w-full text-left flex items-center justify-between"
       >
-        {bankLoading ? 'Verifying...' : 'Verify Account'}
+        <span className={selectedBank ? '' : 'text-text-tertiary'}>
+          {selectedBank?.name || 'Choose your bank'}
+        </span>
+        <Search01Icon className="w-4 h-4 text-text-tertiary" />
       </button>
-      {accountName && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-clay-sm">
-          <p className="text-xs text-text-tertiary font-semibold uppercase tracking-wider mb-1">Account Name</p>
-          <p className="text-sm font-bold text-green-700">{accountName}</p>
+      {showBankList && (
+        <div className="absolute z-10 mt-1 w-full bg-white border border-clay-border rounded-clay-sm shadow-clay max-h-48 overflow-y-auto">
+          <div className="sticky top-0 bg-white p-2 border-b border-clay-border">
+            <input
+              type="text"
+              value={bankSearch}
+              onChange={(e) => setBankSearch(e.target.value)}
+              placeholder="Search01Icon banks..."
+              className="clay-input w-full text-sm py-1.5"
+              autoFocus
+            />
+          </div>
+          {filteredBanks.slice(0, 30).map((bank) => (
+            <button
+              key={bank.code}
+              type="button"
+              onClick={(e) => {
+                // The list sits inside a form; without these the click submits it.
+                e.preventDefault();
+                e.stopPropagation();
+                setSelectedBank(bank);
+                setShowBankList(false);
+                setBankSearch('');
+                setAccountName('');
+                setBankError('');
+              }}
+              className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
+                }`}
+            >
+              {bank.name}
+            </button>
+          ))}
         </div>
       )}
-      <div className="flex gap-3">
-        <button
-          type="button"
-          onClick={handleSkipBank}
-          className="text-sm text-text-tertiary hover:text-text-secondary font-medium underline underline-offset-2"
-        >
-          Skip — I'll do this later
-        </button>
-      </div>
     </div>
-  );
-
-  const getStepTitle = () => {
-    switch (step) {
-      case 1: return 'Create Account';
-      case 2: return 'TelephoneIcon Number';
-      case 3: return 'Bank Account Setup';
-      default: return '';
-    }
-  };
-
-  const getStepSubtitle = () => {
-    switch (step) {
-      case 1: return 'Enter your basic information';
-      case 2: return 'Enter your phone number';
-      case 3: return 'Link your bank for automatic rent payouts';
-      default: return '';
-    }
-  };
-
-  return (
-    <div 
-      className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat flex items-center justify-center p-4 py-12"
-      style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_register.png')" }}
+    <div>
+      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+        Account Number
+      </label>
+      <input
+        type="text"
+        inputMode="numeric"
+        name="nuban-account-number"
+        autoComplete="off"
+        data-lpignore="true"
+        data-form-type="other"
+        value={accountNumber}
+        onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); setBankError(''); }}
+        placeholder="Enter 10-digit account number"
+        className="clay-input w-full"
+        maxLength={10}
+      />
+    </div>
+    {bankError && (
+      <p className="flex items-center gap-1.5 text-xs text-red-600">
+        <Alert01Icon className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
+      </p>
+    )}
+    <button
+      type="button"
+      onClick={handleResolveAccount}
+      disabled={!selectedBank || accountNumber.length < 10 || bankLoading}
+      className="clay-input w-full text-center text-sm font-semibold py-2 bg-mustard-pale border-mustard disabled:opacity-50"
     >
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-clay overflow-hidden shadow-clay">
-            <img src="/NoBG Logo.png" alt="iléSure" className="w-full h-full object-contain" />
+      {bankLoading ? 'Verifying...' : 'Verify Account'}
+    </button>
+    {accountName && (
+      <div className="p-3 bg-green-50 border border-green-200 rounded-clay-sm">
+        <p className="text-xs text-text-tertiary font-semibold uppercase tracking-wider mb-1">Account Name</p>
+        <p className="text-sm font-bold text-green-700">{accountName}</p>
+      </div>
+    )}
+    <div className="flex gap-3">
+      <button
+        type="button"
+        onClick={handleSkipBank}
+        className="text-sm text-text-tertiary hover:text-text-secondary font-medium underline underline-offset-2"
+      >
+        Skip, I'll do this later
+      </button>
+    </div>
+  </div>
+);
+
+const getStepTitle = () => {
+  switch (step) {
+    case 1: return 'Create Account';
+    case 2: return 'TelephoneIcon Number';
+    case 3: return 'Bank Account Setup';
+    default: return '';
+  }
+};
+
+const getStepSubtitle = () => {
+  switch (step) {
+    case 1: return 'Enter your basic information';
+    case 2: return 'Enter your phone number';
+    case 3: return 'Link your bank for automatic rent payouts';
+    default: return '';
+  }
+};
+
+return (
+  <div
+    className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat flex items-center justify-center p-4 py-12"
+    style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_register.png')" }}
+  >
+    <div className="w-full max-w-md">
+      <div className="text-center mb-8">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-clay overflow-hidden shadow-clay">
+          <img src="/NoBG Logo.png" alt="iléSure" className="w-full h-full object-contain" />
+        </div>
+      </div>
+
+      <StepIndicator currentStep={step} totalSteps={3} />
+
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
+        <p className="text-text-tertiary mt-1">{getStepSubtitle()}</p>
+      </div>
+
+      <div className="clay-card p-6">
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
+            {error}
           </div>
-        </div>
-
-        <StepIndicator currentStep={step} totalSteps={3} />
-
-        <div className="text-center mb-6">
-          <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
-          <p className="text-text-tertiary mt-1">{getStepSubtitle()}</p>
-        </div>
-
-        <div className="clay-card p-6">
-          {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-clay-sm text-red-600 text-sm">
-              {error}
+        )}
+        {step === 1 && (
+          <div className="mb-6">
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
+              I want to register as
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, role: 'agent' }))}
+                className={clsx(
+                  'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
+                  !isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
+                )}
+              >
+                <UserIcon className="w-6 h-6 text-burnt-brown" />
+                <span className="text-sm font-medium text-text-primary">Agent / Landlord</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, role: 'company' }))}
+                className={clsx(
+                  'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
+                  isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
+                )}
+              >
+                <Building04Icon className="w-6 h-6 text-burnt-brown" />
+                <span className="text-sm font-medium text-text-primary">Company</span>
+              </button>
             </div>
-          )}
-          {step === 1 && (
-            <div className="mb-6">
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">
-                I want to register as
-              </label>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: 'agent' }))}
-                  className={clsx(
-                    'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
-                    !isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
-                  )}
-                >
-                  <UserIcon className="w-6 h-6 text-burnt-brown" />
-                  <span className="text-sm font-medium text-text-primary">Agent / Landlord</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFormData(prev => ({ ...prev, role: 'company' }))}
-                  className={clsx(
-                    'p-4 rounded-clay-sm border-2 transition-all flex flex-col items-center gap-2',
-                    isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
-                  )}
-                >
-                  <Building04Icon className="w-6 h-6 text-burnt-brown" />
-                  <span className="text-sm font-medium text-text-primary">Company</span>
-                </button>
-              </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {step === 1 && renderStep1()}
-          {step === 2 && renderStep2()}
-          {step === 3 && renderBankStep()}
+        {step === 1 && renderStep1()}
+        {step === 2 && renderStep2()}
+        {step === 3 && renderBankStep()}
 
-          <div className="flex gap-3 mt-6">
-            {step > 1 && (
-              <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
-                <ArrowLeft01Icon className="w-4 h-4 mr-2" /> Back
-              </Button>
-            )}
-            {/* QA-CO-027: the Complete button was `disabled={!acceptedTerms}`, so an agent who
+        <div className="flex gap-3 mt-6">
+          {step > 1 && (
+            <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
+              <ArrowLeft01Icon className="w-4 h-4 mr-2" /> Back
+            </Button>
+          )}
+          {/* QA-CO-027: the Complete button was `disabled={!acceptedTerms}`, so an agent who
                 had not ticked the box clicked a dead control with nothing to explain why.
-                handleSubmit has always carried the right message — it could never run. */}
-            {step < 3 ? (
-              <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
-                Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
-              </Button>
-            ) : (
-<<<<<<< HEAD
-              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading} disabled={!acceptedTerms}>
-                Complete <ArrowRight01Icon className="w-4 h-4 ml-2" />
-=======
-              <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading}>
-                Complete <ArrowRight className="w-4 h-4 ml-2" />
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+                handleSubmit has always carried the right message, it could never run. */}
+          {step < 3 ? (
+            <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
+              Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
+            </Button>
+          ) : (
+            <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading} disabled={!acceptedTerms}>
+              Complete <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             )}
-          </div>
+            </div>
         </div>
 
         <div className="mt-6 text-center">
@@ -681,5 +666,5 @@ export function SignupPage() {
         </div>
       </div>
     </div>
-  );
+    );
 }

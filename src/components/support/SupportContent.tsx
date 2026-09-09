@@ -1,9 +1,5 @@
 import { useState } from 'react';
-import { 
-  Sparkles, MessageSquare, Send, CheckCircle2, HelpCircle, 
-  Phone, Mail, MessageCircle, ChevronDown, ChevronUp, 
-  ExternalLink, Bot, ShieldCheck, Clock, AlertCircle, Loader2
-} from 'lucide-react';
+import { SparklesIcon as Sparkles, Message01Icon as MessageSquare, MailSend01Icon as Send, CheckmarkBadge02Icon as CheckCircle2, HelpCircleIcon as HelpCircle, TelephoneIcon as Phone, Mail01Icon as Mail, BubbleChatIcon as MessageCircle, ArrowDown01Icon as ChevronDown, ArrowUp01Icon as ChevronUp, LinkSquare01Icon as ExternalLink, BotIcon as Bot, SecurityCheckIcon as ShieldCheck, Clock01Icon as Clock, Alert01Icon as AlertCircle, Loading02Icon as Loader2 } from '@hugeicons/react';
 import { ClayCard } from '../ui/ClayCard';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../api/authContext';

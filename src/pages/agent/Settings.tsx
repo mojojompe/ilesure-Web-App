@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon } from '@hugeicons/react';
-=======
-import { Save, Loader, Banknote, CheckCircle, Shield, Clock } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Clock01Icon as Clock } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -62,7 +58,7 @@ export function AgentSettingsPage() {
 
   // BUGFIX (QA-AGT-008): the toggles were initialised to all-true and
   // `getNotificationSettings()` was never called anywhere in the app, so the screen
-  // always showed every preference as ON regardless of what the server held — and a
+  // always showed every preference as ON regardless of what the server held, and a
   // save-then-return looked like it had been discarded even when it had persisted.
   const loadNotificationSettings = async () => {
     try {
@@ -247,9 +243,8 @@ export function AgentSettingsPage() {
 
       {/* Toast notification overlay */}
       {toast && (
-        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
-          toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-        }`}>
+        <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
+          }`}>
           {toast.type === 'success' ? '✓' : '✕'} {toast.message}
         </div>
       )}

@@ -1,11 +1,6 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Tick02Icon, ArrowRight01Icon, Loading02Icon } from '@hugeicons/react';
-=======
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Check, X, ArrowRight, ArrowLeft, Home, Loader2, Clock, ShieldCheck, AlertCircle } from 'lucide-react';
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
+import { Tick02Icon as Check, ArrowRight01Icon as ArrowRight, Loading02Icon, Cancel01Icon as X, ArrowLeft01Icon as ArrowLeft, Home01Icon as Home, Clock01Icon as Clock, SecurityCheckIcon as ShieldCheck, Alert01Icon as AlertCircle } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
@@ -171,7 +166,7 @@ export function TierPage({ role }: TierPageProps) {
   }
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-cover bg-center bg-fixed bg-no-repeat py-8 px-4"
       style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_tier.png')" }}
     >
@@ -380,7 +375,7 @@ export function TierPage({ role }: TierPageProps) {
                         Renew Plan <ArrowRight className="w-4 h-4 ml-2" />
                       </Button>
                       <p className="text-[11px] text-status-warning text-center mt-2 font-medium">
-                        Expires in {daysRemaining} day{daysRemaining === 1 ? '' : 's'} — Renew now
+                        Expires in {daysRemaining} day{daysRemaining === 1 ? '' : 's'}, Renew now
                       </p>
                     </div>
                   ) : (
@@ -393,51 +388,14 @@ export function TierPage({ role }: TierPageProps) {
                     </Button>
                   )}
                 </div>
-<<<<<<< HEAD
 
-                <div className="space-y-2 mb-6">
-                  {tier.features?.maxListings !== undefined && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                      <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
-                    </div>
-                  )}
-                  {tier.features?.analytics && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                      <span className="text-text-secondary">{tier.features.analytics}</span>
-                    </div>
-                  )}
-                  {tier.features?.support && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                      <span className="text-text-secondary">{tier.features.support}</span>
-                    </div>
-                  )}
-                  {tier.features?.visibility && (
-                    <div className="flex items-start gap-2 text-sm">
-                      <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
-                      <span className="text-text-secondary">{tier.features.visibility}</span>
-                    </div>
-                  )}
-                </div>
-
-                <Button
-                  onClick={() => handleSelectTier(tier)}
-                  variant={isPopular ? 'mustard' : 'primary'}
-                  className="w-full"
-                >
-                  Select Plan <ArrowRight01Icon className="w-4 h-4 ml-2" />
-                </Button>
-=======
->>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
-              </div>
+              </div >
             );
-          })}
-        </div>
+})}
+        </div >
 
-        {/* Bottom Return Action */}
-        <div className="mt-10 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+  {/* Bottom Return Action */ }
+  < div className = "mt-10 text-center flex flex-col sm:flex-row items-center justify-center gap-3" >
           <button
             onClick={handleBack}
             className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-white border border-clay-border text-sm font-semibold text-text-primary hover:bg-neutral-50 shadow-xs transition-all active:scale-[0.98]"
@@ -452,8 +410,8 @@ export function TierPage({ role }: TierPageProps) {
             <Home className="w-4 h-4 text-mustard" />
             <span>{isAuthenticated ? 'Go to Dashboard' : 'Home'}</span>
           </Link>
-        </div>
-      </div>
-    </div>
+        </div >
+      </div >
+    </div >
   );
 }

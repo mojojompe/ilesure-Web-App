@@ -128,7 +128,7 @@ export function AgentNotificationsPage() {
   return (
     <AppLayout role="agent" title="Notifications" subtitle="Your notifications and preferences">
       {/* BUGFIX (QA-AGT-022): this page contained ONLY preference switches. The actual
-          notifications — which the API returns and the header bell already shows — were
+          notifications, which the API returns and the header bell already shows, were
           unreachable from the page named "Notifications". */}
       <div className="clay-card p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -145,7 +145,7 @@ export function AgentNotificationsPage() {
 
         {inboxLoading ? (
           <div className="flex items-center gap-2 py-6 justify-center text-text-tertiary">
-            <Loader2 className="w-4 h-4 animate-spin" /> <span className="text-sm">Loading notifications…</span>
+            <Loading02Icon className="w-4 h-4 animate-spin" /> <span className="text-sm">Loading notifications…</span>
           </div>
         ) : inbox.length === 0 ? (
           <p className="py-6 text-center text-sm text-text-tertiary">You have no notifications yet.</p>
