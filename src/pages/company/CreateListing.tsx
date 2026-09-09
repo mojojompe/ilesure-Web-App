@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, ArrowRight, ArrowLeft, Check, Upload, X } from 'lucide-react';
+import { Home01Icon, Location01Icon, Money01Icon, Building01Icon, Sofa01Icon, FlashIcon, Wifi01Icon, SecurityIcon, Camera01Icon, ArrowRight01Icon, ArrowLeft01Icon, Tick02Icon, Upload01Icon, Cancel02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { AppLayout } from '../../components/layout/AppLayout';
@@ -104,6 +104,7 @@ interface ListingFormData {
   photos: string[];
   leaseDurationValue: string;
   leaseDurationUnit: 'year' | 'month';
+  rentDuration: string;
 }
 
 const initialFormData: ListingFormData = {
@@ -140,6 +141,7 @@ const initialFormData: ListingFormData = {
   photos: [],
   leaseDurationValue: '1',
   leaseDurationUnit: 'year',
+  rentDuration: '',
 };
 
 export function CompanyCreateListingPage() {
@@ -245,6 +247,7 @@ export function CompanyCreateListingPage() {
         leaseDuration: formData.propertyType === 'shortlet'
           ? undefined
           : `${Number(formData.leaseDurationValue) || 1} ${formData.leaseDurationUnit}${(Number(formData.leaseDurationValue) || 1) > 1 ? 's' : ''}`,
+        rentDuration: formData.rentDuration || undefined,
         additionalNotes: formData.additionalNotes || undefined,
         // Flexible custom shortlet tiers
         shortletRates: formData.propertyType === 'shortlet'
@@ -503,7 +506,7 @@ export function CompanyCreateListingPage() {
           <div>
             <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
               <input
                 type="number"
                 value={formData.annualRent}
@@ -512,6 +515,16 @@ export function CompanyCreateListingPage() {
                 className="clay-input w-full pl-11"
               />
             </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Duration</label>
+            <input
+              type="text"
+              value={formData.rentDuration || ''}
+              onChange={e => handleChange('rentDuration', e.target.value)}
+              placeholder="e.g. 1 Year, 6 Months"
+              className="clay-input w-full mb-4"
+            />
           </div>
           <div>
             <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Lease Duration</label>
@@ -600,7 +613,7 @@ export function CompanyCreateListingPage() {
           <div>
             <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
               <input
                 type="number"
                 value={formData.cautionFee}
@@ -613,7 +626,7 @@ export function CompanyCreateListingPage() {
           <div>
             <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
             <div className="relative">
-              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
               <input
                 type="number"
                 value={formData.agencyFee}
@@ -777,7 +790,7 @@ export function CompanyCreateListingPage() {
                     selected ? 'bg-mustard' : 'bg-clay-border'
                   )}
                 >
-                  {selected && <Check className="w-3 h-3 text-white" />}
+                  {selected && <Tick02Icon className="w-3 h-3 text-white" />}
                 </div>
               </button>
             );
@@ -815,7 +828,7 @@ export function CompanyCreateListingPage() {
                   formData[rule.key as keyof ListingFormData] ? 'bg-mustard' : 'bg-clay-border'
                 )}
               >
-                {formData[rule.key as keyof ListingFormData] && <Check className="w-3 h-3 text-white" />}
+                {formData[rule.key as keyof ListingFormData] && <Tick02Icon className="w-3 h-3 text-white" />}
               </div>
             </button>
           ))}
@@ -840,7 +853,7 @@ export function CompanyCreateListingPage() {
                     onClick={() => handleRemovePhoto(i)}
                     className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-4 h-4 text-white" />
+                    <Cancel02Icon className="w-4 h-4 text-white" />
                   </button>
                 </div>
               );
@@ -853,7 +866,7 @@ export function CompanyCreateListingPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border hover:border-mustard transition-colors flex items-center justify-center bg-clay-border-light cursor-pointer"
                 >
-                  <Upload className="w-6 h-6 text-text-tertiary" />
+                  <Upload01Icon className="w-6 h-6 text-text-tertiary" />
                 </button>
               );
             }
@@ -918,7 +931,7 @@ export function CompanyCreateListingPage() {
       <AppLayout role="company" title="Create Listing">
         <div className="max-w-3xl mx-auto flex flex-col items-center justify-center py-24 px-4 text-center">
           <div className="w-20 h-20 bg-status-error/10 rounded-full flex items-center justify-center mb-6">
-            <Shield className="w-10 h-10 text-status-error" />
+            <SecurityIcon className="w-10 h-10 text-status-error" />
           </div>
           <h2 className="text-2xl font-bold text-text-primary mb-3">Verification Required</h2>
           <p className="text-text-secondary max-w-md mb-8">
@@ -953,12 +966,12 @@ export function CompanyCreateListingPage() {
           <div className="flex gap-3 mt-6">
             {step > 1 && (
               <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                <ArrowLeft01Icon className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
             {step < 9 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
+                Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             ) : (
               <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading || uploading}>

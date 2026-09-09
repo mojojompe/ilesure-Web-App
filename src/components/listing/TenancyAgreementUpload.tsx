@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { FileText, Upload, X, Loader2, CheckCircle } from 'lucide-react';
+import { Note01Icon, Upload01Icon, Cancel02Icon, Loading02Icon, CheckmarkBadge02Icon } from '@hugeicons/react';
 import agentApi, { TenancyAgreementDocument } from '../../api/agent';
 
 interface TenancyAgreementUploadProps {
@@ -68,7 +68,7 @@ export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUplo
 
       {value ? (
         <div className="clay-card p-4 flex items-start gap-3 bg-clay-surface">
-          <CheckCircle className="w-5 h-5 text-status-success shrink-0 mt-0.5" />
+          <CheckmarkBadge02Icon className="w-5 h-5 text-status-success shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-text-primary truncate">{value.fileName}</p>
             <p className="text-xs text-text-tertiary mt-0.5">
@@ -93,7 +93,7 @@ export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUplo
             aria-label="Remove tenancy agreement"
             className="w-7 h-7 rounded-full bg-clay-border-light hover:bg-clay-border flex items-center justify-center shrink-0"
           >
-            <X className="w-4 h-4 text-text-secondary" />
+            <Cancel02Icon className="w-4 h-4 text-text-secondary" />
           </button>
         </div>
       ) : (
@@ -105,13 +105,13 @@ export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUplo
         >
           {uploading ? (
             <>
-              <Loader2 className="w-6 h-6 text-text-tertiary animate-spin" />
+              <Loading02Icon className="w-6 h-6 text-text-tertiary animate-spin" />
               <span className="text-sm text-text-secondary">Uploading…</span>
             </>
           ) : (
             <>
-              <Upload className="w-6 h-6 text-text-tertiary" />
-              <span className="text-sm font-medium text-text-secondary">Upload tenancy agreement</span>
+              <Upload01Icon className="w-6 h-6 text-text-tertiary" />
+              <span className="text-sm font-medium text-text-secondary">Upload01Icon tenancy agreement</span>
               <span className="text-xs text-text-tertiary">PDF, up to 10MB</span>
             </>
           )}
@@ -129,7 +129,7 @@ export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUplo
       {error && <p className="text-xs text-status-error mt-2">{error}</p>}
 
       <div className="flex items-start gap-2 mt-3">
-        <FileText className="w-4 h-4 text-text-tertiary shrink-0 mt-0.5" />
+        <Note01Icon className="w-4 h-4 text-text-tertiary shrink-0 mt-0.5" />
         <p className="text-xs text-text-tertiary">
           Attach your own agreement for this property and tenants will review and sign it
           instead of the standard iléSure template. A signature page is added at the end for

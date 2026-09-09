@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, User, Briefcase, Building2, ArrowRight, Check } from 'lucide-react';
+import { BookOpen01Icon, UserIcon, Briefcase01Icon, Building04Icon, ArrowRight01Icon, Tick02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole } from '../types';
@@ -17,14 +17,14 @@ const roles: Role[] = [
   {
     id: 'agent',
     name: 'Agent / Landlord',
-    icon: Briefcase,
+    icon: Briefcase01Icon,
     description: 'List and manage properties',
     features: ['List properties', 'Manage bookings', 'Get inquiries', 'Analytics'],
   },
   {
     id: 'company',
     name: 'Company',
-    icon: Building2,
+    icon: Building04Icon,
     description: 'Full company account',
     features: ['Unlimited listings', 'Team management', 'Priority support', 'Advanced analytics'],
   },
@@ -78,7 +78,7 @@ export function RoleSelectionPage() {
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-text-primary">{role.name}</h3>
                     {selectedRole === role.id && (
-                      <Check className="w-5 h-5 text-mustard" />
+                      <Tick02Icon className="w-5 h-5 text-mustard" />
                     )}
                   </div>
                   <p className="text-sm text-text-tertiary mt-1">{role.description}</p>
@@ -103,7 +103,7 @@ export function RoleSelectionPage() {
           disabled={!selectedRole}
           onClick={handleContinue}
         >
-          Continue <ArrowRight className="w-4 h-4 ml-2" />
+          Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>

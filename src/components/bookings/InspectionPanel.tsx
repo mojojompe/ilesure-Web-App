@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CalendarClock, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
+import { Calendar02Icon, CheckmarkBadge02Icon, Cancel02Icon, Alert01Icon } from '@hugeicons/react';
 import { Button } from '../ui/Button';
 
 /**
@@ -44,7 +44,7 @@ export function InspectionPanel({ booking, onMarkMissed, busy = false }: Inspect
   let summary: { icon: JSX.Element; text: string };
   if (booking.isVerified) {
     summary = {
-      icon: <CheckCircle2 className="w-4 h-4 text-status-success shrink-0" />,
+      icon: <CheckmarkBadge02Icon className="w-4 h-4 text-status-success shrink-0" />,
       text:
         booking.inspectionVerifiedBy === 'tenant'
           ? 'The tenant confirmed the apartment matches the listing. They can now pay.'
@@ -52,24 +52,24 @@ export function InspectionPanel({ booking, onMarkMissed, busy = false }: Inspect
     };
   } else if (booking.timelineStep === 3) {
     summary = {
-      icon: <XCircle className="w-4 h-4 text-status-error shrink-0" />,
+      icon: <Cancel02Icon className="w-4 h-4 text-status-error shrink-0" />,
       text: 'The tenant reported that the apartment does not match the listing.',
     };
   } else if (status === 'missed') {
     summary = {
-      icon: <AlertTriangle className="w-4 h-4 text-status-warning shrink-0" />,
+      icon: <Alert01Icon className="w-4 h-4 text-status-warning shrink-0" />,
       text: 'The viewing was marked as missed. The tenant can schedule another.',
     };
   } else if (status === 'scheduled') {
     summary = {
-      icon: <CalendarClock className="w-4 h-4 text-text-secondary shrink-0" />,
+      icon: <Calendar02Icon className="w-4 h-4 text-text-secondary shrink-0" />,
       text: scheduledOn
         ? `Viewing booked for ${scheduledOn}${booking.inspectionTime ? ` at ${booking.inspectionTime}` : ''}. Waiting for the tenant to confirm after they attend.`
         : 'Viewing booked. Waiting for the tenant to confirm after they attend.',
     };
   } else {
     summary = {
-      icon: <CalendarClock className="w-4 h-4 text-text-tertiary shrink-0" />,
+      icon: <Calendar02Icon className="w-4 h-4 text-text-tertiary shrink-0" />,
       text: 'The tenant has not booked a viewing yet.',
     };
   }

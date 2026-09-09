@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MessageCircle, Phone, ChevronRight, ChevronLeft, Send, Loader2 } from 'lucide-react';
+import { Search01Icon, BubbleChatIcon, TelephoneIcon, ArrowRight01Icon, ArrowLeft01Icon, SentIcon, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -82,7 +82,7 @@ export function CompanyInquiriesPage() {
     return (
       <AppLayout role="company" title="Inquiries" subtitle="Messages from potential clients">
         <div className="clay-card p-6 flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-mustard" />
+          <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -102,10 +102,10 @@ export function CompanyInquiriesPage() {
         <div className="p-4 border-b border-clay-border">
           <div className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+              <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
               <input
                 type="text"
-                placeholder="Search inquiries..."
+                placeholder="Search01Icon inquiries..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="clay-input w-full pl-10"
@@ -132,7 +132,7 @@ export function CompanyInquiriesPage() {
 
         {filteredInquiries.length === 0 ? (
           <div className="p-12 text-center">
-            <MessageCircle className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
+            <BubbleChatIcon className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
             <p className="text-text-secondary">No inquiries found</p>
           </div>
         ) : (
@@ -162,12 +162,12 @@ export function CompanyInquiriesPage() {
                         <span>{formatDate(inquiry.createdAt)}</span>
                         {inquiry.user.phone && (
                           <span className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" /> {inquiry.user.phone}
+                            <TelephoneIcon className="w-3 h-3" /> {inquiry.user.phone}
                           </span>
                         )}
                       </div>
                     </div>
-                    <ChevronRight className="w-5 h-5 text-text-tertiary flex-shrink-0" />
+                    <ArrowRight01Icon className="w-5 h-5 text-text-tertiary flex-shrink-0" />
                   </div>
                 </div>
               ))}
@@ -177,7 +177,7 @@ export function CompanyInquiriesPage() {
               <div className="lg:w-1/2 border-l border-clay-border-light flex flex-col">
                 <div className="p-4 border-b border-clay-border-light flex items-center justify-between">
                   <button onClick={() => setSelectedInquiry(null)} className="lg:hidden flex items-center gap-2 text-text-secondary">
-                    <ChevronLeft className="w-4 h-4" /> Back
+                    <ArrowLeft01Icon className="w-4 h-4" /> Back
                   </button>
                   <h3 className="font-semibold text-text-primary">Inquiry Details</h3>
                 </div>
@@ -240,8 +240,8 @@ export function CompanyInquiriesPage() {
                         disabled={!replyMessage.trim() || sending}
                         loading={sending}
                       >
-                        <Send className="w-4 h-4 mr-2" />
-                        {sending ? 'Sending...' : 'Send Reply'}
+                        <SentIcon className="w-4 h-4 mr-2" />
+                        {sending ? 'Sending...' : 'SentIcon Reply'}
                       </Button>
                     </div>
                   )}

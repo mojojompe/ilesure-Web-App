@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Upload, X, File as FileIcon, AlertCircle, Camera } from 'lucide-react';
+import { Upload01Icon, Cancel02Icon, File01Icon as FileIcon, Alert01Icon, Camera01Icon } from '@hugeicons/react';
 
 export interface FileState {
   file: File | null;
@@ -66,7 +66,7 @@ export function FileUploadZone({
 }: FileUploadZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
-  const Icon = icon === 'camera' ? Camera : Upload;
+  const Icon = icon === 'camera' ? Camera01Icon : Upload01Icon;
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
@@ -100,7 +100,7 @@ export function FileUploadZone({
             aria-label={`Remove ${label}`}
             className="p-1.5 rounded-full hover:bg-clay-border-light transition-colors flex-shrink-0"
           >
-            <X className="w-4 h-4 text-text-tertiary" />
+            <Cancel02Icon className="w-4 h-4 text-text-tertiary" />
           </button>
         </div>
       ) : (
@@ -131,7 +131,7 @@ export function FileUploadZone({
 
       {fileState.error && (
         <p className="flex items-center gap-1.5 mt-1.5 text-xs text-red-600">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          <Alert01Icon className="w-3.5 h-3.5 flex-shrink-0" />
           {fileState.error}
         </p>
       )}

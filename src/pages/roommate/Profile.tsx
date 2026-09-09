@@ -1,18 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, Bed, BookOpen, Users, Moon, Volume2, Sparkles, Heart, DollarSign, Calendar } from 'lucide-react';
+import { ArrowLeft01Icon, ArrowRight01Icon, BedIcon, BookOpen01Icon, UserMultiple02Icon, Moon01Icon, VolumeHighIcon, SparklesIcon, FavouriteIcon, Money01Icon, Calendar02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { roommateApi } from '../../api/roommate';
 import type { RoommateProfile } from '../../types';
 
 const LIFESTYLE_CATEGORIES = [
-  { key: 'sleepSchedule',    label: 'Sleep Schedule',    icon: Moon,       options: ['early_bird', 'night_owl', 'flexible'] },
-  { key: 'noiseTolerance',   label: 'Noise Tolerance',   icon: Volume2,    options: ['very_quiet', 'moderate', 'noisy_ok'] },
-  { key: 'cleanliness',      label: 'Cleanliness',        icon: Sparkles,   options: ['neat_freak', 'organized', 'casual', 'messy'] },
+  { key: 'sleepSchedule',    label: 'Sleep Schedule',    icon: Moon01Icon,       options: ['early_bird', 'night_owl', 'flexible'] },
+  { key: 'noiseTolerance',   label: 'Noise Tolerance',   icon: VolumeHighIcon,    options: ['very_quiet', 'moderate', 'noisy_ok'] },
+  { key: 'cleanliness',      label: 'Cleanliness',        icon: SparklesIcon,   options: ['neat_freak', 'organized', 'casual', 'messy'] },
   { key: 'cookingFrequency', label: 'Cooking Habits',    icon: null,        options: ['daily', 'few_times_week', 'rarely', 'never'] },
-  { key: 'studySchedule',    label: 'Study Habits',       icon: BookOpen,   options: ['morning', 'afternoon', 'evening', 'late_night', 'distributed'] },
-  { key: 'socialActivity',   label: 'Social Level',        icon: Users,       options: ['very_social', 'moderate', 'private', 'hermit'] },
+  { key: 'studySchedule',    label: 'Study Habits',       icon: BookOpen01Icon,   options: ['morning', 'afternoon', 'evening', 'late_night', 'distributed'] },
+  { key: 'socialActivity',   label: 'Social Level',        icon: UserMultiple02Icon,       options: ['very_social', 'moderate', 'private', 'hermit'] },
   { key: 'guestComfort',     label: 'Guest Policy',       icon: null,        options: ['love_guests', 'ok_with_notice', 'rare_guests', 'no_guests'] },
   { key: 'smokingAlcohol',   label: 'Smoking/Alcohol',    icon: null,        options: ['no', 'socially', 'yes'] },
   { key: 'powerUsage',       label: 'Power Usage',        icon: null,        options: ['low', 'medium', 'high'] },
@@ -119,7 +119,7 @@ export function RoommateProfilePage() {
           <div className="space-y-6">
             <div className="clay-card p-6">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Bed className="w-5 h-5 text-mustard" />
+                <BedIcon className="w-5 h-5 text-mustard" />
                 Lifestyle Preferences
               </h3>
               <p className="text-sm text-text-tertiary mb-6">
@@ -156,7 +156,7 @@ export function RoommateProfilePage() {
             {/* Numeric preferences */}
             <div className="clay-card p-6">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Heart className="w-5 h-5 text-mustard" />
+                <FavouriteIcon className="w-5 h-5 text-mustard" />
                 Personality & Values
               </h3>
 
@@ -207,7 +207,7 @@ export function RoommateProfilePage() {
                 onClick={() => setStep(2)}
                 className="flex items-center gap-2 px-6 py-3 bg-mustard text-white rounded-clay-sm font-medium hover:bg-mustard/90 transition-colors"
               >
-                Next <ArrowRight className="w-4 h-4" />
+                Next <ArrowRight01Icon className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -217,7 +217,7 @@ export function RoommateProfilePage() {
           <div className="space-y-6">
             <div className="clay-card p-6">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-mustard" />
+                <Money01Icon className="w-5 h-5 text-mustard" />
                 Budget & Preferences
               </h3>
 
@@ -299,7 +299,7 @@ export function RoommateProfilePage() {
 
             <div className="clay-card p-6">
               <h3 className="font-semibold text-lg mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-mustard" />
+                <Calendar02Icon className="w-5 h-5 text-mustard" />
                 Academic Info
               </h3>
 
@@ -350,7 +350,7 @@ export function RoommateProfilePage() {
                 onClick={() => setStep(1)}
                 className="flex items-center gap-2 px-6 py-3 border-2 border-clay-border rounded-clay-sm font-medium hover:border-mustard/50 transition-colors"
               >
-                <ArrowLeft className="w-4 h-4" /> Back
+                <ArrowLeft01Icon className="w-4 h-4" /> Back
               </button>
               <button
                 type="button"
@@ -358,7 +358,7 @@ export function RoommateProfilePage() {
                 disabled={saving}
                 className="flex items-center gap-2 px-6 py-3 bg-mustard text-white rounded-clay-sm font-medium hover:bg-mustard/90 transition-colors disabled:opacity-50"
               >
-                {saving ? 'Saving...' : 'Find My Matches'} <Sparkles className="w-4 h-4" />
+                {saving ? 'Saving...' : 'Find My Matches'} <SparklesIcon className="w-4 h-4" />
               </button>
             </div>
           </div>

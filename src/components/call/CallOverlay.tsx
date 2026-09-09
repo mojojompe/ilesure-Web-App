@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Phone, PhoneOff, Mic, MicOff, Video, VideoOff } from 'lucide-react';
+import { TelephoneIcon, Mic01Icon, MicOff01Icon, Video01Icon, VideoOffIcon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { useCall } from '../../contexts/CallContext';
 
@@ -153,14 +153,14 @@ export function CallOverlay() {
                 aria-label="Decline call"
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 transition-transform active:scale-95"
               >
-                <PhoneOff className="h-6 w-6" />
+                <TelephoneIcon className="h-6 w-6" />
               </button>
               <button
                 onClick={call.acceptCall}
                 aria-label="Accept call"
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-green-500 transition-transform active:scale-95"
               >
-                <Phone className="h-6 w-6" />
+                <TelephoneIcon className="h-6 w-6" />
               </button>
             </div>
           ) : phase === 'ended' ? null : (
@@ -173,7 +173,7 @@ export function CallOverlay() {
                   micEnabled ? 'bg-white/15' : 'bg-white text-[#0E0E10]'
                 )}
               >
-                {micEnabled ? <Mic className="h-5 w-5" /> : <MicOff className="h-5 w-5" />}
+                {micEnabled ? <Mic01Icon className="h-5 w-5" /> : <MicOff01Icon className="h-5 w-5" />}
               </button>
 
               <button
@@ -181,7 +181,7 @@ export function CallOverlay() {
                 aria-label="End call"
                 className="flex h-16 w-16 items-center justify-center rounded-full bg-red-500 transition-transform active:scale-95"
               >
-                <PhoneOff className="h-6 w-6" />
+                <TelephoneIcon className="h-6 w-6" />
               </button>
 
               {isVideo && (
@@ -193,7 +193,7 @@ export function CallOverlay() {
                     cameraEnabled ? 'bg-white/15' : 'bg-white text-[#0E0E10]'
                   )}
                 >
-                  {cameraEnabled ? <Video className="h-5 w-5" /> : <VideoOff className="h-5 w-5" />}
+                  {cameraEnabled ? <Video01Icon className="h-5 w-5" /> : <VideoOffIcon className="h-5 w-5" />}
                 </button>
               )}
             </div>

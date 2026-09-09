@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, Heart, MessageCircle, TrendingUp, DollarSign, Loader } from 'lucide-react';
+import { ViewIcon, FavouriteIcon, BubbleChatIcon, ArrowUpRight01Icon, Money01Icon, Loading02Icon } from '@hugeicons/react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
@@ -34,7 +34,7 @@ export function CompanyAnalyticsPage() {
     return (
       <AppLayout role="company" title="Analytics" subtitle="Company performance">
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -43,10 +43,10 @@ export function CompanyAnalyticsPage() {
   return (
     <AppLayout role="company" title="Analytics" subtitle="Company performance">
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <KpiCard title="Total Views" value={analytics?.overview?.totalViews?.toLocaleString() || '0'} icon={Eye} variant={1} />
-        <KpiCard title="Total Saves" value={analytics?.overview?.totalSaves?.toLocaleString() || '0'} icon={Heart} variant={2} />
-        <KpiCard title="Inquiries" value={analytics?.overview?.totalInquiries || '0'} icon={MessageCircle} variant={2} />
-        <KpiCard title="Revenue" value={formatCurrency(analytics?.overview?.monthlyRevenue || 0)} icon={DollarSign} variant={1} />
+        <KpiCard title="Total Views" value={analytics?.overview?.totalViews?.toLocaleString() || '0'} icon={ViewIcon} variant={1} />
+        <KpiCard title="Total Saves" value={analytics?.overview?.totalSaves?.toLocaleString() || '0'} icon={FavouriteIcon} variant={2} />
+        <KpiCard title="Inquiries" value={analytics?.overview?.totalInquiries || '0'} icon={BubbleChatIcon} variant={2} />
+        <KpiCard title="Revenue" value={formatCurrency(analytics?.overview?.monthlyRevenue || 0)} icon={Money01Icon} variant={1} />
       </div>
 
       <ClayCard className="p-5 mb-6">

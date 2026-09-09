@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
-import { Key, ArrowRight, CheckCircle, Mail } from 'lucide-react';
+import { LockIcon, ArrowRight01Icon, CheckmarkBadge02Icon, Mail01Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import authApi from '../api/authApi';
 
@@ -55,7 +55,7 @@ export function ResetPasswordPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-status-success/10 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-status-success" />
+              <CheckmarkBadge02Icon className="w-8 h-8 text-status-success" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">Password Reset!</h1>
             <p className="text-text-tertiary mt-1">
@@ -65,7 +65,7 @@ export function ResetPasswordPage() {
           <div className="clay-card p-6">
             <Link to="/login">
               <Button variant="primary" className="w-full">
-                Sign In <ArrowRight className="w-4 h-4 ml-2" />
+                Sign In <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             </Link>
           </div>
@@ -103,7 +103,7 @@ export function ResetPasswordPage() {
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <Mail01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="email"
                   value={email}
@@ -119,7 +119,7 @@ export function ResetPasswordPage() {
                 New Password
               </label>
               <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="password"
                   value={password}
@@ -135,7 +135,7 @@ export function ResetPasswordPage() {
                 Confirm Password
               </label>
               <div className="relative">
-                <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="password"
                   value={confirmPassword}
@@ -148,7 +148,7 @@ export function ResetPasswordPage() {
             </div>
 
             <Button type="submit" variant="primary" className="w-full" loading={loading}>
-              Reset Password <ArrowRight className="w-4 h-4 ml-2" />
+              Reset Password <ArrowRight01Icon className="w-4 h-4 ml-2" />
             </Button>
           </form>
         </div>

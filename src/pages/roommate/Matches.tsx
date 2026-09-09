@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Sparkles, Heart, User, CheckCircle, AlertTriangle, Star, TrendingUp, Info, ThumbsUp } from 'lucide-react';
+import { ArrowLeft01Icon, SparklesIcon, FavouriteIcon, UserIcon, CheckmarkBadge02Icon, Alert01Icon, StarIcon, ArrowUpRight01Icon, InformationCircleIcon, ThumbsUpIcon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { roommateApi } from '../../api/roommate';
 import type { MatchWithUser } from '../../api/roommate';
@@ -20,9 +20,9 @@ function getRecommendationColor(rec: string): string {
 }
 
 function getRecommendationIcon(rec: string) {
-  if (rec === 'excellent') return <Star className="w-5 h-5 text-green-600" />;
-  if (rec === 'good') return <ThumbsUp className="w-5 h-5 text-blue-600" />;
-  return <Info className="w-5 h-5 text-yellow-600" />;
+  if (rec === 'excellent') return <StarIcon className="w-5 h-5 text-green-600" />;
+  if (rec === 'good') return <ThumbsUpIcon className="w-5 h-5 text-blue-600" />;
+  return <InformationCircleIcon className="w-5 h-5 text-yellow-600" />;
 }
 
 export function RoommateMatchesPage() {
@@ -75,7 +75,7 @@ export function RoommateMatchesPage() {
       <div className="max-w-4xl mx-auto">
         {/* AI Badge */}
         <div className="flex items-center gap-2 mb-6 text-sm text-mustard font-medium">
-          <Sparkles className="w-4 h-4" />
+          <SparklesIcon className="w-4 h-4" />
           AI-Powered Matching Active
           <span className="text-text-tertiary">•</span>
           <span className="text-text-secondary">{total} potential matches found</span>
@@ -88,7 +88,7 @@ export function RoommateMatchesPage() {
         ) : matches.length === 0 ? (
           <div className="clay-card p-8 text-center">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-mustard/10 flex items-center justify-center">
-              <User className="w-8 h-8 text-mustard" />
+              <UserIcon className="w-8 h-8 text-mustard" />
             </div>
             <h3 className="text-lg font-semibold text-text-primary mb-2">No Matches Yet</h3>
             <p className="text-text-secondary mb-4">
@@ -115,7 +115,7 @@ export function RoommateMatchesPage() {
                       {match.avatar ? (
                         <img src={match.avatar} alt={match.fullName} className="w-full h-full object-cover" />
                       ) : (
-                        <User className="w-6 h-6 text-mustard" />
+                        <UserIcon className="w-6 h-6 text-mustard" />
                       )}
                     </div>
                     <div>
@@ -171,7 +171,7 @@ export function RoommateMatchesPage() {
                     {match.strengths && match.strengths.length > 0 && (
                       <div className="mb-3">
                         <h4 className="text-sm font-semibold text-green-700 mb-2 flex items-center gap-1">
-                          <CheckCircle className="w-4 h-4" /> Compatibility Strengths
+                          <CheckmarkBadge02Icon className="w-4 h-4" /> Compatibility Strengths
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {match.strengths.map((s, i) => (
@@ -187,7 +187,7 @@ export function RoommateMatchesPage() {
                     {match.concerns && match.concerns.length > 0 && (
                       <div className="mb-3">
                         <h4 className="text-sm font-semibold text-yellow-700 mb-2 flex items-center gap-1">
-                          <AlertTriangle className="w-4 h-4" /> Potential Concerns
+                          <Alert01Icon className="w-4 h-4" /> Potential Concerns
                         </h4>
                         <div className="flex flex-wrap gap-2">
                           {match.concerns.map((c, i) => (
@@ -206,7 +206,7 @@ export function RoommateMatchesPage() {
                           className="px-6 py-2 bg-green-100 text-green-700 rounded-clay-sm font-medium cursor-default"
                           disabled
                         >
-                          <Heart className="w-4 h-4 inline mr-2 fill-green-700" />
+                          <FavouriteIcon className="w-4 h-4 inline mr-2 fill-green-700" />
                           Mutual Interest!
                         </button>
                       ) : match.aInterested ? (
@@ -221,7 +221,7 @@ export function RoommateMatchesPage() {
                           }}
                           className="px-6 py-2 bg-mustard text-white rounded-clay-sm font-medium hover:bg-mustard/90"
                         >
-                          <Heart className="w-4 h-4 inline mr-2" />
+                          <FavouriteIcon className="w-4 h-4 inline mr-2" />
                           Express Interest
                         </button>
                       )}

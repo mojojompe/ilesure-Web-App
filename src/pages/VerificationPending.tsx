@@ -1,4 +1,4 @@
-import { Clock, Mail, AlertCircle } from 'lucide-react';
+import { Clock02Icon, Mail01Icon, Alert01Icon } from '@hugeicons/react';
 import { Link } from 'react-router-dom';
 
 export function VerificationPendingPage() {
@@ -10,7 +10,7 @@ export function VerificationPendingPage() {
       <div className="w-full max-w-md text-center">
         <div className="clay-card p-8">
           <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-mustard-pale flex items-center justify-center animate-pulse">
-            <Clock className="w-10 h-10 text-mustard" />
+            <Clock02Icon className="w-10 h-10 text-mustard" />
           </div>
 
           <h1 className="text-2xl font-bold text-text-primary mb-2">
@@ -22,7 +22,7 @@ export function VerificationPendingPage() {
 
           <div className="bg-burnt-brown-pale rounded-clay-sm p-4 text-left mb-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-mustard flex-shrink-0 mt-0.5" />
+              <Alert01Icon className="w-5 h-5 text-mustard flex-shrink-0 mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-text-primary">What happens next?</p>
                 <ul className="text-sm text-text-secondary mt-2 space-y-1">
@@ -51,7 +51,7 @@ export function VerificationPendingPage() {
 
           <div className="mt-6 pt-6 border-t border-clay-border">
             <div className="flex items-center justify-center gap-2 text-sm text-text-tertiary">
-              <Mail className="w-4 h-4" />
+              <Mail01Icon className="w-4 h-4" />
               <span>Need help? Contact support@ilesure.com</span>
             </div>
           </div>

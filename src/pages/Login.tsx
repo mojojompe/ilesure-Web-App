@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Mail01Icon, LockIcon, ViewIcon, ViewOffIcon, ArrowRight01Icon, ArrowLeft01Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 
@@ -79,7 +79,7 @@ export function LoginPage() {
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <Mail01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   id="email"
                   type="email"
@@ -98,7 +98,7 @@ export function LoginPage() {
                 Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   id="password"
                   type={showPassword ? 'text' : 'password'}
@@ -113,7 +113,7 @@ export function LoginPage() {
                   onClick={() => setShowPassword(!showPassword)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
                 >
-                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showPassword ? <ViewOffIcon className="w-5 h-5" /> : <ViewIcon className="w-5 h-5" />}
                 </button>
               </div>
               {errors.password && <p className="text-xs text-status-error mt-1">{errors.password}</p>}
@@ -126,7 +126,7 @@ export function LoginPage() {
             </div>
 
             <Button type="submit" variant="primary" className="w-full" loading={loading}>
-              Sign In <ArrowRight className="w-4 h-4 ml-2" />
+              Sign In <ArrowRight01Icon className="w-4 h-4 ml-2" />
             </Button>
           </form>
 

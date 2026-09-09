@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, MapPin, DollarSign, Building, Sofa, Zap, Wifi, Shield, Camera, ArrowRight, ArrowLeft, Check, Upload, X, Loader2, AlertCircle, CheckCircle, Clock } from 'lucide-react';
+import { Home01Icon, Location01Icon, Money01Icon, Building01Icon, Sofa01Icon, FlashIcon, Wifi01Icon, SecurityIcon, Camera01Icon, ArrowRight01Icon, ArrowLeft01Icon, Tick02Icon, Upload01Icon, Cancel02Icon, Loading02Icon, Alert01Icon, CheckmarkBadge02Icon, Clock02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -150,13 +150,13 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
     <AppLayout role="agent" title="Create Listing">
       {toast && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'}`}>
-          {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />} {toast.message}
+          {toast.type === 'success' ? <CheckmarkBadge02Icon className="w-4 h-4" /> : <Alert01Icon className="w-4 h-4" />} {toast.message}
         </div>
       )}
       <div className="max-w-lg mx-auto py-12 px-4">
         <div className="clay-card p-6 text-center mb-6">
           <div className="w-20 h-20 bg-mustard-pale rounded-full flex items-center justify-center mx-auto mb-6">
-            <Shield className="w-10 h-10 text-mustard" />
+            <SecurityIcon className="w-10 h-10 text-mustard" />
           </div>
           <h2 className="text-2xl font-bold text-text-primary mb-3">Verification Required</h2>
           <p className="text-text-secondary max-w-md mx-auto mb-2">
@@ -167,7 +167,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
         <div className="clay-card p-5 space-y-4">
           {loading ? (
             <div className="flex items-center gap-2 py-6 justify-center">
-              <Loader2 className="w-5 h-5 animate-spin text-mustard" />
+              <Loading02Icon className="w-5 h-5 animate-spin text-mustard" />
               <span className="text-sm text-text-tertiary">Loading verification status...</span>
             </div>
           ) : (
@@ -176,7 +176,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
               <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
                 <div className="flex items-center gap-3">
                   <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${ninDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
-                    {ninDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+                    {ninDone ? <CheckmarkBadge02Icon className="w-5 h-5 text-status-success" /> : <SecurityIcon className="w-5 h-5 text-mustard" />}
                   </div>
                   <div>
                     <p className="text-sm font-semibold text-text-primary">NIN Verification</p>
@@ -187,7 +187,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
                   <StatusBadge variant="success">Verified</StatusBadge>
                 ) : (
                   <Button variant="primary" size="sm" onClick={() => openDojah('nin')} loading={verifying === 'nin'} disabled={verifying !== null}>
-                    Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                    Verify <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
                   </Button>
                 )}
               </div>
@@ -197,7 +197,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
                 <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
                   <div className="flex items-center gap-3">
                     <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${bvnDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
-                      {bvnDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+                      {bvnDone ? <CheckmarkBadge02Icon className="w-5 h-5 text-status-success" /> : <SecurityIcon className="w-5 h-5 text-mustard" />}
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-text-primary">BVN Verification</p>
@@ -208,7 +208,7 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
                     <StatusBadge variant="success">Verified</StatusBadge>
                   ) : (
                     <Button variant="primary" size="sm" onClick={() => openDojah('bvn')} loading={verifying === 'bvn'} disabled={verifying !== null}>
-                      Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                      Verify <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
                     </Button>
                   )}
                 </div>
@@ -217,14 +217,14 @@ function VerificationGate({ role, onVerified }: { role: string; onVerified: () =
               {/* Status banner */}
               {allDone && (
                 <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
-                  <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                  <CheckmarkBadge02Icon className="w-4 h-4 text-status-success flex-shrink-0" />
                   <p className="text-sm font-medium text-status-success">Your identity is fully verified. You can now create listings.</p>
                 </div>
               )}
 
               {!allDone && !verifying && (kycStatus?.verificationStatus === 'pending' || ninDone !== bvnDone) && (
                 <Button variant="secondary" size="sm" onClick={handleSync} loading={syncing} disabled={syncing || verifying !== null} className="w-full">
-                  <Clock className="w-4 h-4 mr-2" /> Sync Verification Status
+                  <Clock02Icon className="w-4 h-4 mr-2" /> Sync Verification Status
                 </Button>
               )}
             </>
@@ -292,6 +292,7 @@ interface ListingFormData {
   photos: string[];
   leaseDurationValue: string;
   leaseDurationUnit: 'year' | 'month';
+  rentDuration: string;
   availableDays: string[];
   availableTimeSlots: string[];
   inspectionNotes: string;
@@ -331,6 +332,7 @@ const initialFormData: ListingFormData = {
   photos: [],
   leaseDurationValue: '1',
   leaseDurationUnit: 'year',
+  rentDuration: '',
   availableDays: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
   availableTimeSlots: ['09:00 AM', '11:00 AM', '02:00 PM', '04:00 PM'],
   inspectionNotes: '',
@@ -462,6 +464,7 @@ export function AgentCreateListingPage() {
         leaseDuration: formData.propertyType === 'shortlet'
           ? undefined
           : `${Number(formData.leaseDurationValue) || 1} ${formData.leaseDurationUnit}${(Number(formData.leaseDurationValue) || 1) > 1 ? 's' : ''}`,
+        rentDuration: formData.rentDuration || undefined,
         additionalNotes: formData.additionalNotes || undefined,
         // Flexible custom shortlet tiers
         shortletRates: formData.propertyType === 'shortlet'
@@ -726,7 +729,7 @@ export function AgentCreateListingPage() {
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Annual Rent (₦)</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="number"
                   value={formData.annualRent}
@@ -735,6 +738,16 @@ export function AgentCreateListingPage() {
                   className="clay-input w-full pl-11"
                 />
               </div>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Rent Duration</label>
+              <input
+                type="text"
+                value={formData.rentDuration || ''}
+                onChange={e => handleChange('rentDuration', e.target.value)}
+                placeholder="e.g. 1 Year, 6 Months"
+                className="clay-input w-full mb-4"
+              />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Lease Duration</label>
@@ -823,7 +836,7 @@ export function AgentCreateListingPage() {
             <div>
               <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="number"
                   value={formData.cautionFee}
@@ -836,7 +849,7 @@ export function AgentCreateListingPage() {
             <div>
               <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <Money01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="number"
                   value={formData.agencyFee}
@@ -1000,7 +1013,7 @@ export function AgentCreateListingPage() {
                     selected ? 'bg-mustard' : 'bg-clay-border'
                   )}
                 >
-                  {selected && <Check className="w-3 h-3 text-white" />}
+                  {selected && <Tick02Icon className="w-3 h-3 text-white" />}
                 </div>
               </button>
             );
@@ -1038,7 +1051,7 @@ export function AgentCreateListingPage() {
                   formData[rule.key as keyof ListingFormData] ? 'bg-mustard' : 'bg-clay-border'
                 )}
               >
-                {formData[rule.key as keyof ListingFormData] && <Check className="w-3 h-3 text-white" />}
+                {formData[rule.key as keyof ListingFormData] && <Tick02Icon className="w-3 h-3 text-white" />}
               </div>
             </button>
           ))}
@@ -1134,7 +1147,7 @@ export function AgentCreateListingPage() {
                     onClick={() => handleRemovePhoto(i)}
                     className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                   >
-                    <X className="w-4 h-4 text-white" />
+                    <Cancel02Icon className="w-4 h-4 text-white" />
                   </button>
                 </div>
               );
@@ -1147,7 +1160,7 @@ export function AgentCreateListingPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border hover:border-mustard transition-colors flex items-center justify-center bg-clay-border-light cursor-pointer"
                 >
-                  <Upload className="w-6 h-6 text-text-tertiary" />
+                  <Upload01Icon className="w-6 h-6 text-text-tertiary" />
                 </button>
               );
             }
@@ -1212,7 +1225,7 @@ export function AgentCreateListingPage() {
     return (
       <AppLayout role="agent" title="Create Listing">
         <div className="flex items-center justify-center h-64">
-          <Loader2 className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -1245,12 +1258,12 @@ export function AgentCreateListingPage() {
           <div className="flex gap-3 mt-6">
             {step > 1 && (
               <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                <ArrowLeft01Icon className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
             {step < 9 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
+                Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             ) : (
               <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading || uploading}>

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Loader, Users } from 'lucide-react';
+import { Search01Icon, Tick02Icon, Cancel02Icon, Loading02Icon, UserMultiple02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -90,10 +90,10 @@ export function AgentBookingsPage() {
     <AppLayout role="agent" title="Bookings" subtitle="Manage your bookings">
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search bookings..."
+            placeholder="Search01Icon bookings..."
             className="clay-input w-full pl-11"
           />
         </div>
@@ -111,7 +111,7 @@ export function AgentBookingsPage() {
             }`}
           >
             {f === 'shared' ? (
-              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Shared</span>
+              <span className="flex items-center gap-1"><UserMultiple02Icon className="w-3 h-3" /> Shared</span>
             ) : (
               f.charAt(0).toUpperCase() + f.slice(1)
             )}
@@ -122,7 +122,7 @@ export function AgentBookingsPage() {
       <ClayCard className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader className="w-8 h-8 animate-spin text-mustard" />
+            <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
           </div>
         ) : bookings.length > 0 ? (
           <div className="overflow-x-auto">
@@ -467,7 +467,7 @@ export function AgentBookingsPage() {
                         onClick={() => handleStatusChange(selectedBooking, 'confirmed')}
                         loading={updating}
                       >
-                        <Check className="w-4 h-4 mr-2" /> Confirm
+                        <Tick02Icon className="w-4 h-4 mr-2" /> Confirm
                       </Button>
                       <Button
                         variant="danger"
@@ -475,7 +475,7 @@ export function AgentBookingsPage() {
                         onClick={() => handleStatusChange(selectedBooking, 'rejected')}
                         loading={updating}
                       >
-                        <X className="w-4 h-4 mr-2" /> Reject
+                        <Cancel02Icon className="w-4 h-4 mr-2" /> Reject
                       </Button>
                     </div>
                   )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, Star, UserPlus, Eye, Loader, Mail, Phone } from 'lucide-react';
+import { Search01Icon, PencilEdit01Icon, Delete02Icon, StarIcon, UserAdd01Icon, ViewIcon, Loading02Icon, Mail01Icon, TelephoneIcon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -99,23 +99,23 @@ export function CompanyAgentsPage() {
 
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search agents..."
+            placeholder="Search01Icon agents..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="clay-input w-full pl-11"
           />
         </div>
         <Button variant="primary" onClick={() => setShowInviteModal(true)}>
-          <UserPlus className="w-4 h-4 mr-2" /> Invite Agent
+          <UserAdd01Icon className="w-4 h-4 mr-2" /> Invite Agent
         </Button>
       </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       ) : agents.length > 0 ? (
         <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -136,18 +136,18 @@ export function CompanyAgentsPage() {
               <div className="flex items-center gap-4 text-sm text-text-secondary mb-4">
                 <span>{agent.listingsCount} listings</span>
                 <span className="flex items-center gap-1">
-                  <Star className="w-4 h-4 text-mustard" /> {agent.rating || 0}
+                  <StarIcon className="w-4 h-4 text-mustard" /> {agent.rating || 0}
                 </span>
               </div>
               <div className="flex gap-2 pt-4 border-t border-clay-border-light">
                 <Button variant="secondary" size="sm" className="flex-1" onClick={() => handleView(agent)}>
-                  <Eye className="w-3 h-3 mr-1" /> View
+                  <ViewIcon className="w-3 h-3 mr-1" /> View
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => handleEdit(agent)}>
-                  <Edit className="w-3 h-3" />
+                  <PencilEdit01Icon className="w-3 h-3" />
                 </Button>
                 <Button variant="secondary" size="sm" onClick={() => handleRemove(agent.id)}>
-                  <Trash2 className="w-3 h-3" />
+                  <Delete02Icon className="w-3 h-3" />
                 </Button>
               </div>
             </ClayCard>
@@ -181,7 +181,7 @@ export function CompanyAgentsPage() {
               Email Address
             </label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <Mail01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
               <input
                 type="email"
                 value={email}
@@ -199,7 +199,7 @@ export function CompanyAgentsPage() {
           <div className="flex gap-2">
             <Button variant="secondary" className="flex-1" onClick={() => setShowInviteModal(false)}>Cancel</Button>
             <Button variant="primary" className="flex-1" onClick={handleInvite} loading={submitting}>
-              {submitting ? <Loader className="w-4 h-4 animate-spin" /> : 'Send Invite'}
+              {submitting ? <Loading02Icon className="w-4 h-4 animate-spin" /> : 'Send Invite'}
             </Button>
           </div>
         </div>
@@ -221,15 +221,15 @@ export function CompanyAgentsPage() {
             </div>
             <div className="space-y-2 text-sm">
               <div className="flex items-center gap-2 text-text-secondary">
-                <Mail className="w-4 h-4" />
+                <Mail01Icon className="w-4 h-4" />
                 <span>{selectedAgent.email}</span>
               </div>
               <div className="flex items-center gap-2 text-text-secondary">
-                <Phone className="w-4 h-4" />
+                <TelephoneIcon className="w-4 h-4" />
                 <span>{selectedAgent.phone || 'N/A'}</span>
               </div>
               <div className="flex items-center gap-2 text-text-secondary">
-                <Star className="w-4 h-4 text-mustard" />
+                <StarIcon className="w-4 h-4 text-mustard" />
                 <span>{selectedAgent.rating || 0} ({selectedAgent.reviewCount || 0} reviews)</span>
               </div>
             </div>
@@ -244,13 +244,13 @@ export function CompanyAgentsPage() {
               </div>
             </div>
             <Button variant="primary" className="w-full" onClick={() => { setShowViewModal(false); handleEdit(selectedAgent); }}>
-              <Edit className="w-4 h-4 mr-2" /> Edit Agent
+              <PencilEdit01Icon className="w-4 h-4 mr-2" /> PencilEdit01Icon Agent
             </Button>
           </div>
         )}
       </Modal>
 
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`Edit ${selectedAgent?.fullName || 'Agent'}`}>
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`PencilEdit01Icon ${selectedAgent?.fullName || 'Agent'}`}>
         {selectedAgent && (
           <div className="space-y-4">
             <div>
@@ -262,7 +262,7 @@ export function CompanyAgentsPage() {
               <input type="email" defaultValue={selectedAgent.email} className="clay-input w-full" />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Phone</label>
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">TelephoneIcon</label>
               <input type="tel" defaultValue={selectedAgent.phone || ''} className="clay-input w-full" />
             </div>
             <div>
@@ -285,7 +285,7 @@ export function CompanyAgentsPage() {
       <Modal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} title="Invitation Sent!">
         <div className="flex flex-col items-center justify-center p-6 text-center space-y-4">
           <div className="w-16 h-16 bg-status-success/20 rounded-full flex items-center justify-center mb-2">
-            <Mail className="w-8 h-8 text-status-success" />
+            <Mail01Icon className="w-8 h-8 text-status-success" />
           </div>
           <h3 className="text-xl font-bold text-text-primary">Invitation Sent Successfully</h3>
           <p className="text-sm text-text-secondary">

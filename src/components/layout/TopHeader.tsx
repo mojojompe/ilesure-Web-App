@@ -1,4 +1,4 @@
-import { Menu, Search, Bell, ChevronDown, RefreshCw } from 'lucide-react';
+import { Menu01Icon, Search01Icon, Notification02Icon, ArrowDown01Icon, ReloadIcon } from '@hugeicons/react';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../api/authContext';
@@ -8,9 +8,10 @@ interface TopHeaderProps {
   title: string;
   subtitle?: string;
   onReload?: () => void;
+  isCollapsed?: boolean;
 }
 
-export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderProps) {
+export function TopHeader({ onMenuClick, title, subtitle, onReload, isCollapsed }: TopHeaderProps) {
   const { user } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -50,14 +51,17 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
   }, []);
 
   return (
-    <header className="fixed top-4 left-4 md:left-[276px] right-4 z-20 bg-white rounded-[9999px] shadow-clay-sm h-16 flex items-center px-4 md:px-6">
+    <header className={clsx(
+      "fixed top-4 right-4 z-20 bg-white shadow-clay-sm h-16 flex items-center px-4 md:px-6 transition-all duration-300 rounded-[2rem]",
+      isCollapsed ? "left-4 md:left-[96px]" : "left-4 md:left-[276px]"
+    )}>
       <div className="flex items-center justify-between w-full">
         <div className="flex items-center gap-3">
           <button
             onClick={onMenuClick}
             className="md:hidden p-2 rounded-clay-sm hover:bg-clay-border-light"
           >
-            <Menu className="w-5 h-5 text-text-secondary" />
+            <Menu01Icon className="w-5 h-5 text-text-secondary" />
           </button>
           <div>
             <h1 className="text-lg font-bold text-text-primary">{title}</h1>
@@ -71,17 +75,17 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
             className="p-2 rounded-full hover:bg-clay-border-light transition-colors"
             title="Reload"
           >
-            <RefreshCw className="w-4 h-4 text-text-secondary" />
+            <ReloadIcon className="w-4 h-4 text-text-secondary" />
           </button>
         )}
 
         <div className="hidden md:flex items-center gap-2 flex-1 max-w-md mx-8">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+            <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
             <input
               type="text"
               placeholder="Search listings, bookings..."
-              className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-clay-border rounded-pill focus:border-mustard focus:ring-2 focus:ring-mustard/20 outline-none transition-all"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-white border border-clay-border rounded-xl focus:border-mustard focus:ring-2 focus:ring-mustard/20 outline-none transition-all"
             />
           </div>
         </div>
@@ -92,7 +96,7 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload }: TopHeaderP
               onClick={() => setShowNotifications(!showNotifications)}
               className="relative p-2 rounded-pill hover:bg-clay-border-light transition-colors"
             >
-              <Bell className="w-5 h-5 text-text-secondary" />
+              <Notification02Icon className="w-5 h-5 text-text-secondary" />
               {unreadCount > 0 && (
                 <span className="absolute top-1 right-1 w-2 h-2 bg-status-error rounded-full" />
               )}

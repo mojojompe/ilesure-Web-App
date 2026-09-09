@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { useLocation } from 'react-router-dom';
+import { clsx } from 'clsx';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
 import type { UserRole } from '../../types';
@@ -15,6 +16,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, role, title, subtitle, onReload }: AppLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
@@ -50,16 +52,19 @@ export function AppLayout({ children, role, title, subtitle, onReload }: AppLayo
     >
       <Sidebar
         isOpen={sidebarOpen}
+        isCollapsed={isCollapsed}
+        onToggleCollapse={() => setIsCollapsed(!isCollapsed)}
         onClose={() => setSidebarOpen(false)}
         role={role}
       />
       
-      <div className="md:ml-60 min-h-screen flex flex-col">
+      <div className={clsx("min-h-screen flex flex-col transition-all duration-300", isCollapsed ? "md:ml-20" : "md:ml-[260px]")}>
         <TopHeader
           onMenuClick={() => setSidebarOpen(true)}
           title={title}
           subtitle={subtitle}
           onReload={onReload}
+          isCollapsed={isCollapsed}
         />
         <main className="flex-1 p-4 pt-24 md:px-6 md:pt-[6rem] overflow-x-hidden">
           {children}

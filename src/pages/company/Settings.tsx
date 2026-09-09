@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader, Banknote, CheckCircle, Shield, FileText, Upload, X, AlertCircle } from 'lucide-react';
+import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -200,7 +200,7 @@ export function CompanySettingsPage() {
     return (
       <AppLayout role="company" title="Settings" subtitle="Manage your company">
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -263,13 +263,13 @@ export function CompanySettingsPage() {
               </div>
             </div>
             <Button variant="primary" className="mt-4" loading={saving} onClick={handleSave}>
-              <Save className="w-4 h-4 mr-2" /> Save Changes
+              <FloppyDiskIcon className="w-4 h-4 mr-2" /> FloppyDiskIcon Changes
             </Button>
           </ClayCard>
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-mustard" />
+              <SecurityIcon className="w-5 h-5 text-mustard" />
               Director Identity Verification
             </h2>
             <p className="text-sm text-text-tertiary mb-4">
@@ -285,23 +285,23 @@ export function CompanySettingsPage() {
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-mustard" />
+              <Note01Icon className="w-5 h-5 text-mustard" />
               Company Documents
             </h2>
             {company?.status === 'verified' ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
-                <CheckCircle className="w-4 h-4 text-status-success" />
+                <CheckmarkBadge02Icon className="w-4 h-4 text-status-success" />
                 <p className="text-sm font-medium text-status-success">Company is verified</p>
               </div>
             ) : company?.documentsSubmitted || docSubmitted ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-mustard/10 border border-mustard/20">
-                <AlertCircle className="w-4 h-4 text-mustard" />
+                <Alert01Icon className="w-4 h-4 text-mustard" />
                 <p className="text-sm font-medium text-mustard">Documents submitted — under review</p>
               </div>
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-text-tertiary">
-                  Upload your CAC certificate and business permit for verification.
+                  Upload01Icon your CAC certificate and business permit for verification.
                 </p>
 
                 <div>
@@ -323,15 +323,15 @@ export function CompanySettingsPage() {
                   </label>
                   {cacFile ? (
                     <div className="flex items-center gap-3 p-3 bg-status-success/5 border border-status-success/30 rounded-clay-sm">
-                      <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                      <CheckmarkBadge02Icon className="w-4 h-4 text-status-success flex-shrink-0" />
                       <span className="text-sm text-text-primary truncate flex-1">{cacFile.name}</span>
                       <button onClick={() => setCacFile(null)} className="p-1 rounded-full hover:bg-clay-border-light">
-                        <X className="w-3.5 h-3.5 text-text-tertiary" />
+                        <Cancel02Icon className="w-3.5 h-3.5 text-text-tertiary" />
                       </button>
                     </div>
                   ) : (
                     <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-clay-border rounded-clay-sm cursor-pointer hover:border-mustard hover:bg-mustard-pale/40 transition-all">
-                      <Upload className="w-5 h-5 text-text-tertiary" />
+                      <Upload01Icon className="w-5 h-5 text-text-tertiary" />
                       <span className="text-sm text-text-secondary">Click to upload CAC certificate</span>
                       <input
                         type="file"
@@ -349,15 +349,15 @@ export function CompanySettingsPage() {
                   </label>
                   {permitFile ? (
                     <div className="flex items-center gap-3 p-3 bg-status-success/5 border border-status-success/30 rounded-clay-sm">
-                      <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+                      <CheckmarkBadge02Icon className="w-4 h-4 text-status-success flex-shrink-0" />
                       <span className="text-sm text-text-primary truncate flex-1">{permitFile.name}</span>
                       <button onClick={() => setPermitFile(null)} className="p-1 rounded-full hover:bg-clay-border-light">
-                        <X className="w-3.5 h-3.5 text-text-tertiary" />
+                        <Cancel02Icon className="w-3.5 h-3.5 text-text-tertiary" />
                       </button>
                     </div>
                   ) : (
                     <label className="flex items-center justify-center gap-2 p-4 border-2 border-dashed border-clay-border rounded-clay-sm cursor-pointer hover:border-mustard hover:bg-mustard-pale/40 transition-all">
-                      <Upload className="w-5 h-5 text-text-tertiary" />
+                      <Upload01Icon className="w-5 h-5 text-text-tertiary" />
                       <span className="text-sm text-text-secondary">Click to upload business permit</span>
                       <input
                         type="file"
@@ -370,7 +370,7 @@ export function CompanySettingsPage() {
                 </div>
 
                 <div className="bg-blue-50 border border-blue-200 rounded-clay-sm p-3 flex gap-2 text-xs text-blue-700">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <Alert01Icon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>Documents are securely stored and reviewed by iléSure's team. Approval usually takes 1–2 business days.</span>
                 </div>
 
@@ -381,7 +381,7 @@ export function CompanySettingsPage() {
                   loading={docUploading}
                   disabled={docUploading || !cacFile || !officeAddress.trim()}
                 >
-                  <Upload className="w-4 h-4 mr-2" /> Submit Documents
+                  <Upload01Icon className="w-4 h-4 mr-2" /> Submit Documents
                 </Button>
               </div>
             )}
@@ -412,13 +412,13 @@ export function CompanySettingsPage() {
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Banknote className="w-5 h-5 text-mustard" />
+              <Money01Icon className="w-5 h-5 text-mustard" />
               Company Bank Account
             </h2>
             {subaccount?.subaccountCode ? (
               <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
                 <div className="flex items-center gap-2 text-status-success font-medium">
-                  <CheckCircle className="w-5 h-5" />
+                  <CheckmarkBadge02Icon className="w-5 h-5" />
                   Subaccount Active
                 </div>
                 <div className="text-sm text-text-secondary space-y-1">
@@ -505,7 +505,7 @@ export function CompanySettingsPage() {
                   loading={setupLoading}
                   disabled={!resolved || !bankForm.businessName}
                 >
-                  <Banknote className="w-4 h-4 mr-2" /> Setup Subaccount
+                  <Money01Icon className="w-4 h-4 mr-2" /> Setup Subaccount
                 </Button>
               </div>
             )}

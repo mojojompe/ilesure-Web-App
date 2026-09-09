@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
+import { LockIcon, ArrowRight01Icon, ViewIcon, ViewOffIcon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import { userApi } from '../api/user';
 import { useAuth } from '../api/authContext';
@@ -75,7 +75,7 @@ export function UpdatePasswordPage() {
                 Current (Temporary) Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type={showCurrent ? 'text' : 'password'}
                   value={currentPassword}
@@ -88,7 +88,7 @@ export function UpdatePasswordPage() {
                   onClick={() => setShowCurrent(!showCurrent)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
                 >
-                  {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showCurrent ? <ViewOffIcon className="w-5 h-5" /> : <ViewIcon className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -98,7 +98,7 @@ export function UpdatePasswordPage() {
                 New Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type={showNew ? 'text' : 'password'}
                   value={newPassword}
@@ -111,7 +111,7 @@ export function UpdatePasswordPage() {
                   onClick={() => setShowNew(!showNew)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary"
                 >
-                  {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  {showNew ? <ViewOffIcon className="w-5 h-5" /> : <ViewIcon className="w-5 h-5" />}
                 </button>
               </div>
             </div>
@@ -121,7 +121,7 @@ export function UpdatePasswordPage() {
                 Confirm New Password
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type={showNew ? 'text' : 'password'}
                   value={confirmPassword}
@@ -133,7 +133,7 @@ export function UpdatePasswordPage() {
             </div>
 
             <Button type="submit" variant="primary" className="w-full" loading={loading}>
-              Update Password <ArrowRight className="w-4 h-4 ml-2" />
+              Update Password <ArrowRight01Icon className="w-4 h-4 ml-2" />
             </Button>
           </form>
         </div>

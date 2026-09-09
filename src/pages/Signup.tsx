@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, Phone, Building2, Search, AlertCircle } from 'lucide-react';
+import { UserIcon, Mail01Icon, LockIcon, ViewIcon, ViewOffIcon, ArrowRight01Icon, ArrowLeft01Icon, TelephoneIcon, Building04Icon, Search01Icon, Alert01Icon, GlobeIcon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
@@ -73,6 +73,7 @@ export function SignupPage() {
   });
 
   const [companyName, setCompanyName] = useState('');
+  const [companyWebsite, setCompanyWebsite] = useState('');
 
   // Derived rather than held in state: role is the single source of truth, so the two
   // cannot drift apart if the role is ever changed from somewhere else.
@@ -165,6 +166,7 @@ export function SignupPage() {
         password: formData.password,
         role: formData.role as UserRole,
         ...(isCompany && companyName ? { companyName } : {}),
+        ...(isCompany && companyWebsite ? { companyWebsite } : {}),
       };
       
       const response = await authApi.register(registerData);
@@ -217,7 +219,7 @@ export function SignupPage() {
           {isCompany ? 'Company Representative Name' : 'Full Name'}
         </label>
         <div className="relative">
-          <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
             name="fullName"
@@ -235,7 +237,7 @@ export function SignupPage() {
           Email
         </label>
         <div className="relative">
-          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <Mail01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="email"
             name="email"
@@ -254,7 +256,7 @@ export function SignupPage() {
             Company Name
           </label>
           <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+            <Building04Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
             <input
               type="text"
               value={companyName}
@@ -267,12 +269,30 @@ export function SignupPage() {
         </div>
       )}
 
+      {isCompany && (
+        <div>
+          <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
+            Company Website <span className="font-normal text-text-tertiary">(Optional)</span>
+          </label>
+          <div className="relative">
+            <GlobeIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+            <input
+              type="url"
+              value={companyWebsite}
+              onChange={(e) => setCompanyWebsite(e.target.value)}
+              placeholder="https://yourcompany.com"
+              className="clay-input w-full pl-11"
+            />
+          </div>
+        </div>
+      )}
+
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
           Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type={showPassword ? 'text' : 'password'}
             name="password"
@@ -287,7 +307,7 @@ export function SignupPage() {
             onClick={() => setShowPassword(!showPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
           >
-            {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            {showPassword ? <ViewOffIcon className="w-5 h-5" /> : <ViewIcon className="w-5 h-5" />}
           </button>
         </div>
         {formData.password && (
@@ -313,7 +333,7 @@ export function SignupPage() {
           Confirm Password
         </label>
         <div className="relative">
-          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <LockIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type={showConfirmPassword ? 'text' : 'password'}
             name="confirmPassword"
@@ -328,7 +348,7 @@ export function SignupPage() {
             onClick={() => setShowConfirmPassword(!showConfirmPassword)}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
           >
-            {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+            {showConfirmPassword ? <ViewOffIcon className="w-5 h-5" /> : <ViewIcon className="w-5 h-5" />}
           </button>
         </div>
         {formData.confirmPassword && formData.password !== formData.confirmPassword && (
@@ -342,10 +362,10 @@ export function SignupPage() {
     <div className="space-y-4">
       <div>
         <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-          Phone Number
+          TelephoneIcon Number
         </label>
         <div className="relative">
-          <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <TelephoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="tel"
             name="phone"
@@ -397,7 +417,7 @@ export function SignupPage() {
           <span className={selectedBank ? '' : 'text-text-tertiary'}>
             {selectedBank?.name || 'Choose your bank'}
           </span>
-          <Search className="w-4 h-4 text-text-tertiary" />
+          <Search01Icon className="w-4 h-4 text-text-tertiary" />
         </button>
         {showBankList && (
           <div className="absolute z-10 mt-1 w-full bg-white border border-clay-border rounded-clay-sm shadow-clay max-h-48 overflow-y-auto">
@@ -406,7 +426,7 @@ export function SignupPage() {
                 type="text"
                 value={bankSearch}
                 onChange={(e) => setBankSearch(e.target.value)}
-                placeholder="Search banks..."
+                placeholder="Search01Icon banks..."
                 className="clay-input w-full text-sm py-1.5"
                 autoFocus
               />
@@ -455,7 +475,7 @@ export function SignupPage() {
       </div>
       {bankError && (
         <p className="flex items-center gap-1.5 text-xs text-red-600">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
+          <Alert01Icon className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
         </p>
       )}
       <button
@@ -487,7 +507,7 @@ export function SignupPage() {
   const getStepTitle = () => {
     switch (step) {
       case 1: return 'Create Account';
-      case 2: return 'Phone Number';
+      case 2: return 'TelephoneIcon Number';
       case 3: return 'Bank Account Setup';
       default: return '';
     }
@@ -541,7 +561,7 @@ export function SignupPage() {
                     !isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
                   )}
                 >
-                  <User className="w-6 h-6 text-burnt-brown" />
+                  <UserIcon className="w-6 h-6 text-burnt-brown" />
                   <span className="text-sm font-medium text-text-primary">Agent / Landlord</span>
                 </button>
                 <button
@@ -552,7 +572,7 @@ export function SignupPage() {
                     isCompany ? 'border-mustard bg-mustard-pale shadow-clay' : 'border-clay-border hover:border-mustard bg-white'
                   )}
                 >
-                  <Building2 className="w-6 h-6 text-burnt-brown" />
+                  <Building04Icon className="w-6 h-6 text-burnt-brown" />
                   <span className="text-sm font-medium text-text-primary">Company</span>
                 </button>
               </div>
@@ -566,16 +586,16 @@ export function SignupPage() {
           <div className="flex gap-3 mt-6">
             {step > 1 && (
               <Button type="button" variant="secondary" onClick={handleBack} className="flex-1">
-                <ArrowLeft className="w-4 h-4 mr-2" /> Back
+                <ArrowLeft01Icon className="w-4 h-4 mr-2" /> Back
               </Button>
             )}
             {step < 3 ? (
               <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
+                Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             ) : (
               <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading} disabled={!acceptedTerms}>
-                Complete <ArrowRight className="w-4 h-4 ml-2" />
+                Complete <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             )}
           </div>

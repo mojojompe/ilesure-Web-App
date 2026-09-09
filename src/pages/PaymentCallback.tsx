@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Check, X, Loader } from 'lucide-react';
+import { Tick02Icon, Cancel02Icon, Loading02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import paymentsApi from '../api/payments';
 import { useAuth } from '../api/authContext';
@@ -61,7 +61,7 @@ export function PaymentCallbackPage() {
         <div className="clay-card p-8">
           {status === 'verifying' && (
             <>
-              <Loader className="w-12 h-12 animate-spin text-mustard mx-auto mb-4" />
+              <Loading02Icon className="w-12 h-12 animate-spin text-mustard mx-auto mb-4" />
               <h1 className="text-xl font-bold text-text-primary mb-2">
                 Verifying Payment
               </h1>
@@ -74,7 +74,7 @@ export function PaymentCallbackPage() {
           {status === 'success' && (
             <>
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-status-success/10 flex items-center justify-center">
-                <Check className="w-10 h-10 text-status-success" />
+                <Tick02Icon className="w-10 h-10 text-status-success" />
               </div>
               <h1 className="text-2xl font-bold text-text-primary mb-2">
                 Payment Successful!
@@ -99,7 +99,7 @@ export function PaymentCallbackPage() {
           {status === 'failed' && (
             <>
               <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-red-50 flex items-center justify-center">
-                <X className="w-10 h-10 text-red-500" />
+                <Cancel02Icon className="w-10 h-10 text-red-500" />
               </div>
               <h1 className="text-2xl font-bold text-text-primary mb-2">
                 Payment Failed

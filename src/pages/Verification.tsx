@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  FileText, Upload, CheckCircle, ArrowRight, Loader2, Shield, X, File, AlertCircle,
-} from 'lucide-react';
+  Note01Icon, Upload01Icon, CheckmarkBadge02Icon, ArrowRight01Icon, Loading02Icon, SecurityIcon, Cancel02Icon, File01Icon, Alert01Icon,
+} from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 import type { UserRole } from '../types';
@@ -61,7 +61,7 @@ function FileUploadZone({
       {fileState.file ? (
         <div className="flex items-center gap-3 p-4 bg-status-success/5 border border-status-success/30 rounded-clay-sm">
           <div className="w-10 h-10 rounded-clay-sm bg-status-success/10 flex items-center justify-center flex-shrink-0">
-            <File className="w-5 h-5 text-status-success" />
+            <File01Icon className="w-5 h-5 text-status-success" />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-text-primary truncate">{fileState.name}</p>
@@ -72,7 +72,7 @@ function FileUploadZone({
             onClick={onClear}
             className="p-1.5 rounded-full hover:bg-clay-border-light transition-colors flex-shrink-0"
           >
-            <X className="w-4 h-4 text-text-tertiary" />
+            <Cancel02Icon className="w-4 h-4 text-text-tertiary" />
           </button>
         </div>
       ) : (
@@ -89,7 +89,7 @@ function FileUploadZone({
           onDragLeave={() => setDragging(false)}
           onDrop={handleDrop}
         >
-          <Upload className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
+          <Upload01Icon className="w-8 h-8 text-text-tertiary mx-auto mb-2" />
           <p className="text-sm text-text-secondary font-medium">
             Drop file here or <span className="text-mustard">click to upload</span>
           </p>
@@ -99,7 +99,7 @@ function FileUploadZone({
 
       {fileState.error && (
         <p className="flex items-center gap-1.5 mt-1.5 text-xs text-red-600">
-          <AlertCircle className="w-3.5 h-3.5 flex-shrink-0" />
+          <Alert01Icon className="w-3.5 h-3.5 flex-shrink-0" />
           {fileState.error}
         </p>
       )}
@@ -226,14 +226,14 @@ export function VerificationPage({ role }: VerificationProps) {
           <div className="clay-card p-6 md:p-8">
             <div className="text-center mb-6">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-mustard-pale flex items-center justify-center">
-                {isCompany ? <FileText className="w-8 h-8 text-mustard" /> : <Shield className="w-8 h-8 text-mustard" />}
+                {isCompany ? <Note01Icon className="w-8 h-8 text-mustard" /> : <SecurityIcon className="w-8 h-8 text-mustard" />}
               </div>
               <h1 className="text-2xl font-bold text-text-primary">
                 {isCompany ? 'Verify Your Company' : 'Verify Your Identity'}
               </h1>
               <p className="text-text-tertiary mt-2 text-sm">
                 {isCompany
-                  ? 'Upload your company registration documents for review'
+                  ? 'Upload01Icon your company registration documents for review'
                   : 'We use a secure third-party service to verify your identity'}
               </p>
             </div>
@@ -274,7 +274,7 @@ export function VerificationPage({ role }: VerificationProps) {
                 />
 
                 <div className="bg-blue-50 border border-blue-200 rounded-clay-sm p-3 flex gap-2 text-xs text-blue-700">
-                  <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                  <Alert01Icon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                   <span>
                     Documents are securely stored and only reviewed by iléSure's verification team. Approval usually takes 1–2 business days.
                   </span>
@@ -282,7 +282,7 @@ export function VerificationPage({ role }: VerificationProps) {
 
                 {error && (
                   <div className="bg-red-50 border border-red-200 rounded-clay-sm p-3 flex gap-2 text-xs text-red-700">
-                    <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                    <Alert01Icon className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     {error}
                   </div>
                 )}
@@ -304,7 +304,7 @@ export function VerificationPage({ role }: VerificationProps) {
                   variant="primary"
                   className="w-full"
                 >
-                  Continue <ArrowRight className="w-4 h-4 ml-2" />
+                  Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
                 </Button>
 
                 <Button onClick={handleSkip} variant="secondary" className="w-full">
@@ -395,7 +395,7 @@ export function VerificationPage({ role }: VerificationProps) {
         <div className="clay-card p-6 md:p-8">
           <div className="text-center mb-6">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-mustard-pale flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-mustard" />
+              <CheckmarkBadge02Icon className="w-8 h-8 text-mustard" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">
               {isCompany ? 'Confirm Submission' : 'Review Your Information'}
@@ -478,7 +478,7 @@ export function VerificationPage({ role }: VerificationProps) {
 
           {error && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-clay-sm p-3 flex gap-2 text-xs text-red-700">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <Alert01Icon className="w-4 h-4 flex-shrink-0 mt-0.5" />
               {error}
             </div>
           )}
@@ -491,7 +491,7 @@ export function VerificationPage({ role }: VerificationProps) {
             disabled={loading}
           >
             {loading ? (
-              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Uploading documents...</>
+              <><Loading02Icon className="w-4 h-4 animate-spin mr-2" /> Uploading documents...</>
             ) : (
               'Submit for Verification'
             )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Bell, Mail, Phone, MessageSquare, Check, Loader2 } from 'lucide-react';
+import { Notification02Icon, Mail01Icon, TelephoneIcon, Message01Icon, Tick02Icon, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import notificationsApi, { NotificationSettings } from '../../api/notifications';
@@ -83,7 +83,7 @@ export function CompanyNotificationsPage() {
     return (
       <AppLayout role="company" title="Notifications" subtitle="Manage your notification preferences">
         <div className="clay-card p-6 flex items-center justify-center py-12">
-          <Loader2 className="w-6 h-6 animate-spin text-mustard" />
+          <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -138,7 +138,7 @@ export function CompanyNotificationsPage() {
 
         {saving && (
           <div className="mt-4 flex items-center justify-center gap-2 text-text-tertiary">
-            <Loader2 className="w-4 h-4 animate-spin" />
+            <Loading02Icon className="w-4 h-4 animate-spin" />
             <span className="text-sm">Saving...</span>
           </div>
         )}

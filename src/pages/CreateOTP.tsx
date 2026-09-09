@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
+import { ArrowLeft01Icon, ReloadIcon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
@@ -136,7 +136,7 @@ export function CreateOTPPage() {
     >
       <div className="w-full max-w-md">
         <button onClick={() => navigate(-1)} className="flex items-center text-mustard text-sm hover:underline mb-6">
-          <ArrowLeft className="w-4 h-4 mr-1" /> Back
+          <ArrowLeft01Icon className="w-4 h-4 mr-1" /> Back
         </button>
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text-primary">Verify OTP</h1>
@@ -184,7 +184,7 @@ export function CreateOTPPage() {
               <p className="text-sm text-text-tertiary">Resend code in <span className="font-semibold text-mustard">{formatTime(countdown)}</span></p>
             ) : (
               <button onClick={handleResend} disabled={loading || resending || !email} className="flex items-center justify-center mx-auto text-sm text-mustard hover:underline disabled:opacity-50">
-                <RefreshCw className={clsx('w-4 h-4 mr-1', resending && 'animate-spin')} /> {resending ? 'Sending…' : 'Resend code'}
+                <ReloadIcon className={clsx('w-4 h-4 mr-1', resending && 'animate-spin')} /> {resending ? 'Sending…' : 'Resend code'}
               </button>
             )}
           </div>

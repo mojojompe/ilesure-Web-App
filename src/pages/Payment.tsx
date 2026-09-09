@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Loader } from 'lucide-react';
+import { Loading02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import paymentsApi from '../api/payments';
 
@@ -41,7 +41,7 @@ export function PaymentPage() {
         <div className="clay-card p-8">
           {initializing ? (
             <>
-              <Loader className="w-12 h-12 animate-spin text-mustard mx-auto mb-4" />
+              <Loading02Icon className="w-12 h-12 animate-spin text-mustard mx-auto mb-4" />
               <h1 className="text-xl font-bold text-text-primary mb-2">
                 Redirecting to Paystack...
               </h1>

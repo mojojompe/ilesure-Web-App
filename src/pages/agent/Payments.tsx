@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { DollarSign, TrendingUp, CreditCard } from 'lucide-react';
+import { Money01Icon, ArrowUpRight01Icon, CreditCardIcon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -45,7 +45,7 @@ export function AgentPaymentsPage() {
         <ClayCard className="p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-clay-sm bg-status-success/10 flex items-center justify-center">
-              <DollarSign className="w-5 h-5 text-status-success" />
+              <Money01Icon className="w-5 h-5 text-status-success" />
             </div>
             <span className="text-sm text-text-tertiary">Total Paid</span>
           </div>
@@ -54,7 +54,7 @@ export function AgentPaymentsPage() {
         <ClayCard className="p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-clay-sm bg-mustard/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-mustard" />
+              <ArrowUpRight01Icon className="w-5 h-5 text-mustard" />
             </div>
             <span className="text-sm text-text-tertiary">Pending Commission</span>
           </div>
@@ -63,7 +63,7 @@ export function AgentPaymentsPage() {
         <ClayCard className="p-5">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-10 h-10 rounded-clay-sm bg-status-info/10 flex items-center justify-center">
-              <CreditCard className="w-5 h-5 text-status-info" />
+              <CreditCardIcon className="w-5 h-5 text-status-info" />
             </div>
             <span className="text-sm text-text-tertiary">This Month</span>
           </div>

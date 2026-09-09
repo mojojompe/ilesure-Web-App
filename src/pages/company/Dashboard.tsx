@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Users, Calendar, DollarSign, Loader } from 'lucide-react';
+import { Building04Icon, UserMultiple02Icon, Calendar02Icon, Money01Icon, Loading02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
@@ -46,7 +46,7 @@ export function CompanyDashboardPage() {
     return (
       <AppLayout role="company" title="Dashboard" subtitle="Welcome back">
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -58,26 +58,26 @@ export function CompanyDashboardPage() {
         <KpiCard
           title="Total Listings"
           value={overview?.totalListings || 0}
-          icon={Building2}
+          icon={Building04Icon}
           variant={1}
         />
         <KpiCard
           title="Total Agents"
           value={overview?.totalAgents || 0}
-          icon={Users}
+          icon={UserMultiple02Icon}
           variant={2}
         />
         <KpiCard
           title="Active Bookings"
           value={overview?.activeBookings || 0}
-          icon={Calendar}
+          icon={Calendar02Icon}
           variant={2}
         />
         <KpiCard
           title="Monthly Revenue"
           value={formatCurrency(overview?.monthlyRevenue || 0)}
           change={overview?.trends?.revenue ? `${overview.trends.revenue}%` : undefined}
-          icon={DollarSign}
+          icon={Money01Icon}
           variant={1}
         />
       </div>

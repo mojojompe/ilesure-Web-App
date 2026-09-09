@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ArrowRight, Loader2 } from 'lucide-react';
+import { Tick02Icon, ArrowRight01Icon, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
@@ -53,7 +53,7 @@ export function TierSelectionPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-off-white py-8 px-4 flex items-center justify-center">
-        <Loader2 className="w-6 h-6 animate-spin text-mustard" />
+        <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
       </div>
     );
   }
@@ -128,25 +128,25 @@ export function TierSelectionPage() {
               <div className="space-y-2">
                 {tier.features?.maxListings !== undefined && (
                   <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
                     <span className="text-text-secondary">Up to {tier.features.maxListings} active listing slots</span>
                   </div>
                 )}
                 {tier.features?.analytics && (
                   <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
                     <span className="text-text-secondary">{tier.features.analytics}</span>
                   </div>
                 )}
                 {tier.features?.support && (
                   <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
                     <span className="text-text-secondary">{tier.features.support}</span>
                   </div>
                 )}
                 {tier.features?.visibility && (
                   <div className="flex items-start gap-2 text-sm">
-                    <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
                     <span className="text-text-secondary">{tier.features.visibility}</span>
                   </div>
                 )}
@@ -161,7 +161,7 @@ export function TierSelectionPage() {
           disabled={!selectedTier || selecting}
           onClick={handleContinue}
         >
-          Continue <ArrowRight className="w-4 h-4 ml-2" />
+          Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>

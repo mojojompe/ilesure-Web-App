@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, Heart, MessageCircle, TrendingUp, Loader } from 'lucide-react';
+import { ViewIcon, FavouriteIcon, BubbleChatIcon, ArrowUpRight01Icon, Loading02Icon } from '@hugeicons/react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
@@ -32,7 +32,7 @@ export function AgentAnalyticsPage() {
     return (
       <AppLayout role="agent" title="Analytics" subtitle="Track your performance">
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -45,26 +45,26 @@ export function AgentAnalyticsPage() {
           title="Total Views"
           value={analytics?.totalViews?.toLocaleString() || '0'}
           change={analytics?.changes?.views}
-          icon={Eye}
+          icon={ViewIcon}
           variant={1}
         />
         <KpiCard
           title="Total Saves"
           value={analytics?.totalSaves?.toLocaleString() || '0'}
           change={analytics?.changes?.saves}
-          icon={Heart}
+          icon={FavouriteIcon}
           variant={2}
         />
         <KpiCard
           title="Inquiries"
           value={analytics?.totalInquiries || '0'}
-          icon={MessageCircle}
+          icon={BubbleChatIcon}
           variant={2}
         />
         <KpiCard
           title="Conversion Rate"
           value={`${analytics?.conversionRate || 0}%`}
-          icon={TrendingUp}
+          icon={ArrowUpRight01Icon}
           variant={1}
         />
       </div>
@@ -96,7 +96,7 @@ export function AgentAnalyticsPage() {
                   <p className="font-medium text-text-primary">{listing.title}</p>
                 </div>
                 <div className="flex items-center gap-1 text-mustard">
-                  <Eye className="w-4 h-4" />
+                  <ViewIcon className="w-4 h-4" />
                   <span className="font-semibold">{listing.views?.toLocaleString()}</span>
                 </div>
               </div>

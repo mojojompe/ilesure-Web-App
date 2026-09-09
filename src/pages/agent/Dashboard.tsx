@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Building2, Calendar, DollarSign, Eye, Heart, MessageCircle, Loader, ShieldAlert, X, ArrowRight } from 'lucide-react';
+import { Building04Icon, Calendar02Icon, Money01Icon, ViewIcon, FavouriteIcon, BubbleChatIcon, Loading02Icon, Alert01Icon, Cancel02Icon, ArrowRight01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
@@ -54,7 +54,7 @@ export function AgentDashboardPage() {
     return (
       <AppLayout role="agent" title="Dashboard" subtitle="Welcome back">
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -76,7 +76,7 @@ export function AgentDashboardPage() {
           <div className={`flex-shrink-0 w-10 h-10 rounded-clay-sm flex items-center justify-center ${
             isPending ? 'bg-amber-100' : 'bg-mustard-pale'
           }`}>
-            <ShieldAlert className={`w-5 h-5 ${isPending ? 'text-amber-600' : 'text-mustard'}`} />
+            <Alert01Icon className={`w-5 h-5 ${isPending ? 'text-amber-600' : 'text-mustard'}`} />
           </div>
 
           {/* Content */}
@@ -96,7 +96,7 @@ export function AgentDashboardPage() {
                 href="/agent/settings"
                 className="inline-flex items-center gap-1.5 mt-2 text-xs font-semibold text-mustard hover:text-burnt-brown transition-colors"
               >
-                Verify now <ArrowRight className="w-3.5 h-3.5" />
+                Verify now <ArrowRight01Icon className="w-3.5 h-3.5" />
               </a>
             )}
           </div>
@@ -107,7 +107,7 @@ export function AgentDashboardPage() {
             className="flex-shrink-0 w-7 h-7 flex items-center justify-center rounded-full hover:bg-black/10 transition-colors"
             aria-label="Dismiss"
           >
-            <X className="w-4 h-4 text-text-tertiary" />
+            <Cancel02Icon className="w-4 h-4 text-text-tertiary" />
           </button>
         </div>
       )}
@@ -116,26 +116,26 @@ export function AgentDashboardPage() {
         <KpiCard
           title="Total Listings"
           value={overview?.totalListings || 0}
-          icon={Building2}
+          icon={Building04Icon}
           variant={1}
         />
         <KpiCard
           title="Active Listings"
           value={overview?.activeListings || 0}
-          icon={Building2}
+          icon={Building04Icon}
           variant={2}
         />
         <KpiCard
           title="Total Bookings"
           value={overview?.totalBookings || 0}
-          icon={Calendar}
+          icon={Calendar02Icon}
           variant={2}
         />
         <KpiCard
           title="Monthly Revenue"
           value={formatCurrency(overview?.monthlyRevenue || 0)}
           change={overview?.trends?.revenue ? `${overview.trends.revenue}%` : undefined}
-          icon={DollarSign}
+          icon={Money01Icon}
           variant={1}
         />
       </div>
@@ -227,7 +227,7 @@ export function AgentDashboardPage() {
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-clay-sm bg-mustard-pale flex items-center justify-center">
-                <Eye className="w-5 h-5 text-mustard" />
+                <ViewIcon className="w-5 h-5 text-mustard" />
               </div>
               <div>
                 <p className="text-lg font-bold text-text-primary">{(overview?.totalViews || 0).toLocaleString()}</p>
@@ -236,7 +236,7 @@ export function AgentDashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-clay-sm bg-status-success/10 flex items-center justify-center">
-                <Heart className="w-5 h-5 text-status-success" />
+                <FavouriteIcon className="w-5 h-5 text-status-success" />
               </div>
               <div>
                 <p className="text-lg font-bold text-text-primary">{(overview?.totalSaves || 0).toLocaleString()}</p>
@@ -245,7 +245,7 @@ export function AgentDashboardPage() {
             </div>
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-clay-sm bg-status-info/10 flex items-center justify-center">
-                <MessageCircle className="w-5 h-5 text-status-info" />
+                <BubbleChatIcon className="w-5 h-5 text-status-info" />
               </div>
               <div>
                 <p className="text-lg font-bold text-text-primary">{overview?.totalInquiries || 0}</p>

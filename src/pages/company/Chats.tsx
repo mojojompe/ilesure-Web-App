@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Send, MoreVertical, Phone, Video, Loader, MessageCircle } from 'lucide-react';
+import { Search01Icon, SentIcon, MoreVerticalIcon, TelephoneIcon, Video01Icon, Loading02Icon, BubbleChatIcon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { chatApi } from '../../api/chat';
@@ -228,10 +228,10 @@ export function CompanyChatsPage() {
           <div className={clsx('w-full md:w-80 border-r border-clay-border flex flex-col', selectedChat ? 'hidden md:flex' : 'flex')}>
             <div className="p-4 border-b border-clay-border">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                 <input
                   type="text"
-                  placeholder="Search conversations..."
+                  placeholder="Search01Icon conversations..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="clay-input w-full pl-10 text-sm"
@@ -242,7 +242,7 @@ export function CompanyChatsPage() {
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center py-8">
-                  <Loader className="w-6 h-6 animate-spin text-mustard" />
+                  <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
                 </div>
               ) : filteredChats.length > 0 ? (
                 filteredChats.map(chat => (
@@ -281,7 +281,7 @@ export function CompanyChatsPage() {
                 ))
               ) : (
                 <div className="p-12 text-center">
-                  <MessageCircle className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
+                  <BubbleChatIcon className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
                   <p className="text-text-secondary">No conversations yet</p>
                 </div>
               )}
@@ -318,19 +318,19 @@ export function CompanyChatsPage() {
                     title={callAvailability?.peerBusy ? 'They are on another call' : 'Voice call'}
                     className="p-2 rounded-full hover:bg-clay-border-light disabled:opacity-40"
                   >
-                    <Phone className="w-5 h-5 text-text-secondary" />
+                    <TelephoneIcon className="w-5 h-5 text-text-secondary" />
                   </button>
                   <button
                     onClick={() => placeCall('video')}
                     disabled={callAvailability?.peerBusy}
                     aria-label="Start video call"
-                    title={callAvailability?.peerBusy ? 'They are on another call' : 'Video call'}
+                    title={callAvailability?.peerBusy ? 'They are on another call' : 'Video01Icon call'}
                     className="p-2 rounded-full hover:bg-clay-border-light disabled:opacity-40"
                   >
-                    <Video className="w-5 h-5 text-text-secondary" />
+                    <Video01Icon className="w-5 h-5 text-text-secondary" />
                   </button>
                   <button className="p-2 rounded-full hover:bg-clay-border-light">
-                    <MoreVertical className="w-5 h-5 text-text-secondary" />
+                    <MoreVerticalIcon className="w-5 h-5 text-text-secondary" />
                   </button>
                 </div>
               </div>
@@ -385,9 +385,9 @@ export function CompanyChatsPage() {
                     className="p-2 rounded-full bg-mustard text-white hover:bg-mustard-light disabled:opacity-50"
                   >
                     {sending ? (
-                      <Loader className="w-5 h-5 animate-spin" />
+                      <Loading02Icon className="w-5 h-5 animate-spin" />
                     ) : (
-                      <Send className="w-5 h-5" />
+                      <SentIcon className="w-5 h-5" />
                     )}
                   </button>
                 </div>
@@ -396,7 +396,7 @@ export function CompanyChatsPage() {
           ) : (
             <div className="hidden md:flex flex-1 flex-col items-center justify-center">
               <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-clay-border-light flex items-center justify-center">
-                <MessageCircle className="w-8 h-8 text-text-tertiary" />
+                <BubbleChatIcon className="w-8 h-8 text-text-tertiary" />
               </div>
               <h3 className="text-lg font-semibold text-text-primary mb-2">No conversation selected</h3>
               <p className="text-text-tertiary">Select a conversation to start chatting</p>

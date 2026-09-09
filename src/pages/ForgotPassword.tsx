@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Mail, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail01Icon, ArrowRight01Icon, CheckmarkBadge02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import authApi from '../api/authApi';
 
@@ -36,7 +36,7 @@ export function ForgotPasswordPage() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-status-success/10 flex items-center justify-center">
-              <CheckCircle className="w-8 h-8 text-status-success" />
+              <CheckmarkBadge02Icon className="w-8 h-8 text-status-success" />
             </div>
             <h1 className="text-2xl font-bold text-text-primary">Check your email</h1>
             <p className="text-text-tertiary mt-1">
@@ -56,7 +56,7 @@ export function ForgotPasswordPage() {
 
             <Link to="/login">
               <Button variant="secondary" className="w-full mt-4">
-                <ArrowRight className="w-4 h-4 mr-2" /> Back to Login
+                <ArrowRight01Icon className="w-4 h-4 mr-2" /> Back to Login
               </Button>
             </Link>
           </div>
@@ -88,7 +88,7 @@ export function ForgotPasswordPage() {
                 Email
               </label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <Mail01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="email"
                   value={email}
@@ -101,7 +101,7 @@ export function ForgotPasswordPage() {
             </div>
 
             <Button type="submit" variant="primary" className="w-full" loading={loading}>
-              Send Reset Link <ArrowRight className="w-4 h-4 ml-2" />
+              Send Reset Link <ArrowRight01Icon className="w-4 h-4 ml-2" />
             </Button>
           </form>
 

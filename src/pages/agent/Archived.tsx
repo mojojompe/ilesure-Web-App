@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, RotateCcw, Eye, Trash2, Loader2 } from 'lucide-react';
+import { Search01Icon, ReloadIcon, ViewIcon, Delete02Icon, Loading02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -58,7 +58,7 @@ export function AgentArchivedPage() {
     return (
       <AppLayout role="agent" title="Archived Listings" subtitle="Previously archived properties">
         <div className="clay-card p-12 flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-mustard" />
+          <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -76,10 +76,10 @@ export function AgentArchivedPage() {
 
       <div className="mb-6">
         <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+          <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search archived listings..."
+            placeholder="Search01Icon archived listings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="clay-input w-full pl-11"
@@ -90,7 +90,7 @@ export function AgentArchivedPage() {
       {filteredListings.length === 0 ? (
         <div className="clay-card p-12 text-center">
           <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-clay-border-light flex items-center justify-center">
-            <Trash2 className="w-8 h-8 text-text-tertiary" />
+            <Delete02Icon className="w-8 h-8 text-text-tertiary" />
           </div>
           <h3 className="text-lg font-semibold text-text-primary mb-2">No archived listings</h3>
           <p className="text-text-tertiary">Listings you archive will appear here</p>
@@ -105,7 +105,7 @@ export function AgentArchivedPage() {
                     <img src={listing.images[0]} alt={listing.title} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-text-tertiary">
-                      <Eye className="w-6 h-6" />
+                      <ViewIcon className="w-6 h-6" />
                     </div>
                   )}
                 </div>
@@ -125,7 +125,7 @@ export function AgentArchivedPage() {
                     disabled={restoring === listing._id}
                     loading={restoring === listing._id}
                   >
-                    <RotateCcw className="w-4 h-4 mr-1" /> 
+                    <ReloadIcon className="w-4 h-4 mr-1" /> 
                     {restoring === listing._id ? 'Restoring...' : 'Restore'}
                   </Button>
                 </div>

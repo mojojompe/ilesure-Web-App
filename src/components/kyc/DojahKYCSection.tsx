@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Shield, CheckCircle, Clock, Loader2, AlertCircle, ArrowRight } from 'lucide-react';
+import { SecurityIcon, CheckmarkBadge02Icon, Clock02Icon, Loading02Icon, Alert01Icon, ArrowRight01Icon } from '@hugeicons/react';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/StatusBadge';
 import { userApi, type KycStatus } from '../../api/user';
@@ -173,7 +173,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
   if (loading) {
     return (
       <div className="flex items-center gap-2 py-6 justify-center">
-        <Loader2 className="w-5 h-5 animate-spin text-mustard" />
+        <Loading02Icon className="w-5 h-5 animate-spin text-mustard" />
         <span className="text-sm text-text-tertiary">Loading verification status...</span>
       </div>
     );
@@ -191,7 +191,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-clay shadow-clay-lg text-sm font-semibold animate-fade-in ${
           toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
         }`}>
-          {toast.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
+          {toast.type === 'success' ? <CheckmarkBadge02Icon className="w-4 h-4" /> : <Alert01Icon className="w-4 h-4" />}
           {toast.message}
         </div>
       )}
@@ -201,7 +201,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${ninDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
-              {ninDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+              {ninDone ? <CheckmarkBadge02Icon className="w-5 h-5 text-status-success" /> : <SecurityIcon className="w-5 h-5 text-mustard" />}
             </div>
             <div>
               <p className="text-sm font-semibold text-text-primary">NIN Verification</p>
@@ -226,7 +226,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
                 loading={verifying === 'nin'}
                 disabled={verifying !== null}
               >
-                Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                Verify <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
               </Button>
             )}
           </div>
@@ -237,7 +237,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
             <div className="flex items-center gap-3">
               <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${bvnDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
-                {bvnDone ? <CheckCircle className="w-5 h-5 text-status-success" /> : <Shield className="w-5 h-5 text-mustard" />}
+                {bvnDone ? <CheckmarkBadge02Icon className="w-5 h-5 text-status-success" /> : <SecurityIcon className="w-5 h-5 text-mustard" />}
               </div>
               <div>
                 <p className="text-sm font-semibold text-text-primary">BVN Verification</p>
@@ -262,7 +262,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
                   loading={verifying === 'bvn'}
                   disabled={verifying !== null}
                 >
-                  Verify <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                  Verify <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
                 </Button>
               )}
             </div>
@@ -272,7 +272,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         {/* Pending Review Banner */}
         {kycStatus?.verificationStatus === 'pending' && !isFullyVerified && (
           <div className="flex items-center gap-3 p-4 rounded-clay-sm bg-amber-50 border border-amber-200">
-            <Clock className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
+            <Clock02Icon className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
             <div>
               <p className="text-sm font-semibold text-amber-900">Verification Pending Review</p>
               <p className="text-xs text-amber-700">
@@ -285,7 +285,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         {/* Overall status */}
         {allDone && (
           <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
-            <CheckCircle className="w-4 h-4 text-status-success flex-shrink-0" />
+            <CheckmarkBadge02Icon className="w-4 h-4 text-status-success flex-shrink-0" />
             <p className="text-sm font-medium text-status-success">
               {isFullyVerified ? 'Your identity is fully verified' : 'Verification submitted — pending review'}
             </p>
@@ -302,13 +302,13 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
             disabled={syncing || verifying !== null}
             className="w-full"
           >
-            <Clock className="w-4 h-4 mr-2" /> Sync Verification Status
+            <Clock02Icon className="w-4 h-4 mr-2" /> Sync Verification Status
           </Button>
         )}
 
         {error && (
           <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-red-50 border border-red-200">
-            <AlertCircle className="w-4 h-4 text-red-600 flex-shrink-0" />
+            <Alert01Icon className="w-4 h-4 text-red-600 flex-shrink-0" />
             <p className="text-xs text-red-700">{error}</p>
           </div>
         )}

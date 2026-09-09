@@ -8,25 +8,25 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        'burnt-brown':       '#8B4513',
-        'burnt-brown-dark':  '#6B3310',
-        'burnt-brown-light': '#A0522D',
-        'burnt-brown-pale':  '#F5EDE6',
-        'mustard':           '#D4821A',
-        'mustard-light':     '#F5A623',
+        'burnt-brown':       '#3E1F0A', // PWA primary
+        'burnt-brown-dark':  '#2C1406', // PWA primary-dark
+        'burnt-brown-light': '#5C2F12', // PWA primary-light
+        'burnt-brown-pale':  '#F5F5F4', // PWA soft-surface
+        'mustard':           '#E1AD01', // PWA accent
+        'mustard-light':     '#F0C832', // PWA accent-light
         'mustard-pale':      '#FFF8E1',
-        'mustard-border':    '#F0D080',
-        'off-white':         '#FAFAF8',
-        'clay-surface':      '#FFFFFF',
-        'text-primary':      '#1C0A00',
-        'text-secondary':    '#6B4C3B',
-        'text-tertiary':     '#A07860',
-        'clay-border':       '#E7DCD4',
-        'clay-border-light': '#F2EDE8',
-        'status-success':    '#38A169',
-        'status-warning':    '#D4821A',
-        'status-error':      '#E53E3E',
-        'status-info':       '#3182CE',
+        'mustard-border':    '#F0C832',
+        'off-white':         '#FAFAF9', // PWA background
+        'clay-surface':      '#FFFFFF', // PWA surface
+        'text-primary':      '#2D1B12', // PWA text-primary
+        'text-secondary':    '#6B4F3A', // PWA text-secondary
+        'text-tertiary':     '#A08070', // PWA text-tertiary
+        'clay-border':       '#E7DCD4', // PWA border
+        'clay-border-light': '#F0E8E2', // PWA border-light
+        'status-success':    '#4CAF50', // PWA status-success
+        'status-warning':    '#FF9800', // PWA status-warning
+        'status-error':      '#E53935', // PWA status-error
+        'status-info':       '#2196F3', // PWA status-info
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'DM Sans', 'sans-serif'],
@@ -47,9 +47,9 @@ const config: Config = {
         'sidebar-pill': '0 8px 40px rgba(107,51,16,0.28), 0 2px 12px rgba(107,51,16,0.18), 0 0 0 1px rgba(255,255,255,0.06)',
       },
       backgroundImage: {
-        'sidebar-gradient': 'linear-gradient(180deg, #8B4513 0%, #6B3310 100%)',
-        'btn-primary':      'linear-gradient(135deg, #8B4513 0%, #6B3310 100%)',
-        'btn-mustard':      'linear-gradient(135deg, #F5A623 0%, #D4821A 100%)',
+        'sidebar-gradient': 'linear-gradient(180deg, #3E1F0A 0%, #2C1406 100%)',
+        'btn-primary':      'linear-gradient(135deg, #3E1F0A 0%, #2C1406 100%)',
+        'btn-mustard':      'linear-gradient(135deg, #F0C832 0%, #E1AD01 100%)',
         'kpi-gradient-1':   'linear-gradient(135deg, #FFF8E1 0%, #FFFFFF 100%)',
         'kpi-gradient-2':   'linear-gradient(135deg, #F5EDE6 0%, #FFFFFF 100%)',
       },

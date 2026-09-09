@@ -10,11 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@hugeicons/react": "^0.3.4",
     "@paystack/inline-js": "^2.22.9",
     "@tanstack/react-table": "^8.21.3",
     "axios": "^1.15.2",
     "clsx": "^2.1.1",
-    "lucide-react": "^0.344.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.30.3",

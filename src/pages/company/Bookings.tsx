@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Check, X, Loader, Users } from 'lucide-react';
+import { Search01Icon, Tick02Icon, Cancel02Icon, Loading02Icon, UserMultiple02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -92,7 +92,7 @@ export function CompanyBookingsPage() {
             }`}
           >
             {f === 'shared' ? (
-              <span className="flex items-center gap-1"><Users className="w-3 h-3" /> Shared</span>
+              <span className="flex items-center gap-1"><UserMultiple02Icon className="w-3 h-3" /> Shared</span>
             ) : (
               f.charAt(0).toUpperCase() + f.slice(1)
             )}
@@ -103,7 +103,7 @@ export function CompanyBookingsPage() {
       <ClayCard className="overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <Loader className="w-8 h-8 animate-spin text-mustard" />
+            <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
           </div>
         ) : bookings.length > 0 ? (
           <div className="overflow-x-auto">
@@ -358,10 +358,10 @@ export function CompanyBookingsPage() {
               {selectedBooking.status === 'pending' && (
                 <div className="flex gap-2 pt-4">
                   <Button variant="success" className="flex-1" onClick={() => handleStatusChange(selectedBooking.id, 'confirmed')} loading={updating}>
-                    <Check className="w-4 h-4 mr-2" /> Confirm
+                    <Tick02Icon className="w-4 h-4 mr-2" /> Confirm
                   </Button>
                   <Button variant="danger" className="flex-1" onClick={() => handleStatusChange(selectedBooking.id, 'cancelled')} loading={updating}>
-                    <X className="w-4 h-4 mr-2" /> Cancel
+                    <Cancel02Icon className="w-4 h-4 mr-2" /> Cancel
                   </Button>
                 </div>
               )}

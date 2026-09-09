@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { MapPin, Loader, Check } from 'lucide-react';
+import { Location01Icon, Loading02Icon, Tick02Icon } from '@hugeicons/react';
 import { mapsApi, PlacePrediction } from '../../api/maps';
 
 interface AddressAutocompleteProps {
@@ -99,9 +99,9 @@ export function AddressAutocomplete({
         />
         <div className="absolute right-3 top-1/2 -translate-y-1/2">
           {loading ? (
-            <Loader className="w-4 h-4 animate-spin text-mustard" />
+            <Loading02Icon className="w-4 h-4 animate-spin text-mustard" />
           ) : pinned ? (
-            <Check className="w-4 h-4 text-status-success" />
+            <Tick02Icon className="w-4 h-4 text-status-success" />
           ) : null}
         </div>
       </div>
@@ -121,7 +121,7 @@ export function AddressAutocomplete({
                 onClick={() => handlePick(prediction)}
                 className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text-secondary hover:bg-clay-border-light"
               >
-                <MapPin className="w-4 h-4 shrink-0 text-text-tertiary" />
+                <Location01Icon className="w-4 h-4 shrink-0 text-text-tertiary" />
                 <span className="truncate">{prediction.description}</span>
               </button>
             </li>

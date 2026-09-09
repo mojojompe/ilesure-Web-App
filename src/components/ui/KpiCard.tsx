@@ -1,12 +1,11 @@
 import { clsx } from 'clsx';
 import type { ReactNode } from 'react';
-import { LucideIcon } from 'lucide-react';
 
 interface KpiCardProps {
   title: string;
   value: string | number;
   change?: string;
-  icon: LucideIcon;
+  icon: any;
   variant?: 1 | 2;
   className?: string;
 }

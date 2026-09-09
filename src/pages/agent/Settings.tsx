@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Save, Loader, Banknote, CheckCircle, Shield } from 'lucide-react';
+import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -177,7 +177,7 @@ export function AgentSettingsPage() {
     return (
       <AppLayout role="agent" title="Settings" subtitle="Manage your account">
         <div className="flex items-center justify-center h-64">
-          <Loader className="w-8 h-8 animate-spin text-mustard" />
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
         </div>
       </AppLayout>
     );
@@ -267,13 +267,13 @@ export function AgentSettingsPage() {
               </div>
             </div>
             <Button variant="primary" className="mt-4" loading={saving} onClick={handleSaveProfile}>
-              <Save className="w-4 h-4 mr-2" /> Save Changes
+              <FloppyDiskIcon className="w-4 h-4 mr-2" /> FloppyDiskIcon Changes
             </Button>
           </ClayCard>
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Shield className="w-5 h-5 text-mustard" />
+              <SecurityIcon className="w-5 h-5 text-mustard" />
               Identity Verification
             </h2>
             <p className="text-sm text-text-tertiary mb-4">
@@ -313,13 +313,13 @@ export function AgentSettingsPage() {
           {user?.role !== 'sub_agent' && (
             <ClayCard className="p-5">
               <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-                <Banknote className="w-5 h-5 text-mustard" />
+                <Money01Icon className="w-5 h-5 text-mustard" />
                 Bank Account for Payments
               </h2>
               {subaccount?.subaccountCode ? (
                 <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
                   <div className="flex items-center gap-2 text-status-success font-medium">
-                    <CheckCircle className="w-5 h-5" />
+                    <CheckmarkBadge02Icon className="w-5 h-5" />
                     Subaccount Active
                   </div>
                   <div className="text-sm text-text-secondary space-y-1">
@@ -406,7 +406,7 @@ export function AgentSettingsPage() {
                     loading={setupLoading}
                     disabled={!resolved || !bankForm.businessName}
                   >
-                    <Banknote className="w-4 h-4 mr-2" /> Save Bank Account
+                    <Money01Icon className="w-4 h-4 mr-2" /> FloppyDiskIcon Bank Account
                   </Button>
                 </div>
               )}
