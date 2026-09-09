@@ -63,11 +63,15 @@ export const tiersApi = {
     }
   },
 
-  async selectTier(tierId: string, billingCycle: 'monthly' | 'annually'): Promise<SelectTierResponse> {
+  async selectTier(tierId: string, billingCycle: 'monthly' | 'annually', callbackUrl?: string): Promise<SelectTierResponse> {
     try {
+      const resolvedCallbackUrl =
+        callbackUrl ||
+        (typeof window !== 'undefined' ? `${window.location.origin}/payment/callback` : undefined);
       const response = await apiClient.post<SelectTierResponse>('/tiers/select', {
         tierId,
         billingCycle,
+        callbackUrl: resolvedCallbackUrl,
       });
       return response.data;
     } catch (error: unknown) {

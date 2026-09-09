@@ -1,18 +1,43 @@
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { useNavigate } from 'react-router-dom';
 import { Tick02Icon, ArrowRight01Icon, Loading02Icon } from '@hugeicons/react';
+=======
+import { useNavigate, Link } from 'react-router-dom';
+import { Check, X, ArrowRight, ArrowLeft, Home, Loader2 } from 'lucide-react';
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import tiersApi from '../api/tiers';
+import { paymentsApi } from '../api/payments';
+import { useAuth } from '../api/authContext';
 import type { Tier } from '../types';
+import { getWebTierBullets } from './Tiers';
 
 export function TierSelectionPage() {
   const navigate = useNavigate();
+  const { isAuthenticated, role: authRole } = useAuth();
+  const homePath = isAuthenticated ? (authRole === 'company' ? '/company' : '/agent') : '/login';
+
+  const handleBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1);
+    } else {
+      navigate(homePath);
+    }
+  };
+
   const [tiers, setTiers] = useState<Tier[]>([]);
   const [loading, setLoading] = useState(true);
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('annually');
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selecting, setSelecting] = useState(false);
+  const [myTier, setMyTier] = useState<{
+    tierId: string;
+    name: string;
+    expiresAt: string | null;
+  } | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     loadTiers();
@@ -20,11 +45,22 @@ export function TierSelectionPage() {
 
   const loadTiers = async () => {
     setLoading(true);
-    const response = await tiersApi.getTiers();
-    if (response.success && response.data) {
-      setTiers(response.data.tiers);
+    try {
+      const [tiersRes, myTierRes] = await Promise.all([
+        tiersApi.getTiers(),
+        tiersApi.getMyTier().catch(() => null),
+      ]);
+      if (tiersRes.success && tiersRes.data) {
+        setTiers(tiersRes.data.tiers);
+      }
+      if (myTierRes && myTierRes.success && myTierRes.data) {
+        setMyTier(myTierRes.data);
+      }
+    } catch (err) {
+      console.error('Failed to load tiers:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   /**
@@ -35,7 +71,9 @@ export function TierSelectionPage() {
    */
   const priceFor = (tier: Tier): number => {
     const monthly = tier.priceMonthly ?? tier.price ?? 0;
-    return billingCycle === 'annually' ? (tier.priceYearly ?? 0) : monthly;
+    return billingCycle === 'annually'
+      ? (tier.priceYearly ?? Math.round(monthly * 12 * 0.8))
+      : monthly;
   };
 
   const formatPrice = (tier: Tier) => {
@@ -47,6 +85,33 @@ export function TierSelectionPage() {
 
   const handleContinue = async () => {
     if (!selectedTier) return;
+    setErrorMsg(null);
+
+    const chosen = tiers.find((t) => t.id === selectedTier);
+    if (!chosen) return;
+
+    const expiresDate = myTier?.expiresAt ? new Date(myTier.expiresAt) : null;
+    const isExpired = expiresDate ? expiresDate.getTime() <= Date.now() : true;
+    const daysRemaining = expiresDate && !isExpired
+      ? Math.max(0, Math.ceil((expiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+      : 0;
+
+    const isSameTier = myTier?.tierId?.toLowerCase() === chosen.id.toLowerCase();
+    if (isSameTier && !isExpired && daysRemaining > 7) {
+      setErrorMsg(`You already have an active ${chosen.name} subscription with ${daysRemaining} day(s) remaining. Renewal is available 7 days before expiration.`);
+      return;
+    }
+
+    const isFree = (chosen.priceMonthly ?? chosen.price) === 0;
+    if (isFree) {
+      try {
+        await paymentsApi.initialize({ tierId: selectedTier, billingCycle });
+      } catch {
+        // Activation is idempotent server-side; fall through to the dashboard either way.
+      }
+      navigate('/agent', { replace: true });
+      return;
+    }
     navigate(`/payment?tier=${selectedTier}&billing=${billingCycle}`);
   };
 
@@ -64,24 +129,48 @@ export function TierSelectionPage() {
       style={{ backgroundImage: "linear-gradient(rgba(249, 248, 246, 0.85), rgba(249, 248, 246, 0.85)), url('/bg_tier.png')" }}
     >
       <div className="max-w-4xl mx-auto">
+        {/* Navigation Bar: Back to Home / Dashboard */}
+        <div className="flex items-center justify-between gap-3 mb-8 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl border border-clay-border shadow-sm">
+          <button
+            onClick={handleBack}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-pill bg-white border border-clay-border text-xs sm:text-sm font-semibold text-text-primary hover:bg-neutral-50 hover:shadow-xs transition-all active:scale-[0.98]"
+          >
+            <ArrowLeft className="w-4 h-4 text-mustard" />
+            <span>{isAuthenticated ? 'Back to Dashboard' : 'Back'}</span>
+          </button>
+
+          <Link
+            to={homePath}
+            className="flex items-center gap-2 hover:opacity-85 transition-opacity"
+          >
+            <img src="/NoBG Logo.png" alt="iléSure" className="w-7 h-7 object-contain" />
+            <span className="font-bold text-sm sm:text-base text-text-primary hidden sm:inline">iléSure</span>
+          </Link>
+
+          <div className="flex items-center gap-2">
+            <Link
+              to={homePath}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-pill bg-burnt-brown text-white text-xs font-bold shadow-sm hover:bg-burnt-brown/90 transition-all active:scale-[0.98]"
+            >
+              <Home className="w-3.5 h-3.5 text-mustard" />
+              <span>{isAuthenticated ? 'Dashboard' : 'Home'}</span>
+            </Link>
+          </div>
+        </div>
+
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-text-primary">Choose Your Plan</h1>
           <p className="text-text-tertiary mt-1">Select the plan that fits your needs</p>
         </div>
 
+        {errorMsg && (
+          <div className="mb-6 p-4 rounded-clay bg-status-danger/10 border border-status-danger/20 text-status-danger text-sm text-center">
+            {errorMsg}
+          </div>
+        )}
+
         <div className="flex justify-center mb-8">
           <div className="bg-white rounded-pill p-1 border border-clay-border flex">
-            <button
-              onClick={() => setBillingCycle('annually')}
-              className={clsx(
-                'px-6 py-2 rounded-pill text-sm font-medium transition-all',
-                billingCycle === 'annually'
-                  ? 'bg-burnt-brown text-white'
-                  : 'text-text-secondary hover:text-text-primary'
-              )}
-            >
-              Yearly
-            </button>
             <button
               onClick={() => setBillingCycle('monthly')}
               className={clsx(
@@ -92,6 +181,17 @@ export function TierSelectionPage() {
               )}
             >
               Monthly
+            </button>
+            <button
+              onClick={() => setBillingCycle('annually')}
+              className={clsx(
+                'px-6 py-2 rounded-pill text-sm font-medium transition-all',
+                billingCycle === 'annually'
+                  ? 'bg-burnt-brown text-white'
+                  : 'text-text-secondary hover:text-text-primary'
+              )}
+            >
+              Yearly
             </button>
           </div>
         </div>
@@ -122,10 +222,15 @@ export function TierSelectionPage() {
               <div className="text-center mb-4">
                 <h3 className="text-lg font-bold text-text-primary">{tier.name}</h3>
                 <p className="text-2xl font-bold text-text-primary mt-1">{formatPrice(tier)}</p>
-                <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
+                {/* BUGFIX (QA-AGT-024): unguarded nested access crashed the page to blank when a
+                    tier came back without `limits` — the very next block already guards `features`. */}
+                {tier.limits?.maxListings !== undefined && (
+                  <p className="text-xs text-text-tertiary mt-1">{tier.limits.maxListings} listing slots</p>
+                )}
               </div>
 
               <div className="space-y-2">
+<<<<<<< HEAD
                 {tier.features?.maxListings !== undefined && (
                   <div className="flex items-start gap-2 text-sm">
                     <Tick02Icon className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
@@ -150,6 +255,23 @@ export function TierSelectionPage() {
                     <span className="text-text-secondary">{tier.features.visibility}</span>
                   </div>
                 )}
+=======
+                {getWebTierBullets(tier).map((bullet, bIdx) => (
+                  <div key={bIdx} className="flex items-start gap-2 text-sm">
+                    {bullet.positive ? (
+                      <Check className="w-4 h-4 text-status-success flex-shrink-0 mt-0.5" />
+                    ) : (
+                      <X className="w-4 h-4 text-text-tertiary flex-shrink-0 mt-0.5" />
+                    )}
+                    <span className={clsx(
+                      bullet.positive ? 'text-text-secondary' : 'text-text-tertiary opacity-70',
+                      bullet.highlight && 'font-semibold text-text-primary'
+                    )}>
+                      {bullet.text}
+                    </span>
+                  </div>
+                ))}
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
               </div>
             </button>
           ))}
@@ -163,6 +285,17 @@ export function TierSelectionPage() {
         >
           Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
         </Button>
+
+        {/* Bottom Return Action */}
+        <div className="mt-8 text-center flex flex-col sm:flex-row items-center justify-center gap-3">
+          <button
+            onClick={handleBack}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-pill bg-white border border-clay-border text-xs sm:text-sm font-semibold text-text-primary hover:bg-neutral-50 shadow-xs transition-all active:scale-[0.98]"
+          >
+            <ArrowLeft className="w-4 h-4 text-mustard" />
+            <span>{isAuthenticated ? 'Return to Dashboard' : 'Back to Home'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

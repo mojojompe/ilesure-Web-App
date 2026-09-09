@@ -1,21 +1,26 @@
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon } from '@hugeicons/react';
+=======
+import { Save, Loader, Banknote, CheckCircle, Shield, Clock } from 'lucide-react';
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
+import { tiersApi } from '../../api/tiers';
 import { useAuth } from '../../api/authContext';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 
 export function AgentSettingsPage() {
-  const { updateUser } = useAuth();
+  const { user: authUser, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(authUser);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -52,7 +57,23 @@ export function AgentSettingsPage() {
     fetchProfile();
     loadBanks();
     loadSubaccount();
+    loadNotificationSettings();
   }, []);
+
+  // BUGFIX (QA-AGT-008): the toggles were initialised to all-true and
+  // `getNotificationSettings()` was never called anywhere in the app, so the screen
+  // always showed every preference as ON regardless of what the server held — and a
+  // save-then-return looked like it had been discarded even when it had persisted.
+  const loadNotificationSettings = async () => {
+    try {
+      const res = await userApi.getNotificationSettings();
+      if (res.success && res.data) {
+        setNotifications((prev) => ({ ...prev, ...res.data }));
+      }
+    } catch {
+      // Leave the defaults in place; the save path reports its own failures.
+    }
+  };
 
   const loadBanks = async () => {
     const bankList = await paymentsApi.listBanks();
@@ -115,17 +136,47 @@ export function AgentSettingsPage() {
   const fetchProfile = async () => {
     setLoading(true);
     try {
-      const response = await userApi.getProfile();
-      if (response.success && response.data) {
-        setUser(response.data);
+      const [profileRes, tierRes] = await Promise.all([
+        userApi.getProfile(),
+        tiersApi.getMyTier(),
+      ]);
+      if (profileRes.success && profileRes.data) {
+        const profileData: any = { ...profileRes.data };
+
+        if (tierRes.success && tierRes.data) {
+          const tId = tierRes.data.tierId || 'free';
+          const tName = tierRes.data.name || (tId ? tId.charAt(0).toUpperCase() + tId.slice(1) : 'Free');
+          profileData.tier = {
+            name: tName,
+            billingCycle: profileData.tier?.billingCycle || 'monthly',
+            limits: {
+              maxListings: tierRes.data.listingsLimit ?? (tId === 'premium' ? 10 : tId === 'enterprise' ? 50 : 3),
+              featuredListings: tId === 'premium' ? 2 : tId === 'enterprise' ? 10 : (profileData.tier?.limits?.featuredListings || 0),
+            },
+          };
+        } else if (profileData.tier && typeof profileData.tier === 'string') {
+          const tId = profileData.tier;
+          const tName = tId.charAt(0).toUpperCase() + tId.slice(1);
+          profileData.tier = {
+            name: tName,
+            billingCycle: 'monthly',
+            limits: {
+              maxListings: tId === 'premium' ? 10 : tId === 'enterprise' ? 50 : 3,
+              featuredListings: tId === 'premium' ? 2 : tId === 'enterprise' ? 10 : 0,
+            },
+          };
+        }
+
+        setUser(profileData);
+        updateUser(profileData);
         setFormData({
-          fullName: response.data.fullName || '',
-          phone: response.data.phone || '',
-          whatsapp: response.data.whatsapp || '',
-          bio: response.data.bio || '',
+          fullName: profileData.fullName || '',
+          phone: profileData.phone || '',
+          whatsapp: profileData.whatsapp || '',
+          bio: profileData.bio || '',
         });
         // Default the payout business name to the account holder's name so the Setup button is usable.
-        const holder = response.data.fullName || '';
+        const holder = profileData.fullName || '';
         setBankForm(prev => ({ ...prev, businessName: prev.businessName || holder }));
       }
     } catch (error) {
@@ -164,12 +215,20 @@ export function AgentSettingsPage() {
   };
 
   const handleNotificationChange = async (key: string, value: boolean) => {
+    const previous = notifications;
     const newSettings = { ...notifications, [key]: value };
     setNotifications(newSettings);
     try {
-      await userApi.updateNotificationSettings(newSettings);
+      // BUGFIX (QA-AGT-008): a failure was only ever written to console.error, so the
+      // toggle stayed flipped on screen while the server still held the old value.
+      // Roll the UI back and say so.
+      const res = await userApi.updateNotificationSettings(newSettings);
+      if (!res.success) throw new Error('rejected');
+      showToast('Notification preferences saved', 'success');
     } catch (error) {
       console.error('Failed to update notifications:', error);
+      setNotifications(previous);
+      showToast('Could not save that preference. Please try again.', 'error');
     }
   };
 
@@ -415,28 +474,53 @@ export function AgentSettingsPage() {
         </div>
 
         <div className="space-y-6">
-          {user?.role !== 'sub_agent' && (
-            <ClayCard className="p-5">
-              <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
-              <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-                <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
-                <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
-              </div>
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-tertiary">Max Listings:</span>
-                  <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+          {user?.role !== 'sub_agent' && (() => {
+            const tierExpiresDate = user?.tier?.expiresAt ? new Date(user.tier.expiresAt) : null;
+            const isTierExpired = tierExpiresDate ? tierExpiresDate.getTime() <= Date.now() : true;
+            const tierDaysRemaining = tierExpiresDate && !isTierExpired
+              ? Math.max(0, Math.ceil((tierExpiresDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+              : 0;
+
+            return (
+              <ClayCard className="p-5">
+                <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
+                <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
+                  <p className="text-lg font-bold text-text-primary">{user?.tier?.name || 'Free'}</p>
+                  <p className="text-sm text-text-tertiary capitalize">{user?.tier?.billingCycle || 'monthly'}</p>
+                  {tierExpiresDate && !isTierExpired && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-burnt-brown text-white text-xs font-semibold shadow-sm">
+                      <Clock className="w-3.5 h-3.5 text-mustard" />
+                      <span>{tierDaysRemaining} day{tierDaysRemaining === 1 ? '' : 's'} remaining</span>
+                    </div>
+                  )}
+                  {tierExpiresDate && isTierExpired && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-status-danger text-white text-xs font-semibold">
+                      <span>Expired</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-text-tertiary">Featured:</span>
-                  <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-tertiary">Max Listings:</span>
+                    <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-tertiary">Featured:</span>
+                    <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
+                  </div>
+                  {tierExpiresDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-tertiary">Expires On:</span>
+                      <span className="font-medium">{tierExpiresDate.toLocaleDateString('en-NG', { dateStyle: 'medium' })}</span>
+                    </div>
+                  )}
                 </div>
-              </div>
-              <a href="/tiers" className="block btn-secondary text-center mt-4">
-                Upgrade Plan
-              </a>
-            </ClayCard>
-          )}
+                <a href="/tiers" className="block btn-secondary text-center mt-4">
+                  {user?.tier?.name && user.tier.name.toLowerCase() !== 'free' && !isTierExpired ? 'Manage / Renew Plan' : 'Upgrade Plan'}
+                </a>
+              </ClayCard>
+            );
+          })()}
 
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Company</h2>

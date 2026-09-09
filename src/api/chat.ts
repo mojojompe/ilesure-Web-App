@@ -57,32 +57,58 @@ export const chatApi = {
   },
 
   async sendMessage(chatId: string, text: string, recipientId?: string): Promise<{ success: boolean; message?: any; error?: string }> {
-    return new Promise((resolve) => {
-      if (!socketService.isConnected()) {
-        resolve({ success: false, error: 'Not connected' });
-        return;
+    try {
+      // 1. Primary fast path: HTTP REST API endpoint (guaranteed to persist & dispatch)
+      const res = await apiClient.post<any>(`/chats/${chatId}/messages`, { text, type: 'text' });
+      if (res.data?.success && res.data?.data) {
+        const msg = res.data.data;
+        return {
+          success: true,
+          message: {
+            id: msg.id || msg._id,
+            _id: msg._id || msg.id,
+            chatId: msg.chatId,
+            senderId: msg.senderId,
+            sender: msg.sender,
+            text: msg.text,
+            type: msg.type || 'text',
+            createdAt: msg.createdAt,
+          },
+        };
       }
+      if (res.data?.error?.message) {
+        return { success: false, error: res.data.error.message };
+      }
+    } catch (httpErr: any) {
+      console.warn('[chatApi.sendMessage] REST failed, falling back to socket:', httpErr);
+    }
 
-      const timeout = setTimeout(() => {
-        resolve({ success: false, error: 'Timeout' });
-      }, 10000);
+    // 2. Fallback to websocket if connected
+    if (socketService.isConnected()) {
+      return new Promise((resolve) => {
+        const timeout = setTimeout(() => {
+          resolve({ success: false, error: 'Message delivery timed out' });
+        }, 5000);
 
-      const handleMessage = (data: { chatId: string; message: any }) => {
-        if (data.chatId === chatId && data.message) {
-          clearTimeout(timeout);
-          socketService.off('message', handleMessage);
-          resolve({ success: true, message: data.message });
-        }
-      };
+        const handleMessage = (data: { chatId: string; message: any }) => {
+          if (data.chatId === chatId && data.message) {
+            clearTimeout(timeout);
+            socketService.off('message', handleMessage);
+            resolve({ success: true, message: data.message });
+          }
+        };
 
-      socketService.on('message', handleMessage);
-      socketService.sendMessage(chatId, recipientId || '', text);
-    });
+        socketService.on('message', handleMessage);
+        socketService.sendMessage(chatId, recipientId || '', text);
+      });
+    }
+
+    return { success: false, error: 'Failed to send message. Please check your connection.' };
   },
 
-  async markAsRead(chatId: string, messageId: string): Promise<{ success: boolean }> {
+  async markAsRead(chatId: string, messageId?: string): Promise<{ success: boolean }> {
     try {
-      await apiClient.patch(`/chats/${chatId}/read`, { messageId });
+      await apiClient.patch(`/chats/${chatId}/read`, messageId ? { messageId } : {});
       socketService.markAsRead(chatId, messageId);
       return { success: true };
     } catch {

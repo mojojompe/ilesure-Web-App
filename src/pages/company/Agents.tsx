@@ -20,6 +20,11 @@ export function CompanyAgentsPage() {
   const [fullName, setFullName] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [agents, setAgents] = useState<any[]>([]);
+  // BUGFIX (QA-CO-010): the edit modal's inputs were uncontrolled `defaultValue`s and
+  // the Save button only fired a toast — companyApi.updateAgent existed but had zero
+  // call sites, so nothing was ever written and `updatedAt` never moved.
+  const [editForm, setEditForm] = useState({ fullName: '', phone: '', status: 'active' });
+  const [savingAgent, setSavingAgent] = useState(false);
 
   useEffect(() => {
     fetchAgents();
@@ -71,7 +76,40 @@ export function CompanyAgentsPage() {
 
   const handleEdit = (agent: any) => {
     setSelectedAgent(agent);
+    setEditForm({
+      fullName: agent.fullName || '',
+      phone: agent.phone || '',
+      status: agent.status || 'active',
+    });
     setShowEditModal(true);
+  };
+
+  const handleSaveAgent = async () => {
+    if (!selectedAgent) return;
+    if (!editForm.fullName.trim()) {
+      showToast('Full name is required', 'error');
+      return;
+    }
+    setSavingAgent(true);
+    try {
+      const response = await companyApi.updateAgent(selectedAgent._id || selectedAgent.id, {
+        fullName: editForm.fullName.trim(),
+        phone: editForm.phone.trim(),
+        status: editForm.status,
+      });
+      if (response.success) {
+        showToast('Agent updated successfully!', 'success');
+        setShowEditModal(false);
+        fetchAgents();
+      } else {
+        // Only claim success when the server actually confirmed it.
+        showToast(response.message || 'Could not update the agent. Please try again.', 'error');
+      }
+    } catch {
+      showToast('Could not update the agent. Please try again.', 'error');
+    } finally {
+      setSavingAgent(false);
+    }
   };
 
   const handleRemove = async (id: string) => {
@@ -255,27 +293,35 @@ export function CompanyAgentsPage() {
           <div className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Full Name</label>
-              <input type="text" defaultValue={selectedAgent.fullName} className="clay-input w-full" />
+              <input type="text" value={editForm.fullName} onChange={(e) => setEditForm({ ...editForm, fullName: e.target.value })} className="clay-input w-full" />
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Email</label>
-              <input type="email" defaultValue={selectedAgent.email} className="clay-input w-full" />
+              <input type="email" value={selectedAgent.email} readOnly disabled className="clay-input w-full opacity-70" />
             </div>
             <div>
+<<<<<<< HEAD
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">TelephoneIcon</label>
               <input type="tel" defaultValue={selectedAgent.phone || ''} className="clay-input w-full" />
+=======
+              <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Phone</label>
+              <input type="tel" value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="clay-input w-full" />
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
             </div>
             <div>
               <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Status</label>
-              <select defaultValue={selectedAgent.status} className="clay-input w-full">
+              <select value={editForm.status} onChange={(e) => setEditForm({ ...editForm, status: e.target.value })} className="clay-input w-full">
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
+                {/* A pending invitee was previously rendered as "Active" because the
+                    list had no option matching their real status. */}
+                <option value="pending">Pending</option>
               </select>
             </div>
             <div className="flex gap-2 pt-4">
               <Button variant="secondary" className="flex-1" onClick={() => setShowEditModal(false)}>Cancel</Button>
-              <Button variant="primary" className="flex-1" onClick={() => { showToast('Agent updated successfully!', 'success'); setShowEditModal(false); }}>
-                Save Changes
+              <Button variant="primary" className="flex-1" onClick={handleSaveAgent} disabled={savingAgent}>
+                {savingAgent ? 'Saving…' : 'Save Changes'}
               </Button>
             </div>
           </div>

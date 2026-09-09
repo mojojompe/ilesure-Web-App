@@ -89,12 +89,23 @@ export function CompanyChatsPage() {
         };
 
         const handleMessage = (data: { chatId: string; message: any }) => {
-          if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
-            setMessages(prev => [...prev, data.message]);
+          const isCurrentChat = selectedChatRef.current && data.chatId === selectedChatRef.current.id;
+          if (isCurrentChat) {
+            setMessages(prev => {
+              const msgId = data.message.id || data.message._id;
+              if (prev.some(m => m.id === msgId)) return prev;
+              return [...prev, data.message];
+            });
+            chatApi.markAsRead(data.chatId);
           }
           setChats(prev => prev.map(chat => 
             chat.id === data.chatId 
-              ? { ...chat, lastMessage: data.message.text, lastMessageAt: data.message.createdAt }
+              ? { 
+                  ...chat, 
+                  lastMessage: data.message.text, 
+                  lastMessageAt: data.message.createdAt,
+                  unreadCount: isCurrentChat ? 0 : (chat.unreadCount || 0) + 1,
+                }
               : chat
           ));
         };
@@ -126,7 +137,12 @@ export function CompanyChatsPage() {
     if (selectedChat) {
       fetchMessages(selectedChat.id);
       chatApi.joinChat(selectedChat.id);
+      chatApi.markAsRead(selectedChat.id);
       setPartnerTyping(false);
+      // Immediately clear the unread badge in state
+      setChats(prev => prev.map(chat =>
+        chat.id === selectedChat.id ? { ...chat, unreadCount: 0 } : chat
+      ));
     }
   }, [selectedChat?.id]);
 
@@ -165,14 +181,20 @@ export function CompanyChatsPage() {
     setSending(true);
     try {
       const response = await chatApi.sendMessage(selectedChat.id, newMessage.trim());
-      if (response.success) {
-        setMessages(prev => [...prev, response.message]);
+      if (response.success && response.message) {
+        setMessages(prev => {
+          const msgId = response.message.id || response.message._id;
+          if (prev.some(m => m.id === msgId)) return prev;
+          return [...prev, response.message];
+        });
         setChats(prev => prev.map(chat => 
           chat.id === selectedChat.id 
             ? { ...chat, lastMessage: newMessage.trim(), lastMessageAt: new Date().toISOString() }
             : chat
         ));
         setNewMessage('');
+      } else {
+        alert(response.error || 'Failed to send message');
       }
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -329,8 +351,15 @@ export function CompanyChatsPage() {
                   >
                     <Video01Icon className="w-5 h-5 text-text-secondary" />
                   </button>
+<<<<<<< HEAD
                   <button className="p-2 rounded-full hover:bg-clay-border-light">
                     <MoreVerticalIcon className="w-5 h-5 text-text-secondary" />
+=======
+                  <button
+          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+          aria-label="More options" className="p-2 rounded-full hover:bg-clay-border-light">
+                    <MoreVertical className="w-5 h-5 text-text-secondary" />
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
                   </button>
                 </div>
               </div>

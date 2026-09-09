@@ -1,14 +1,21 @@
 import { useState, useEffect } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { agentApi } from '../../api/agent';
 import { companyApi } from '../../api/company';
 import { chatApi } from '../../api/chat';
 import { clsx } from 'clsx';
 import {
+<<<<<<< HEAD
   DashboardSquare02Icon, Building04Icon, UserMultiple02Icon, ChartIcon, Settings02Icon, Logout02Icon,
   CreditCardIcon, TaskDone01Icon, Notification02Icon, BubbleChatIcon, FavouriteIcon, Archive01Icon, PlusSignIcon,
   ShoppingCart01Icon
 } from '@hugeicons/react';
+=======
+  LayoutDashboard, Building2, Users, BarChart3, Settings, LogOut,
+  CreditCard, FileCheck, Bell, MessageCircle, Heart, Archive, Plus,
+  ShoppingCart, HelpCircle
+} from 'lucide-react';
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
 import { useAuth } from '../../api/authContext';
 import type { UserRole } from '../../types';
 
@@ -21,6 +28,7 @@ interface SidebarProps {
 }
 
 const agentNavItems = [
+<<<<<<< HEAD
   { path: '/agent', label: 'Dashboard', icon: DashboardSquare02Icon, end: true },
   { path: '/agent/listings', label: 'My Listings', icon: Building04Icon },
   { path: '/agent/archived', label: 'Archived', icon: Archive01Icon },
@@ -45,10 +53,39 @@ const companyNavItems = [
   { path: '/company/analytics', label: 'Analytics', icon: ChartIcon },
   { path: '/company/store', label: 'Agent Store', icon: ShoppingCart01Icon },
   { path: '/company/notifications', label: 'Notifications', icon: Notification02Icon },
+=======
+  { path: '/agent', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { path: '/agent/listings', label: 'My Listings', icon: Building2 },
+  { path: '/agent/archived', label: 'Archived', icon: Archive },
+  { path: '/agent/bookings', label: 'Bookings', icon: FileCheck },
+  { path: '/agent/inquiries', label: 'Inquiries', icon: MessageCircle },
+  { path: '/agent/chats', label: 'Messages', icon: MessageCircle },
+  { path: '/agent/payments', label: 'Payments', icon: CreditCard },
+  { path: '/agent/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/agent/store', label: 'Agent Store', icon: ShoppingCart },
+  { path: '/agent/support', label: 'Help & Support', icon: HelpCircle },
+  { path: '/agent/notifications', label: 'Notifications', icon: Bell },
+];
+
+const companyNavItems = [
+  { path: '/company', label: 'Dashboard', icon: LayoutDashboard, end: true },
+  { path: '/company/listings', label: 'All Listings', icon: Building2 },
+  { path: '/company/archived', label: 'Archived', icon: Archive },
+  { path: '/company/agents', label: 'Agents', icon: Users },
+  { path: '/company/bookings', label: 'Bookings', icon: FileCheck },
+  { path: '/company/inquiries', label: 'Inquiries', icon: MessageCircle },
+  { path: '/company/chats', label: 'Messages', icon: MessageCircle },
+  { path: '/company/payments', label: 'Payments', icon: CreditCard },
+  { path: '/company/analytics', label: 'Analytics', icon: BarChart3 },
+  { path: '/company/store', label: 'Agent Store', icon: ShoppingCart },
+  { path: '/company/support', label: 'Help & Support', icon: HelpCircle },
+  { path: '/company/notifications', label: 'Notifications', icon: Bell },
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
 ];
 
 export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onClose, role }: SidebarProps) {
   const location = useLocation();
+  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const currentUserRole = user?.role || role;
   const navItems = currentUserRole === 'company' 
@@ -61,6 +98,7 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onClose, role }
   const handleLogout = () => {
     setShowLogoutModal(false);
     logout();
+    navigate('/login');
   };
 
   const [pendingBookings, setPendingBookings] = useState(0);

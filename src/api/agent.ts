@@ -184,8 +184,20 @@ export const agentApi = {
     try {
       const response = await apiClient.post<ListingResponse>('/agent/listings', data);
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to create listing' } };
+    } catch (err: any) {
+      // BUGFIX (QA-AGT-010): a bare `catch {}` discarded the server's real reason and
+      // returned a generic string. Combined with the caller having no `else` branch,
+      // a 400 produced COMPLETELY silent failure — the Publish button just stopped
+      // spinning. Propagate the API's message and field details so the wizard can
+      // show the user what is actually wrong.
+      const apiError = err?.response?.data?.error;
+      return {
+        success: false,
+        error: {
+          message: apiError?.message || 'Failed to create listing',
+          details: apiError?.details,
+        },
+      } as ListingResponse;
     }
   },
 
@@ -228,6 +240,15 @@ export const agentApi = {
     }
   },
 
+  async markListingRented(id: string, reason = 'rented_off_platform'): Promise<ListingResponse & { pointsAwarded?: number }> {
+    try {
+      const response = await apiClient.put<ListingResponse & { pointsAwarded?: number }>(`/agent/listings/${id}/mark-rented`, { reason });
+      return response.data;
+    } catch {
+      return { success: false, error: { message: 'Failed to mark listing as rented' } };
+    }
+  },
+
   async restoreListing(id: string): Promise<ListingResponse> {
     try {
       const response = await apiClient.put<ListingResponse>(`/agent/listings/${id}/restore`);
@@ -237,9 +258,10 @@ export const agentApi = {
     }
   },
 
-  async deleteListing(id: string): Promise<{ success: boolean; message?: string }> {
+  async deleteListing(id: string, permanent = false): Promise<{ success: boolean; permanent?: boolean; message?: string }> {
     try {
-      const response = await apiClient.delete<{ success: boolean; message?: string }>(`/agent/listings/${id}`);
+      const url = permanent ? `/agent/listings/${id}?permanent=true` : `/agent/listings/${id}`;
+      const response = await apiClient.delete<{ success: boolean; permanent?: boolean; message?: string }>(url);
       return response.data;
     } catch {
       return { success: false, message: 'Failed to delete listing' };
@@ -300,6 +322,19 @@ export const agentApi = {
       return {
         success: false,
         error: { message: error?.response?.data?.error?.message || 'Failed to mark the inspection as missed' },
+      };
+    }
+  },
+
+  /** Schedule or reschedule an inspection viewing. */
+  async scheduleInspection(bookingId: string, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }): Promise<BookingResponse> {
+    try {
+      const response = await apiClient.post<BookingResponse>(`/bookings/${bookingId}/inspection`, data);
+      return response.data;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: { message: error?.response?.data?.error?.message || 'Failed to schedule viewing' },
       };
     }
   },

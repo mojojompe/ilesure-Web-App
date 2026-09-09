@@ -65,6 +65,13 @@ export interface User {
   isEmailVerified?: boolean;
   status?: 'active' | 'pending' | 'inactive';
   verificationStatus?: 'verified' | 'pending' | 'unverified';
+  ninVerified?: boolean;
+  bvnVerified?: boolean;
+  /**
+   * QA-AGT-032: when identity documents were actually submitted, or null if they never were.
+   * `verificationStatus` alone cannot tell those apart — it defaults to 'pending' at signup.
+   */
+  verificationSubmittedAt?: string | null;
   companyId?: string | { _id: string; name: string; tradingName?: string; logo?: string; tier?: string; };
   gender?: 'male' | 'female';
   tier?: {
@@ -320,7 +327,7 @@ export interface SharedBooking {
   listingArea: string;
   rentAnnual: number;
   images: string[];
-  status: 'pending_payment' | 'partially_paid' | 'fully_paid' | 'confirmed' | 'expired' | 'refunded';
+  status: 'pending_payment' | 'partially_paid' | 'fully_paid' | 'confirmed' | 'expired' | 'refunded' | 'cancelled';
   totalRequired: number;
   totalPaid: number;
   participants: SharedBookingParticipant[];

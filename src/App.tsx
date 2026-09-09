@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { AuthProvider, useAuth } from './api/authContext';
 import { LoginPage } from './pages/Login';
+import { GoogleCallbackPage } from './pages/GoogleCallback';
 import { SignupPage } from './pages/Signup';
 import { CreateOTPPage } from './pages/CreateOTP';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
@@ -40,6 +41,8 @@ import { RoommateProfilePage } from './pages/roommate/Profile';
 import { RoommateMatchesPage } from './pages/roommate/Matches';
 import { AgentArchivedPage } from './pages/agent/Archived';
 import { CompanyArchivedPage } from './pages/company/Archived';
+import { AgentSupportPage } from './pages/agent/Support';
+import { CompanySupportPage } from './pages/company/Support';
 import { NotFound } from './pages/NotFound';
 import { CallProvider } from './contexts/CallContext';
 import { CallOverlay } from './components/call/CallOverlay';
@@ -102,6 +105,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* Google sign-in returns here with the session, or ?error=<code> (P-L1). */}
+      <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/create-otp" element={<CreateOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -171,6 +176,11 @@ function AppRoutes() {
           <AgentNotificationsPage />
         </ProtectedRoute>
       } />
+      <Route path="/agent/support" element={
+        <ProtectedRoute role="agent">
+          <AgentSupportPage />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/settings" element={
         <ProtectedRoute role="agent">
           <AgentSettingsPage />
@@ -235,6 +245,11 @@ function AppRoutes() {
       <Route path="/company/notifications" element={
         <ProtectedRoute role="company">
           <CompanyNotificationsPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/company/support" element={
+        <ProtectedRoute role="company">
+          <CompanySupportPage />
         </ProtectedRoute>
       } />
       <Route path="/company/settings" element={

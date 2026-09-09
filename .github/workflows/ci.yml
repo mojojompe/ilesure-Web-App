@@ -1,0 +1,50 @@
+# CI for ilesure-Web-App.
+#
+# This lives in this repository rather than in the workspace directory that contains all six
+# repos: that workspace has no git remote, and its sub-repos are recorded as bare gitlinks with
+# no .gitmodules, so a workflow placed there is never pushed and a clone of it yields empty
+# directories. A root-level workflow cannot run; this one can.
+#
+# Note what this does NOT do: there are no tests in this project to run. The build is the only
+# automated gate here, so it is the one that must stay green.
+name: CI
+
+on:
+  push:
+    branches: [main, master, qa-fixes]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Typecheck and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      # Advisory: pre-existing lint debt would otherwise make every PR red for reasons
+      # unrelated to that PR. Typecheck and build are not advisory.
+      - name: Lint (advisory)
+        run: npm run lint || true
+        continue-on-error: true
+
+      - name: Build
+        run: npm run build
+
+      - name: Dependency audit
+        run: npm audit --audit-level=critical

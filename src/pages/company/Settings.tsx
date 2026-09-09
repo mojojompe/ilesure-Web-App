@@ -1,5 +1,9 @@
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon } from '@hugeicons/react';
+=======
+import { Save, Loader, Banknote, CheckCircle, Shield, FileText, Upload, X, AlertCircle, Clock } from 'lucide-react';
+>>>>>>> 7d4a844803e0cdf23d4765098cb6ab2a39a07649
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -513,26 +517,53 @@ export function CompanySettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <ClayCard className="p-5">
-            <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
-            <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
-              <p className="text-lg font-bold text-text-primary capitalize">{subscription?.name || company?.tier || 'Free'}</p>
-              <p className="text-sm text-text-tertiary capitalize">{subscription?.billingCycle || 'monthly'}</p>
-            </div>
-            <div className="mt-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-text-tertiary">Agent Slots:</span>
-                <span className="font-medium">{subscription?.slotUsage?.total ?? 50}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-text-tertiary">Listings Used:</span>
-                <span className="font-medium">{subscription?.slotUsage?.used ?? 0}</span>
-              </div>
-            </div>
-            <a href="/tiers" className="block btn-secondary text-center mt-4">
-              Upgrade Plan
-            </a>
-          </ClayCard>
+          {(() => {
+            const expDate = subscription?.expiresAt ? new Date(subscription.expiresAt) : null;
+            const isExp = expDate ? expDate.getTime() <= Date.now() : true;
+            const daysLeft = expDate && !isExp
+              ? Math.max(0, Math.ceil((expDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+              : 0;
+
+            return (
+              <ClayCard className="p-5">
+                <h2 className="font-bold text-text-primary mb-4">Current Plan</h2>
+                <div className="text-center p-4 rounded-clay-sm bg-mustard-pale">
+                  <p className="text-lg font-bold text-text-primary capitalize">{subscription?.name || company?.tier || 'Free'}</p>
+                  <p className="text-sm text-text-tertiary capitalize">{subscription?.billingCycle || 'monthly'}</p>
+                  {expDate && !isExp && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-burnt-brown text-white text-xs font-semibold shadow-sm">
+                      <Clock className="w-3.5 h-3.5 text-mustard" />
+                      <span>{daysLeft} day{daysLeft === 1 ? '' : 's'} remaining</span>
+                    </div>
+                  )}
+                  {expDate && isExp && (
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-status-danger text-white text-xs font-semibold">
+                      <span>Expired</span>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-tertiary">Agent Slots:</span>
+                    <span className="font-medium">{subscription?.slotUsage?.total ?? 50}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-text-tertiary">Listings Used:</span>
+                    <span className="font-medium">{subscription?.slotUsage?.used ?? 0}</span>
+                  </div>
+                  {expDate && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-tertiary">Expires On:</span>
+                      <span className="font-medium">{expDate.toLocaleDateString('en-NG', { dateStyle: 'medium' })}</span>
+                    </div>
+                  )}
+                </div>
+                <a href="/tiers" className="block btn-secondary text-center mt-4">
+                  {subscription?.name && subscription.name.toLowerCase() !== 'free' && !isExp ? 'Manage / Renew Plan' : 'Upgrade Plan'}
+                </a>
+              </ClayCard>
+            );
+          })()}
         </div>
       </div>
       <div className="mt-12 text-center pb-6">

@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
+import { FloatingAIChat } from '../support/FloatingAIChat';
 import type { UserRole } from '../../types';
 
 interface AppLayoutProps {
@@ -41,6 +42,8 @@ export function AppLayout({ children, role, title, subtitle, onReload }: AppLayo
     bgImage = '/bg_payment.png';
   } else if (path.includes('/agents')) {
     bgImage = '/bg_team.png';
+  } else if (path.includes('/support')) {
+    bgImage = '/bg_chat.png';
   }
 
   const overlayColor = 'rgba(249, 248, 246, 0.85)';
@@ -70,6 +73,8 @@ export function AppLayout({ children, role, title, subtitle, onReload }: AppLayo
           {children}
         </main>
       </div>
+
+      <FloatingAIChat />
     </div>
   );
 }

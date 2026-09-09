@@ -68,6 +68,8 @@ function FileUploadZone({
             <p className="text-xs text-text-tertiary">{fileState.size}</p>
           </div>
           <button
+          /* A11Y-FIX (QA-A11Y-002): icon-only button, announced as just "button". */
+          aria-label="Close"
             type="button"
             onClick={onClear}
             className="p-1.5 rounded-full hover:bg-clay-border-light transition-colors flex-shrink-0"
@@ -140,6 +142,11 @@ export function VerificationPage({ role }: VerificationProps) {
   const [permitFile, setPermitFile] = useState<FileState>(makeFileState());
   const [confirmed, setConfirmed] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  // BUGFIX (agent KYC): the portal only ever ran BVN. Track both checks so the screen can show
+  // which one is outstanding and run whichever is.
+  const [kycRunning, setKycRunning] = useState<'nin' | 'bvn' | null>(null);
+  const [ninDone, setNinDone] = useState(!!(user as any)?.ninVerified);
+  const [bvnDone, setBvnDone] = useState(!!(user as any)?.bvnVerified);
 
   const isCompany = role === 'company';
   const currentUser = user;
@@ -312,65 +319,48 @@ export function VerificationPage({ role }: VerificationProps) {
                 </Button>
               </div>
             ) : (
-              /* ─── Individual / Agent: Dojah Widget ─── */
+              /* ─── Individual / Agent: Dojah Widget ───
+                 BUGFIX (agent KYC): this ran initializeKyc('bvn') and nothing else, while the
+                 backend refuses listing creation unless an agent or landlord has BOTH
+                 ninVerified and bvnVerified (listingController). An agent who verified here got
+                 BVN only and then met 403 VERIFICATION_REQUIRED on every attempt to publish,
+                 with nothing on this screen offering the step they were missing — the portal
+                 could not satisfy its own prerequisite. Both checks are offered, each showing
+                 whether it is already done. */
               <div className="space-y-4">
-                <div className="text-center py-4">
-                  <Button
-                    onClick={async () => {
-                      if (!(window as any).Connect) {
-                        alert('Verification service is still loading. Please try again in a few seconds.');
-                        return;
-                      }
-
-                      setLoading(true);
-                      try {
-                        // Call backend to get widgetId (mirrors mobile app flow)
-                        const initRes = await userApi.initializeKyc('bvn');
-                        if (!initRes.success || !initRes.data) {
-                          alert(initRes.error?.message || 'Failed to initialize verification. Please try again.');
-                          setLoading(false);
-                          return;
-                        }
-
-                        const { widgetId, referenceId } = initRes.data;
-                        setLoading(false);
-
-                        const options = {
-                          app_id: import.meta.env.VITE_DOJAH_APP_ID,
-                          p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
-                          type: 'custom',
-                          reference_id: referenceId,
-                          config: { widget_id: widgetId },
-                          onSuccess: async (response: any) => {
-                            try {
-                              setLoading(true);
-                              await userApi.verifyKyc(response.reference_id || referenceId, 'bvn');
-                              setStep(2);
-                            } catch {
-                              alert('Failed to submit verification. Please try again.');
-                            } finally {
-                              setLoading(false);
-                            }
-                          },
-                          onError: (err: any) => { console.error('[Dojah]', err); },
-                          onClose: () => {},
-                        };
-
-                        const connect = new (window as any).Connect(options);
-                        connect.setup();
-                        connect.open();
-                      } catch {
-                        alert('Failed to start verification. Please try again.');
-                        setLoading(false);
-                      }
-                    }}
-                    variant="primary"
-                    className="w-full"
-                    loading={loading}
-                  >
-                    Start Identity Verification
-                  </Button>
+                <div className="space-y-3 py-2">
+                  {([
+                    { type: 'nin' as const, label: 'NIN', done: ninDone },
+                    { type: 'bvn' as const, label: 'BVN', done: bvnDone },
+                  ]).map(({ type, label, done }) => (
+                    <div key={type} className="flex items-center justify-between gap-3 rounded-clay-sm border border-clay-border p-3">
+                      <div>
+                        <p className="text-sm font-bold text-text-primary">{label} verification</p>
+                        <p className="text-xs text-text-tertiary">
+                          {done ? 'Verified' : 'Required before you can publish listings'}
+                        </p>
+                      </div>
+                      {done ? (
+                        <CheckCircle className="w-5 h-5 text-status-success flex-shrink-0" />
+                      ) : (
+                        <Button
+                          onClick={() => runKycCheck(type)}
+                          variant="primary"
+                          loading={kycRunning === type}
+                          disabled={!!kycRunning}
+                        >
+                          Verify {label}
+                        </Button>
+                      )}
+                    </div>
+                  ))}
                 </div>
+
+                {ninDone && bvnDone && (
+                  <p className="text-center text-xs text-status-success font-semibold">
+                    Both checks complete — you can publish listings.
+                  </p>
+                )}
 
                 <Button onClick={handleSkip} variant="secondary" className="w-full">
                   Skip for now
@@ -382,6 +372,58 @@ export function VerificationPage({ role }: VerificationProps) {
       </div>
     );
   }
+
+  /**
+   * Run one Dojah check. Parameterised by type because the portal needs both: the backend gate
+   * for agents and landlords is ninVerified AND bvnVerified, so verifying only one leaves the
+   * account permanently unable to list.
+   */
+  const runKycCheck = async (type: 'nin' | 'bvn') => {
+    if (!(window as any).Connect) {
+      alert('Verification service is still loading. Please try again in a few seconds.');
+      return;
+    }
+
+    setKycRunning(type);
+    try {
+      const initRes = await userApi.initializeKyc(type);
+      if (!initRes.success || !initRes.data) {
+        alert(initRes.error?.message || 'Failed to initialize verification. Please try again.');
+        setKycRunning(null);
+        return;
+      }
+
+      const { widgetId, referenceId } = initRes.data;
+
+      const options = {
+        app_id: import.meta.env.VITE_DOJAH_APP_ID,
+        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
+        type: 'custom',
+        reference_id: referenceId,
+        config: { widget_id: widgetId },
+        onSuccess: async (response: any) => {
+          try {
+            await userApi.verifyKyc(response.reference_id || referenceId, type);
+            if (type === 'nin') setNinDone(true);
+            else setBvnDone(true);
+          } catch {
+            alert('Failed to submit verification. Please try again.');
+          } finally {
+            setKycRunning(null);
+          }
+        },
+        onError: (err: any) => { console.error('[Dojah]', err); setKycRunning(null); },
+        onClose: () => setKycRunning(null),
+      };
+
+      const connect = new (window as any).Connect(options);
+      connect.setup();
+      connect.open();
+    } catch {
+      alert('Failed to start verification. Please try again.');
+      setKycRunning(null);
+    }
+  };
 
   // ====================================================
   // STEP 2: Review & Submit

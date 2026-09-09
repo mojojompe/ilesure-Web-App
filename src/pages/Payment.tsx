@@ -3,12 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loading02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import paymentsApi from '../api/payments';
+import { PaymentSafetyModal } from '../components/common/PaymentSafetyModal';
 
 export function PaymentPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [initializing, setInitializing] = useState(false);
   const [error, setError] = useState('');
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
 
   const tierId = searchParams.get('tier') || '';
   const billing = (searchParams.get('billing') || 'monthly') as 'monthly' | 'annually';
@@ -20,11 +22,18 @@ export function PaymentPage() {
   }, [tierId, navigate]);
 
   const handleProceed = async () => {
+    setShowSafetyModal(false);
     setInitializing(true);
     setError('');
-
     try {
-      const result = await paymentsApi.initialize({ tierId, billingCycle: billing });
+      const callbackUrl = `${window.location.origin}/payment/callback`;
+      const result = await paymentsApi.initialize({ tierId, billingCycle: billing, callbackUrl });
+      // BUGFIX (QA-AGT-019): a free tier activates in place and returns no
+      // authorizationUrl, so this used to navigate the browser to `/undefined`.
+      if (!result?.authorizationUrl) {
+        navigate('/agent', { replace: true });
+        return;
+      }
       window.location.href = result.authorizationUrl;
     } catch (err: any) {
       setError(err.message || 'Failed to initialize payment');
@@ -61,7 +70,7 @@ export function PaymentPage() {
                 <p className="text-red-500 text-sm mb-4">{error}</p>
               )}
               <Button
-                onClick={handleProceed}
+                onClick={() => setShowSafetyModal(true)}
                 variant="primary"
                 className="w-full"
               >
@@ -77,9 +86,17 @@ export function PaymentPage() {
             </>
           )}
         </div>
+
+        <PaymentSafetyModal
+          visible={showSafetyModal}
+          onClose={() => setShowSafetyModal(false)}
+          onConfirm={handleProceed}
+          loading={initializing}
+        />
       </div>
     </div>
   );
 }
+
 
 export default PaymentPage;

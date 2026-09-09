@@ -60,6 +60,22 @@ export function CompanyBookingsPage() {
     }
   };
 
+  const handleReschedule = async (booking: any, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }) => {
+    setUpdating(true);
+    try {
+      const bookingId = booking._id || booking.id;
+      const response = await companyApi.scheduleInspection(bookingId, data);
+      if (response.success) {
+        fetchBookings();
+        setShowDetailModal(false);
+      } else {
+        console.error('Failed to reschedule viewing:', response.error?.message);
+      }
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
   const handleStatusChange = async (id: string, status: string) => {
@@ -165,7 +181,8 @@ export function CompanyBookingsPage() {
                           <StatusBadge
                             variant={
                               booking.status === 'confirmed' ? 'success' :
-                              booking.status === 'expired' || booking.status === 'refunded' ? 'error' :
+                              booking.status === 'expired' || booking.status === 'refunded' ||
+                              booking.status === 'cancelled' ? 'error' :
                               booking.status === 'fully_paid' ? 'success' :
                               'warning'
                             }
@@ -257,7 +274,8 @@ export function CompanyBookingsPage() {
                   <StatusBadge
                     variant={
                       selectedBooking.status === 'confirmed' ? 'success' :
-                      selectedBooking.status === 'expired' || selectedBooking.status === 'refunded' ? 'error' :
+                      selectedBooking.status === 'expired' || selectedBooking.status === 'refunded' ||
+                              selectedBooking.status === 'cancelled' ? 'error' :
                       'warning'
                     }
                   >
@@ -351,8 +369,9 @@ export function CompanyBookingsPage() {
 
                 <InspectionPanel
                   booking={selectedBooking}
-                  busy={markingMissed}
+                  busy={markingMissed || updating}
                   onMarkMissed={() => handleMarkMissed(selectedBooking)}
+                  onReschedule={(data) => handleReschedule(selectedBooking, data)}
                 />
               </div>
               {selectedBooking.status === 'pending' && (

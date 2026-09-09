@@ -14,7 +14,7 @@ export function PaymentCallbackPage() {
   const [tierName, setTierName] = useState('');
   const [paymentType, setPaymentType] = useState('');
   
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const returnUrl = localStorage.getItem('paymentReturnUrl');
 
   const handleReturn = () => {
@@ -28,7 +28,7 @@ export function PaymentCallbackPage() {
   };
 
   useEffect(() => {
-    const reference = searchParams.get('reference');
+    const reference = searchParams.get('reference') || searchParams.get('trxref');
     if (!reference) {
       setStatus('failed');
       return;
@@ -39,8 +39,23 @@ export function PaymentCallbackPage() {
         const result = await paymentsApi.verify(reference);
         if (result.status === 'success') {
           setStatus('success');
-          setTierName(result.newTier || '');
+          const rawTier = result.newTier || '';
+          const canonical = rawTier.toLowerCase();
+          const displayName = canonical ? canonical.charAt(0).toUpperCase() + canonical.slice(1) : '';
+          setTierName(displayName);
           setPaymentType(result.type || '');
+          if (canonical) {
+            updateUser({
+              tier: {
+                name: displayName,
+                billingCycle: 'monthly',
+                limits: {
+                  maxListings: canonical === 'enterprise' ? 50 : canonical === 'premium' ? 10 : 5,
+                  featuredListings: canonical === 'enterprise' ? 10 : canonical === 'premium' ? 2 : 0,
+                },
+              },
+            });
+          }
         } else {
           setStatus('failed');
         }
@@ -50,7 +65,7 @@ export function PaymentCallbackPage() {
     };
 
     verify();
-  }, [searchParams]);
+  }, [searchParams, updateUser]);
 
   return (
     <div 

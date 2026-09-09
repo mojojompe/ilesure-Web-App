@@ -4,6 +4,7 @@ import apiClient from './client';
 export interface InitializePaymentRequest {
   tierId: string;
   billingCycle: 'monthly' | 'annually';
+  callbackUrl?: string;
 }
 
 export interface InitializePaymentResponse {
@@ -81,9 +82,12 @@ export const paymentsApi = {
   },
   async initialize(request: InitializePaymentRequest): Promise<InitializePaymentResponse> {
     try {
+      const callbackUrl =
+        request.callbackUrl ||
+        (typeof window !== 'undefined' ? `${window.location.origin}/payment/callback` : undefined);
       const response = await apiClient.post<{ success: boolean; data: InitializePaymentResponse }>(
         '/payments/initialize',
-        request
+        { ...request, callbackUrl }
       );
       return response.data.data;
     } catch (error: unknown) {
