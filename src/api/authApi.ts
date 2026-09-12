@@ -241,6 +241,65 @@ export const authApi = {
       // Ignore logout errors
     }
   },
+
+  async requestAccountDeletion(): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; message: string }>('/auth/delete-account/request');
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to request account deletion');
+      }
+      throw error;
+    }
+  },
+
+  async confirmAccountDeletion(otp: string, confirmText: string): Promise<{ success: boolean }> {
+    try {
+      const response = await apiClient.post<{ success: boolean }>('/auth/delete-account/confirm', { otp, confirmText });
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Invalid OTP or confirmation');
+      }
+      throw error;
+    }
+  },
+
+  async requestReactivation(email: string): Promise<{ success: boolean }> {
+    try {
+      const response = await apiClient.post<{ success: boolean }>('/auth/reactivate/request', { email });
+      return response.data;
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.message || 'Failed to request reactivation');
+      }
+      throw error;
+    }
+  },
+
+  async confirmReactivation(email: string, otp: string): Promise<AuthResponse> {
+    try {
+      const response = await apiClient.post<AuthResponse>('/auth/reactivate/confirm', { email, otp });
+      const body = response.data;
+      const data = body.data ?? body;
+
+      if (body.success && data.user && data.accessToken) {
+        return {
+          success: true,
+          user: data.user,
+          accessToken: data.accessToken,
+          refreshToken: data.refreshToken,
+        };
+      }
+      return { success: false, error: { message: body.error?.message || 'Reactivation failed' } };
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        return { success: false, error: { message: error.response?.data?.message || 'Invalid code' } };
+      }
+      return { success: false, error: { message: 'Network error' } };
+    }
+  },
 };
 
 export default authApi;

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart01Icon, Money01Icon, Store01Icon, PlusSignCircleIcon, StarIcon, PackageIcon } from '@hugeicons/react';
+import { ShoppingCart01Icon, Money01Icon, Store02Icon as Store01Icon, PlusSignCircleIcon, StarIcon, PackageIcon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { agentStoreService } from '../../api/agentStore';
 import { useAuth } from '../../api/authContext';

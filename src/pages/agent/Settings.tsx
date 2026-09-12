@@ -10,11 +10,13 @@ import { useAuth } from '../../api/authContext';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
+import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
 
 export function AgentSettingsPage() {
   const { user: authUser, updateUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [user, setUser] = useState<any>(authUser);
 
@@ -530,11 +532,27 @@ export function AgentSettingsPage() {
               <p className="text-sm text-text-tertiary">Not affiliated with any company</p>
             )}
           </ClayCard>
+
+          <ClayCard className="p-5">
+            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
+              <SecurityIcon className="w-5 h-5 text-status-danger" />
+              Account Management
+            </h2>
+            <p className="text-sm text-text-tertiary mb-4">
+              Deleting your account will remove your access to the platform. 
+              Your data will be retained securely, but you will not be able to log in without reactivating your account.
+            </p>
+            <Button variant="danger" onClick={() => setShowDeleteModal(true)}>
+              Delete Account
+            </Button>
+          </ClayCard>
         </div>
       </div>
       <div className="mt-12 text-center pb-6">
         <p className="text-sm font-semibold text-text-tertiary">Sponsored by Waltik Labs</p>
       </div>
+
+      <DeleteAccountModal isOpen={showDeleteModal} onClose={() => setShowDeleteModal(false)} />
     </AppLayout>
   );
 }
