@@ -140,14 +140,6 @@ export function LoginPage() {
             </Button>
           </form>
 
-          {/* Google sign-in (P-L1). The backend does this as a redirect, not a client-side
-              token exchange, so this is a full-page navigation rather than a fetch.
-
-              `intent=portal` tells the server not to auto-create an account for a Google
-              address it has never seen: it would create a `student`, which on this portal
-              means handing an agent a renter account and then refusing them their own
-              dashboard. Unknown addresses are told to register instead.
-
 
           <div className="mt-6 text-center">
             <p className="text-sm text-text-secondary">
