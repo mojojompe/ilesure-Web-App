@@ -201,7 +201,7 @@ export const authApi = {
 
   async forgotPassword(email: string): Promise<ForgotPasswordResponse> {
     try {
-      const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', { email });
+      const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', { email, client: 'web' });
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {

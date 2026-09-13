@@ -59,7 +59,7 @@ export function AgentStorePage() {
 
   if (loading) {
     return (
-      <AppLayout role="agent" title="Reward Store01Icon">
+      <AppLayout role="agent" title="Reward Store">
         <div className="p-6 space-y-6 max-w-7xl mx-auto animate-pulse">
           <div className="h-8 w-1/4 bg-gray-200 rounded"></div>
           <div className="h-32 bg-gray-200 rounded-xl"></div>
@@ -74,7 +74,7 @@ export function AgentStorePage() {
   }
 
   return (
-    <AppLayout role="agent" title="Reward Store01Icon">
+    <AppLayout role="agent" title="Reward Store">
       <div className="p-6 space-y-6 max-w-7xl mx-auto relative">
         {/* Toast notification overlay */}
         {toast && (

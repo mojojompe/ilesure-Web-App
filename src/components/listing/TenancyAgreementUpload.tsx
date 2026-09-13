@@ -111,7 +111,7 @@ export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUplo
           ) : (
             <>
               <Upload01Icon className="w-6 h-6 text-text-tertiary" />
-              <span className="text-sm font-medium text-text-secondary">Upload01Icon tenancy agreement</span>
+              <span className="text-sm font-medium text-text-secondary">Upload tenancy agreement</span>
               <span className="text-xs text-text-tertiary">PDF, up to 10MB</span>
             </>
           )}

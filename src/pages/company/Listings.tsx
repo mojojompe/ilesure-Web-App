@@ -205,7 +205,7 @@ export function CompanyListingsPage() {
           <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search01Icon listings..."
+            placeholder="Search listings..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="clay-input w-full pl-11"

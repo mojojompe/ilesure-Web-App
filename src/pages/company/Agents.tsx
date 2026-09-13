@@ -139,7 +139,7 @@ export function CompanyAgentsPage() {
           <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search01Icon agents..."
+            placeholder="Search agents..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="clay-input w-full pl-11"
@@ -281,13 +281,13 @@ export function CompanyAgentsPage() {
               </div>
             </div>
             <Button variant="primary" className="w-full" onClick={() => { setShowViewModal(false); handleEdit(selectedAgent); }}>
-              <PencilEdit01Icon className="w-4 h-4 mr-2" /> PencilEdit01Icon Agent
+              <PencilEdit01Icon className="w-4 h-4 mr-2" /> PencilEdit Agent
             </Button>
           </div>
         )}
       </Modal>
 
-      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`PencilEdit01Icon ${selectedAgent?.fullName || 'Agent'}`}>
+      <Modal isOpen={showEditModal} onClose={() => setShowEditModal(false)} title={`PencilEdit ${selectedAgent?.fullName || 'Agent'}`}>
         {selectedAgent && (
           <div className="space-y-4">
             <div>

@@ -105,7 +105,7 @@ export function CompanyInquiriesPage() {
               <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
               <input
                 type="text"
-                placeholder="Search01Icon inquiries..."
+                placeholder="Search inquiries..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 className="clay-input w-full pl-10"
@@ -241,7 +241,7 @@ export function CompanyInquiriesPage() {
                         loading={sending}
                       >
                         <SentIcon className="w-4 h-4 mr-2" />
-                        {sending ? 'Sending...' : 'SentIcon Reply'}
+                        {sending ? 'Sending...' : 'Sent Reply'}
                       </Button>
                     </div>
                   )}

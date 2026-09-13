@@ -73,6 +73,7 @@ body {
   .badge-default  { @apply bg-clay-border text-text-secondary; }
   .badge-brown    { @apply bg-burnt-brown text-white; }
   .badge-mustard  { @apply bg-mustard text-white; }
+  .clay-table { @apply w-full min-w-[800px]; }
   .clay-table th {
     @apply text-left text-xs font-semibold text-text-secondary uppercase tracking-wider px-4 py-3 bg-off-white border-b border-clay-border;
   }

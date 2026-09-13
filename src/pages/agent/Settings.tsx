@@ -323,7 +323,7 @@ export function AgentSettingsPage() {
               </div>
             </div>
             <Button variant="primary" className="mt-4" loading={saving} onClick={handleSaveProfile}>
-              <FloppyDiskIcon className="w-4 h-4 mr-2" /> FloppyDiskIcon Changes
+              <FloppyDiskIcon className="w-4 h-4 mr-2" /> Save Changes
             </Button>
           </ClayCard>
 
@@ -462,7 +462,7 @@ export function AgentSettingsPage() {
                     loading={setupLoading}
                     disabled={!resolved || !bankForm.businessName}
                   >
-                    <Money01Icon className="w-4 h-4 mr-2" /> FloppyDiskIcon Bank Account
+                    <Money01Icon className="w-4 h-4 mr-2" /> Save Bank Account
                   </Button>
                 </div>
               )}

@@ -109,7 +109,7 @@ export function AgentBookingsPage() {
           <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
-            placeholder="Search01Icon bookings..."
+            placeholder="Search bookings..."
             className="clay-input w-full pl-11"
           />
         </div>
@@ -143,7 +143,7 @@ export function AgentBookingsPage() {
         ) : bookings.length > 0 ? (
           <div className="overflow-x-auto">
             {filter === 'shared' ? (
-              <table className="clay-table">
+              <div className="overflow-x-auto w-full"><table className="clay-table">
                 <thead>
                   <tr>
                     <th>Listing</th>
@@ -218,9 +218,9 @@ export function AgentBookingsPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             ) : (
-              <table className="clay-table">
+              <div className="overflow-x-auto w-full"><table className="clay-table">
                 <thead>
                   <tr>
                     <th>Listing</th>
@@ -302,7 +302,7 @@ export function AgentBookingsPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
         ) : (

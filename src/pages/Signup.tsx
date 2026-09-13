@@ -479,7 +479,7 @@ const renderBankStep = () => (
               type="text"
               value={bankSearch}
               onChange={(e) => setBankSearch(e.target.value)}
-              placeholder="Search01Icon banks..."
+              placeholder="Search banks..."
               className="clay-input w-full text-sm py-1.5"
               autoFocus
             />
@@ -559,7 +559,7 @@ const renderBankStep = () => (
 const getStepTitle = () => {
   switch (step) {
     case 1: return 'Create Account';
-    case 2: return 'TelephoneIcon Number';
+    case 2: return 'Telephone Number';
     case 3: return 'Bank Account Setup';
     default: return '';
   }

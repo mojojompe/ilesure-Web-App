@@ -77,7 +77,7 @@ export function CompanyPaymentsPage() {
           {loading ? (
             <div className="p-8 text-center text-text-tertiary">Loading...</div>
           ) : tab === 'transactions' ? (
-          <table className="clay-table">
+          <div className="overflow-x-auto w-full"><table className="clay-table">
             <thead><tr><th>Description</th><th>Tier</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
               {transactions.length === 0 ? (
@@ -94,9 +94,9 @@ export function CompanyPaymentsPage() {
                 ))
               )}
             </tbody>
-          </table>
+          </table></div>
         ) : (
-          <table className="clay-table">
+          <div className="overflow-x-auto w-full"><table className="clay-table">
             <thead><tr><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
               {subscriptions.length === 0 ? (
@@ -112,7 +112,7 @@ export function CompanyPaymentsPage() {
                 ))
               )}
             </tbody>
-          </table>
+          </table></div>
         )}
         </div>
       </ClayCard>

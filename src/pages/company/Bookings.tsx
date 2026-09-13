@@ -124,7 +124,7 @@ export function CompanyBookingsPage() {
         ) : bookings.length > 0 ? (
           <div className="overflow-x-auto">
             {filter === 'shared' ? (
-              <table className="clay-table">
+              <div className="overflow-x-auto w-full"><table className="clay-table">
                 <thead>
                   <tr>
                     <th>Listing</th>
@@ -199,9 +199,9 @@ export function CompanyBookingsPage() {
                     );
                   })}
                 </tbody>
-              </table>
+              </table></div>
             ) : (
-              <table className="clay-table">
+              <div className="overflow-x-auto w-full"><table className="clay-table">
                 <thead>
                   <tr>
                     <th>Listing</th>
@@ -247,7 +247,7 @@ export function CompanyBookingsPage() {
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
             )}
           </div>
         ) : (

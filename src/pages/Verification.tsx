@@ -239,7 +239,7 @@ export function VerificationPage({ role }: VerificationProps) {
               </h1>
               <p className="text-text-tertiary mt-2 text-sm">
                 {isCompany
-                  ? 'Upload01Icon your company registration documents for review'
+                  ? 'Upload your company registration documents for review'
                   : 'We use a secure third-party service to verify your identity'}
               </p>
             </div>

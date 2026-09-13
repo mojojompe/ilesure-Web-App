@@ -264,7 +264,7 @@ export function CompanySettingsPage() {
               </div>
             </div>
             <Button variant="primary" className="mt-4" loading={saving} onClick={handleSave}>
-              <FloppyDiskIcon className="w-4 h-4 mr-2" /> FloppyDiskIcon Changes
+              <FloppyDiskIcon className="w-4 h-4 mr-2" /> Save Changes
             </Button>
           </ClayCard>
 

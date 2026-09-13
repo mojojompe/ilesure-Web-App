@@ -263,7 +263,7 @@ export function AgentChatsPage() {
                 <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
                 <input
                   type="text"
-                  placeholder="Search01Icon conversations..."
+                  placeholder="Search conversations..."
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   className="clay-input w-full pl-10 text-sm"
@@ -356,7 +356,7 @@ export function AgentChatsPage() {
                     onClick={() => placeCall('video')}
                     disabled={callAvailability?.peerBusy}
                     aria-label="Start video call"
-                    title={callAvailability?.peerBusy ? 'They are on another call' : 'Video01Icon call'}
+                    title={callAvailability?.peerBusy ? 'They are on another call' : 'Video call'}
                     className="p-2 rounded-full hover:bg-clay-border-light disabled:opacity-40"
                   >
                     <Video01Icon className="w-5 h-5 text-text-secondary" />
