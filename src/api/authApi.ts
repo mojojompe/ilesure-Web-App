@@ -248,7 +248,7 @@ export const authApi = {
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Failed to request account deletion');
+        throw new Error(error.response?.data?.error?.message || error.response?.data?.message || 'Failed to request account deletion');
       }
       throw error;
     }
@@ -260,7 +260,7 @@ export const authApi = {
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Invalid OTP or confirmation');
+        throw new Error(error.response?.data?.error?.message || error.response?.data?.message || 'Invalid OTP or confirmation');
       }
       throw error;
     }
