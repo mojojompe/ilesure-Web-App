@@ -73,6 +73,13 @@ export function GoogleCallbackPage() {
         const res = await authApi.exchangeGoogleCode(code);
         const user: any = res?.user;
         if (!res?.success || !user || !res.accessToken) {
+          if (res?.error?.code === 'ACCOUNT_DELETED') {
+            // Same contract as a normal login: the backend refuses a deleted account outright.
+            // The Google exchange does not carry the address back on this error, so send the
+            // user to the reactivation screen to enter it themselves.
+            navigate('/reactivate', { replace: true });
+            return;
+          }
           setError(
             res?.error?.code === 'INVALID_CODE'
               ? 'That sign-in link has expired or was already used. Please try again.'

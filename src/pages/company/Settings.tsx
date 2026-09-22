@@ -302,7 +302,7 @@ export function CompanySettingsPage() {
             ) : (
               <div className="space-y-4">
                 <p className="text-sm text-text-tertiary">
-                  Upload01Icon your CAC certificate and business permit for verification.
+                  Upload your CAC certificate and business permit for verification.
                 </p>
 
                 <div>

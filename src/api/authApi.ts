@@ -266,13 +266,15 @@ export const authApi = {
     }
   },
 
-  async requestReactivation(email: string): Promise<{ success: boolean }> {
+  async requestReactivation(email: string): Promise<{ success: boolean; message?: string }> {
     try {
-      const response = await apiClient.post<{ success: boolean }>('/auth/reactivate/request', { email });
+      const response = await apiClient.post<{ success: boolean; message?: string }>('/auth/reactivate/request', { email });
       return response.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.message || 'Failed to request reactivation');
+        // CONTRACT: the backend nests the message under `error.message`, like every other
+        // auth endpoint here, not top-level `message`.
+        throw new Error(error.response?.data?.error?.message || 'Failed to request reactivation');
       }
       throw error;
     }
@@ -290,12 +292,18 @@ export const authApi = {
           user: data.user,
           accessToken: data.accessToken,
           refreshToken: data.refreshToken,
+          nextStep: body.nextStep,
         };
       }
       return { success: false, error: { message: body.error?.message || 'Reactivation failed' } };
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
-        return { success: false, error: { message: error.response?.data?.message || 'Invalid code' } };
+        // CONTRACT: 400 INVALID_OTP/OTP_EXPIRED nest the message under `error.message`.
+        const body = error.response?.data;
+        return {
+          success: false,
+          error: { message: body?.error?.message || 'Invalid code', code: body?.error?.code },
+        };
       }
       return { success: false, error: { message: 'Network error' } };
     }

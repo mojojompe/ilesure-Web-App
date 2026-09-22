@@ -48,6 +48,10 @@ export function LoginPage() {
         // the OTP screen with the address prefilled, it can resend a code, so an expired
         // original is not a dead end.
         navigate('/create-otp', { state: { email: result.email || email } });
+      } else if (result.errorCode === 'ACCOUNT_DELETED') {
+        // The backend now refuses login outright for a deleted account. Send them to the
+        // reactivation screen with the address prefilled instead of a dead-end error.
+        navigate('/reactivate', { state: { email } });
       } else {
         setErrors({ general: result.error || 'Invalid email or password. Try again.' });
       }

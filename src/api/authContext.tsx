@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import type { User, UserRole, AuthState } from '../types';
 import { authApi } from './authApi';
+import { userApi } from './user';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string; errorCode?: string; nextStep?: string; email?: string }>;
@@ -65,6 +66,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (stored) writeStoredAuth(user, stored.accessToken, prev.role);
       return { ...prev, user };
     });
+  }, []);
+
+  // LL-P1-11: state hydrates from the localStorage snapshot taken at last login/signup and is
+  // never refreshed after that, so an admin approving KYC or changing tier leaves the dashboard
+  // banner stale until the user logs out and back in. Refetch the profile once on mount and
+  // merge it in; a failure (including the 401 client.ts already redirects on) is ignored, the
+  // cached snapshot just keeps being shown.
+  useEffect(() => {
+    if (!state.isAuthenticated) return;
+    userApi.getProfile().then(response => {
+      if (response.success && response.data) updateUser(response.data);
+    }).catch(() => {});
+    // Runs once, on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const login = async (email: string, password: string) => {

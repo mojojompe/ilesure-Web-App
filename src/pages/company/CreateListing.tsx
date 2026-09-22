@@ -25,6 +25,10 @@ import {
   DistanceBucket,
 } from '../../constants/listingVocabulary';
 
+// Same cap/whitelist shape as TenancyAgreementUpload's MAX_FILE_SIZE_BYTES check.
+const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
+const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+
 interface StepIndicatorProps {
   currentStep: number;
   totalSteps: number;
@@ -203,9 +207,27 @@ export function CompanyCreateListingPage() {
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const remaining = 6 - photoFiles.length;
-    setPhotoFiles(prev => [...prev, ...files.slice(0, remaining)].slice(0, 6));
     e.target.value = '';
+
+    // Same image-only / size-cap check as TenancyAgreementUpload, so a huge or
+    // mistyped file is rejected here instead of failing later in the upload.
+    const valid: File[] = [];
+    const rejected: string[] = [];
+    for (const file of files) {
+      if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
+        rejected.push(`${file.name} is not a JPEG, PNG, or WEBP image.`);
+        continue;
+      }
+      if (file.size > MAX_PHOTO_SIZE_BYTES) {
+        rejected.push(`${file.name} is larger than 5MB.`);
+        continue;
+      }
+      valid.push(file);
+    }
+    if (rejected.length) alert(rejected[0]);
+
+    const remaining = 6 - photoFiles.length;
+    setPhotoFiles(prev => [...prev, ...valid.slice(0, remaining)].slice(0, 6));
   };
 
   const handleRemovePhoto = (index: number) => {

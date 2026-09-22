@@ -2,6 +2,15 @@ node_modules
 dist
 .env
 
+# Vite temp config left behind when a dev server restart races a config edit.
+vite.config.ts.timestamp-*
+
+# One-off codemod scripts; not part of the app.
+fix_icons2.cjs
+fix_imports.cjs
+fix_ts_icons.cjs
+replace_icons.cjs
+
 # Local overrides. `.env.local` was committed and pointed VITE_API_URL at
 # http://localhost:4000, so every production build baked in localhost and the
 # deployed app called the developer's machine.

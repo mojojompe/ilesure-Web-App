@@ -6,6 +6,7 @@ import { GoogleCallbackPage } from './pages/GoogleCallback';
 import { SignupPage } from './pages/Signup';
 import { CreateOTPPage } from './pages/CreateOTP';
 import { ForgotPasswordPage } from './pages/ForgotPassword';
+import { ReactivateAccountPage } from './pages/ReactivateAccount';
 import { ResetPasswordPage } from './pages/ResetPassword';
 import { UpdatePasswordPage } from './pages/UpdatePassword';
 import { RoleSelectionPage } from './pages/RoleSelection';
@@ -110,6 +111,7 @@ function AppRoutes() {
       <Route path="/signup" element={<SignupPage />} />
       <Route path="/create-otp" element={<CreateOTPPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reactivate" element={<ReactivateAccountPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/role-selection" element={<RoleSelectionPage />} />
