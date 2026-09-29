@@ -3,6 +3,7 @@ import { Search01Icon, SentIcon, MoreVerticalIcon, TelephoneIcon, Video01Icon, L
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { chatApi } from '../../api/chat';
+import type { ReadReceipt } from '../../api/chat';
 import { useAuth } from '../../api/authContext';
 import { callApi, type CallAvailability } from '../../api/callApi';
 import { useCall } from '../../contexts/CallContext';
@@ -30,6 +31,7 @@ interface Message {
   sender?: { _id: string; fullName: string };
   text: string;
   createdAt: string;
+  readAt?: string | null;
 }
 
 export function AgentChatsPage() {
@@ -73,87 +75,91 @@ export function AgentChatsPage() {
 
   useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
 
+  const userIdRef = useRef(user?.id);
+  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
+
   useEffect(() => {
     fetchChats();
 
-    const authData = localStorage.getItem('ilesure_web_auth');
-    if (authData) {
-      const parsed = JSON.parse(authData);
-      if (parsed.accessToken) {
-        chatApi.connectToSocket(parsed.accessToken);
-
-        const handleConnect = () => {
-          if (selectedChatRef.current) {
-            chatApi.joinChat(selectedChatRef.current.id);
-          }
-        };
-
-        const handleMessage = (data: { chatId: string; message: any }) => {
-          const isCurrentChat = selectedChatRef.current && data.chatId === selectedChatRef.current.id;
-          if (isCurrentChat) {
-            setMessages(prev => {
-              const msgId = data.message.id || data.message._id;
-              if (prev.some(m => m.id === msgId)) return prev;
-              return [...prev, data.message];
-            });
-            chatApi.markAsRead(data.chatId);
-          }
-          setChats(prev => prev.map(chat => 
-            chat.id === data.chatId 
-              ? { 
-                  ...chat, 
-                  lastMessage: data.message.text, 
-                  lastMessageAt: data.message.createdAt,
-                  unreadCount: isCurrentChat ? 0 : (chat.unreadCount || 0) + 1,
-                }
-              : chat
-          ));
-        };
-
-        const handleTyping = (data: { chatId: string; userId: string; isTyping: boolean }) => {
-          if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
-            setPartnerTyping(data.isTyping);
-          }
-        };
-
-        const handleRead = (data: { chatId: string; messageId?: string; readerId?: string; userId?: string }) => {
-          if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
-            setMessages(prev => prev.map(msg => 
-              (!data.messageId || msg.id === data.messageId) ? { ...msg, readAt: new Date().toISOString() } : msg
-            ));
-          }
-        };
-
-        chatApi.onConnect(handleConnect);
-        chatApi.onMessage(handleMessage);
-        chatApi.onTyping(handleTyping);
-        chatApi.onRead(handleRead);
-
-        return () => {
-          chatApi.offConnect(handleConnect);
-          chatApi.offMessage(handleMessage);
-          chatApi.offTyping(handleTyping);
-          chatApi.offRead(handleRead);
-          if (selectedChatRef.current) {
-            chatApi.leaveChat(selectedChatRef.current.id);
-          }
-          chatApi.disconnectFromSocket();
-        };
+    // The socket itself belongs to App.tsx `SocketConnection`, which holds it for the
+    // whole session (calls, presence, kyc_status_changed). This page only adds its own
+    // listeners and removes exactly those on unmount; it must never disconnect it.
+    const handleConnect = () => {
+      // A reconnect is a new server-side connection with no rooms; rejoin the open chat.
+      if (selectedChatRef.current) {
+        chatApi.joinChat(selectedChatRef.current.id);
       }
-    }
+    };
+
+    const handleMessage = (data: { chatId: string; message: any }) => {
+      const isCurrentChat = selectedChatRef.current && data.chatId === selectedChatRef.current.id;
+      if (isCurrentChat) {
+        setMessages(prev => {
+          const msgId = data.message.id || data.message._id;
+          if (prev.some(m => m.id === msgId)) return prev;
+          return [...prev, data.message];
+        });
+        chatApi.markAsRead(data.chatId);
+      }
+      setChats(prev => prev.map(chat =>
+        chat.id === data.chatId
+          ? {
+              ...chat,
+              lastMessage: data.message.text,
+              lastMessageAt: data.message.createdAt,
+              unreadCount: isCurrentChat ? 0 : (chat.unreadCount || 0) + 1,
+            }
+          : chat
+      ));
+    };
+
+    const handleTyping = (data: { chatId: string; userId: string; isTyping: boolean }) => {
+      if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
+        setPartnerTyping(data.isTyping);
+      }
+    };
+
+    // `messages_read` is broadcast to the whole room, including the reader. A receipt
+    // means the reader has seen everything the OTHER participant sent, so only messages
+    // not sent by the reader are marked, and our own reading is ignored.
+    const handleRead = (data: ReadReceipt) => {
+      if (!selectedChatRef.current || data.chatId !== selectedChatRef.current.id) return;
+      if (data.readerId && data.readerId === userIdRef.current) return;
+      const readAt = data.readAt || new Date().toISOString();
+      setMessages(prev => prev.map(msg => {
+        if (msg.readAt) return msg;
+        if (data.messageId && msg.id !== data.messageId) return msg;
+        const senderId = msg.senderId || msg.sender?._id;
+        if (data.readerId && senderId === data.readerId) return msg;
+        return { ...msg, readAt };
+      }));
+    };
+
+    const unsubscribe = [
+      chatApi.onConnect(handleConnect),
+      chatApi.onMessage(handleMessage),
+      chatApi.onTyping(handleTyping),
+      chatApi.onRead(handleRead),
+    ];
+
+    return () => {
+      unsubscribe.forEach(off => off());
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedChat) {
-      fetchMessages(selectedChat.id);
-      chatApi.joinChat(selectedChat.id);
-      chatApi.markAsRead(selectedChat.id);
-      setPartnerTyping(false);
-      // Immediately clear the unread badge in state
-      setChats(prev => prev.map(chat =>
-        chat.id === selectedChat.id ? { ...chat, unreadCount: 0 } : chat
-      ));
-    }
+    if (!selectedChat) return;
+    const chatId = selectedChat.id;
+    fetchMessages(chatId);
+    chatApi.joinChat(chatId);
+    chatApi.markAsRead(chatId);
+    setPartnerTyping(false);
+    // Immediately clear the unread badge in state
+    setChats(prev => prev.map(chat =>
+      chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
+    ));
+    // Leave this chat's room when switching to another chat or leaving the page.
+    return () => { chatApi.leaveChat(chatId); };
   }, [selectedChat?.id]);
 
   useEffect(() => {
@@ -387,6 +393,9 @@ export function AgentChatsPage() {
                       <p className="text-sm">{msg.text}</p>
                       <p className={clsx('text-xs mt-1', (msg.senderId === user?.id || msg.sender?._id === user?.id) ? 'text-white/70' : 'text-text-tertiary')}>
                         {formatTime(msg.createdAt)}
+                        {(msg.senderId === user?.id || msg.sender?._id === user?.id) && (
+                          <span className="ml-1">{msg.readAt ? '· Read' : '· Sent'}</span>
+                        )}
                       </p>
                     </div>
                   </div>

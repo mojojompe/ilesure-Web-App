@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Tick02Icon, Cancel02Icon, Loading02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
-import paymentsApi from '../api/payments';
+import paymentsApi, { readPendingTierPurchase, clearPendingTierPurchase } from '../api/payments';
+import tiersApi, { resolveMyTierUsage, catalogueMaxListings } from '../api/tiers';
 import { useAuth } from '../api/authContext';
 
 type Status = 'verifying' | 'success' | 'failed';
@@ -45,16 +46,40 @@ export function PaymentCallbackPage() {
           setTierName(displayName);
           setPaymentType(result.type || '');
           if (canonical) {
+            // BUGFIX: this wrote a hard-coded limits table (5/5/10/50, plus invented
+            // "featured" counts) and `billingCycle: 'monthly'` even after an annual
+            // purchase. The cycle now comes from the verify response, else the purchase
+            // this browser started, else the amount paid against the tier catalogue; the
+            // limit comes from GET /tiers/me, else the public GET /tiers catalogue.
+            const [meRes, catRes] = await Promise.all([tiersApi.getMyTier(), tiersApi.getTiers()]);
+            const catalogue = catRes.success ? catRes.data?.tiers : undefined;
+
+            const pending = readPendingTierPurchase();
+            const pendingMatches =
+              !!pending &&
+              (!pending.reference || pending.reference === reference || pending.reference === result.reference) &&
+              (!pending.tierId || pending.tierId.toLowerCase() === canonical);
+
+            let billingCycle: 'monthly' | 'annually' | undefined =
+              result.billingCycle ?? (pendingMatches ? pending!.billingCycle : undefined);
+            if (!billingCycle && typeof result.amount === 'number') {
+              const bought = catalogue?.find((t) => t.id === canonical);
+              if (bought?.priceYearly && result.amount === bought.priceYearly) billingCycle = 'annually';
+              else if (bought) billingCycle = 'monthly';
+            }
+
+            const usage = meRes.success ? resolveMyTierUsage(meRes.data) : undefined;
+            const maxListings = usage?.limit ?? catalogueMaxListings(catalogue, canonical);
+
             updateUser({
               tier: {
-                name: displayName,
-                billingCycle: 'monthly',
-                limits: {
-                  maxListings: canonical === 'enterprise' ? 50 : canonical === 'premium' ? 10 : 5,
-                  featuredListings: canonical === 'enterprise' ? 10 : canonical === 'premium' ? 2 : 0,
-                },
+                name: (meRes.success && meRes.data?.name) || displayName,
+                billingCycle: billingCycle || 'monthly',
+                expiresAt: result.expiresAt ?? (meRes.success ? meRes.data?.expiresAt : null) ?? null,
+                limits: maxListings !== undefined ? { maxListings } : {},
               },
             });
+            clearPendingTierPurchase();
           }
         } else {
           setStatus('failed');

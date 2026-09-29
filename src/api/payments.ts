@@ -19,6 +19,41 @@ export interface VerifyPaymentResponse {
   type?: string;
   bookingId?: string;
   expiresAt?: string;
+  amount?: number;
+  reference?: string;
+  /** Newer backends echo the purchased cycle; older ones do not. */
+  billingCycle?: 'monthly' | 'annually';
+}
+
+/**
+ * The tier purchase this browser started, kept so the Paystack callback knows which
+ * billing cycle was bought (the verify response has not always included it, and the
+ * callback used to write 'monthly' into the user even after an annual purchase).
+ */
+export interface PendingTierPurchase {
+  tierId: string;
+  billingCycle: 'monthly' | 'annually';
+  reference?: string;
+  startedAt: number;
+}
+
+const PENDING_PURCHASE_KEY = 'pendingTierPurchase';
+
+export function savePendingTierPurchase(p: PendingTierPurchase): void {
+  try { localStorage.setItem(PENDING_PURCHASE_KEY, JSON.stringify(p)); } catch { /* storage unavailable */ }
+}
+
+export function readPendingTierPurchase(): PendingTierPurchase | null {
+  try {
+    const raw = localStorage.getItem(PENDING_PURCHASE_KEY);
+    return raw ? (JSON.parse(raw) as PendingTierPurchase) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function clearPendingTierPurchase(): void {
+  try { localStorage.removeItem(PENDING_PURCHASE_KEY); } catch { /* storage unavailable */ }
 }
 
 export interface Transaction {
@@ -89,6 +124,12 @@ export const paymentsApi = {
         '/payments/initialize',
         { ...request, callbackUrl }
       );
+      savePendingTierPurchase({
+        tierId: request.tierId,
+        billingCycle: request.billingCycle,
+        reference: response.data.data?.reference,
+        startedAt: Date.now(),
+      });
       return response.data.data;
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {

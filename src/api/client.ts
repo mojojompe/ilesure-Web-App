@@ -1,8 +1,62 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig, AxiosError } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import API_BASE_URL from './config';
+
+const STORAGE_KEY = 'ilesure_web_auth';
+
+function readAuthBlob(): Record<string, any> | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * - `refreshed`: a new access token is stored.
+ * - `failed`: the refresh was refused; the session has been ended.
+ * - `suspended`: the account is suspended; the session has been ended.
+ * - `unavailable`: no response (offline); the session is kept.
+ */
+export type RefreshOutcome = 'refreshed' | 'failed' | 'suspended' | 'unavailable';
+
+type RetriableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
+
+/**
+ * Suspension is identified by the backend's error code. The message match is a
+ * fallback only for a response that carries no code at all.
+ */
+export function isAccountSuspendedError(error: unknown): boolean {
+  const body = axios.isAxiosError(error) ? (error.response?.data as any) : undefined;
+  const code = body?.error?.code;
+  if (code) return code === 'ACCOUNT_SUSPENDED';
+  const message = body?.error?.message;
+  return typeof message === 'string' && message.toLowerCase().includes('suspend');
+}
+
+/** The bearer token a request was sent with, if any. */
+function bearerOf(config: InternalAxiosRequestConfig): string | null {
+  const header = config.headers?.Authorization ?? config.headers?.authorization;
+  if (typeof header !== 'string' || !header.startsWith('Bearer ')) return null;
+  return header.slice('Bearer '.length);
+}
+
+/**
+ * Runs `fn` under a cross-tab Web Lock where supported, so two tabs sharing the
+ * refresh cookie never present it concurrently.
+ */
+function withRefreshLock<T>(fn: () => Promise<T>): Promise<T> {
+  const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+  if (locks?.request) {
+    return locks.request('ilesure-web-token-refresh', fn) as Promise<T>;
+  }
+  return fn();
+}
 
 class ApiClient {
   private client: AxiosInstance;
+  private refreshPromise: Promise<RefreshOutcome> | null = null;
+  private tokenListeners = new Set<(token: string) => void>();
 
   constructor() {
     this.client = axios.create({
@@ -34,50 +88,101 @@ class ApiClient {
     this.client.interceptors.response.use(
       (response: AxiosResponse) => response,
       async (error) => {
-        const originalRequest = error.config;
+        const originalRequest = error.config as RetriableRequest | undefined;
+        const status = error.response?.status;
 
-        if (error.response?.status === 401 && !originalRequest._retry) {
+        // `_retry` marks a request that has already been replayed once after a
+        // refresh. A second 401 on it is final, never another refresh: that is
+        // what stops a request from looping.
+        if (status === 401 && originalRequest && !originalRequest._retry) {
           originalRequest._retry = true;
 
           // A 401 on a request made with no token means "not signed in yet",
           // not "session expired". Redirecting here reloaded the page the user
           // was already on, which looped when a request fired on mount.
-          if (!this.getToken()) {
+          const currentToken = this.getToken();
+          if (!currentToken) {
             return Promise.reject(error);
           }
 
-          try {
-            const refreshed = await this.handleRefreshToken();
-            if (refreshed) {
-              const token = this.getToken();
-              if (token && originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
-              }
-              return this.client.request(originalRequest);
-            }
-          } catch (refreshError) {
-            this.clearTokens();
-            this.redirectToLogin();
-            return Promise.reject(refreshError);
+          // If the token this request carried is no longer the stored one, a
+          // refresh already finished while it was in flight. Replay with the
+          // current token instead of spending the refresh cookie again.
+          const sentToken = bearerOf(originalRequest);
+          let token: string | null = null;
+          if (sentToken && sentToken !== currentToken) {
+            token = currentToken;
+          } else if ((await this.refreshSession()) === 'refreshed') {
+            token = this.getToken();
           }
 
-          this.clearTokens();
-          this.redirectToLogin();
+          if (token) {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return this.client.request(originalRequest);
+          }
           return Promise.reject(error);
         }
 
-        if (error.response?.status === 403) {
-          const message = error.response?.data?.error?.message || 'Access denied';
-          if (message.toLowerCase().includes('suspend')) {
-            this.clearTokens();
-            window.location.href = '/suspended';
-            return Promise.reject(error);
-          }
+        if (status === 403 && isAccountSuspendedError(error)) {
+          this.endSession('suspended');
         }
 
         return Promise.reject(error);
       }
     );
+  }
+
+  /** The access token currently in storage (read fresh on every call). */
+  getAccessToken(): string | null {
+    return this.getToken();
+  }
+
+  /**
+   * Subscribe to access-token changes produced by a refresh (in this tab or
+   * another). Returns an unsubscribe function.
+   */
+  onAccessTokenRefreshed(listener: (token: string) => void): () => void {
+    this.tokenListeners.add(listener);
+    return () => { this.tokenListeners.delete(listener); };
+  }
+
+  /**
+   * Single-flight session refresh.
+   *
+   * The backend rotates refresh tokens and treats a second use of an already
+   * rotated one as token REUSE, revoking every session the user has. Two
+   * parallel 401s each firing their own /auth/refresh therefore logged the user
+   * out on every device. Every caller now awaits the one in-flight refresh, and
+   * a Web Lock serialises refreshes across tabs (which share the cookie).
+   *
+   * On failure the session is ended exactly once, here, rather than once per
+   * waiting request. A network failure (no response) keeps the session: being
+   * offline is not a reason to sign someone out.
+   */
+  refreshSession(): Promise<RefreshOutcome> {
+    if (this.refreshPromise) return this.refreshPromise;
+
+    const staleToken = this.getToken();
+    this.refreshPromise = withRefreshLock(async (): Promise<RefreshOutcome> => {
+      // Another tab may have refreshed while this one waited for the lock.
+      const current = this.getToken();
+      if (current && current !== staleToken) return 'refreshed';
+      return this.performRefresh();
+    })
+      .then((outcome) => {
+        if (outcome === 'refreshed') {
+          const token = this.getToken();
+          if (token) this.applyRefreshedToken(token);
+        } else if (outcome === 'failed' || outcome === 'suspended') {
+          this.endSession(outcome);
+        }
+        return outcome;
+      })
+      .finally(() => {
+        this.refreshPromise = null;
+      });
+
+    return this.refreshPromise;
   }
 
   /**
@@ -97,24 +202,18 @@ class ApiClient {
       // the refresh token is no longer stored here (it lives in an httpOnly cookie).
       // FLAG: the access token still sits in JS-readable storage short-term, so it remains
       // XSS-exposable. Moving it to in-memory-only state is tracked as follow-up hardening.
-      const authData = localStorage.getItem('ilesure_web_auth');
-      if (authData) {
-        const parsed = JSON.parse(authData);
-        return parsed.accessToken || null;
-      }
-      return null;
+      return readAuthBlob()?.accessToken || null;
     } catch {
       return null;
     }
   }
 
-  private async handleRefreshToken(): Promise<boolean> {
+  private async performRefresh(): Promise<RefreshOutcome> {
     try {
       // SECURITY-FIX (W-H1/CONTRACT): the refresh token is delivered/stored as a
       // backend-set httpOnly cookie, so we no longer read it from localStorage.
       // withCredentials:true sends that cookie to /auth/refresh.
-      const authData = localStorage.getItem('ilesure_web_auth');
-      const parsed = authData ? JSON.parse(authData) : null;
+      const parsed = readAuthBlob();
 
       // DECISION: during rollout, if a legacy refresh token is still present in the blob,
       // pass it along for backward-compat; otherwise send an empty body and rely purely on
@@ -130,25 +229,43 @@ class ApiClient {
       // SECURITY-FIX (W-M2): tolerate both the documented nested shape ({ data: {...} })
       // and the current top-level shape.
       const payload = response.data?.data ?? response.data;
-      const accessToken = payload?.accessToken;
+      const accessToken: string | undefined = payload?.accessToken;
+      if (!accessToken) return 'failed';
 
-      if (accessToken) {
-        // SECURITY-FIX (W-H1): persist ONLY the short-lived access token alongside the
-        // existing non-sensitive profile. The new refresh token stays in the httpOnly
-        // cookie and is never written to localStorage. Strip any legacy refreshToken.
-        const newData = { ...(parsed ?? {}), accessToken };
-        delete newData.refreshToken;
-        localStorage.setItem('ilesure_web_auth', JSON.stringify(newData));
-        return true;
-      }
-      return false;
-    } catch {
-      return false;
+      // SECURITY-FIX (W-H1): persist ONLY the short-lived access token alongside the
+      // existing non-sensitive profile. The new refresh token stays in the httpOnly
+      // cookie and is never written to localStorage. Strip any legacy refreshToken.
+      // Re-read the blob: it may have changed while the request was in flight.
+      const newData: Record<string, unknown> = { ...(readAuthBlob() ?? {}), accessToken };
+      delete newData.refreshToken;
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(newData));
+      return 'refreshed';
+    } catch (err) {
+      if (isAccountSuspendedError(err)) return 'suspended';
+      if (axios.isAxiosError(err) && !err.response) return 'unavailable';
+      return 'failed';
     }
   }
 
+  private applyRefreshedToken(token: string): void {
+    this.tokenListeners.forEach((listener) => {
+      try { listener(token); } catch { /* a listener must not break the refresh */ }
+    });
+  }
+
+  /** Clears the session and sends the user to sign-in (with the reason when suspended). */
+  private endSession(reason: 'failed' | 'suspended'): void {
+    this.clearTokens();
+    if (reason === 'suspended') {
+      if (window.location.pathname === '/login' && window.location.search.includes('reason=suspended')) return;
+      window.location.assign('/login?reason=suspended');
+      return;
+    }
+    this.redirectToLogin();
+  }
+
   private clearTokens(): void {
-    localStorage.removeItem('ilesure_web_auth');
+    localStorage.removeItem(STORAGE_KEY);
   }
 
   async get<T>(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {

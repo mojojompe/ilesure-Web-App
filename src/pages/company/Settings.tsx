@@ -6,6 +6,7 @@ import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { companyApi } from '../../api/company';
 import { userApi } from '../../api/user';
+import { tiersApi, resolveMyTierUsage } from '../../api/tiers';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
@@ -16,6 +17,7 @@ export function CompanySettingsPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [company, setCompany] = useState<any>(null);
   const [subscription, setSubscription] = useState<any>(null);
+  const [tierUsage, setTierUsage] = useState<{ limit?: number; used?: number } | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
@@ -120,10 +122,15 @@ export function CompanySettingsPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [companyRes, subRes] = await Promise.all([
+      const [companyRes, subRes, tierRes] = await Promise.all([
         companyApi.getProfile(),
         companyApi.getSubscription(),
+        tiersApi.getMyTier(),
       ]);
+      // GET /tiers/me is the authority on the listing cap/usage (entitlements first).
+      if (tierRes.success && tierRes.data) {
+        setTierUsage(resolveMyTierUsage(tierRes.data));
+      }
 
       if (companyRes.success && companyRes.company) {
         setCompany(companyRes.company);
@@ -541,12 +548,14 @@ export function CompanySettingsPage() {
                 </div>
                 <div className="mt-4 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-text-tertiary">Agent Slots:</span>
-                    <span className="font-medium">{subscription?.slotUsage?.total ?? 50}</span>
+                    {/* slotUsage is the LISTING cap (Tier.features.maxListings), not agent seats;
+                        it was labelled "Agent Slots" with a hard-coded 50 fallback. */}
+                    <span className="text-text-tertiary">Listing Slots:</span>
+                    <span className="font-medium">{tierUsage?.limit ?? subscription?.slotUsage?.total ?? '—'}</span>
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-text-tertiary">Listings Used:</span>
-                    <span className="font-medium">{subscription?.slotUsage?.used ?? 0}</span>
+                    <span className="font-medium">{tierUsage?.used ?? subscription?.slotUsage?.used ?? 0}</span>
                   </div>
                   {expDate && (
                     <div className="flex justify-between text-sm">

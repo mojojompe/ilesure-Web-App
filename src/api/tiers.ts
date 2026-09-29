@@ -10,16 +10,54 @@ interface TiersResponse {
   error?: { message: string };
 }
 
+/** GET /tiers/me `entitlements` (newer backends). Every field optional: code defensively. */
+export interface TierEntitlements {
+  limit?: number;
+  used?: number;
+  remaining?: number;
+  percentage?: number;
+  purchasedSlots?: number;
+  features?: Record<string, unknown>;
+  tierId?: string;
+}
+
+export interface MyTierData {
+  tierId: string;
+  name: string;
+  expiresAt: string | null;
+  listingsUsed: number;
+  listingsLimit: number;
+  billingCycle?: 'monthly' | 'annually';
+  entitlements?: TierEntitlements;
+}
+
 interface MyTierResponse {
   success: boolean;
-  data?: {
-    tierId: string;
-    name: string;
-    expiresAt: string | null;
-    listingsUsed: number;
-    listingsLimit: number;
-  };
+  data?: MyTierData;
   error?: { message: string };
+}
+
+const finiteOrUndefined = (n: unknown): number | undefined =>
+  typeof n === 'number' && Number.isFinite(n) ? n : undefined;
+
+/**
+ * Listing cap and usage from GET /tiers/me: `entitlements` first, then the older
+ * `listingsLimit` / `listingsUsed` fields. Undefined when the server did not say;
+ * callers must not substitute a hard-coded table.
+ */
+export function resolveMyTierUsage(data?: MyTierData | null): { tierId: string; limit?: number; used?: number } {
+  const ent = data?.entitlements;
+  return {
+    tierId: ent?.tierId || data?.tierId || 'free',
+    limit: finiteOrUndefined(ent?.limit) ?? finiteOrUndefined(data?.listingsLimit),
+    used: finiteOrUndefined(ent?.used) ?? finiteOrUndefined(data?.listingsUsed),
+  };
+}
+
+/** maxListings for a tier id from the public GET /tiers catalogue. */
+export function catalogueMaxListings(tiers: Tier[] | undefined, tierId: string): number | undefined {
+  const t = tiers?.find((x) => x.id === tierId);
+  return finiteOrUndefined(t?.features?.maxListings) ?? finiteOrUndefined(t?.limits?.maxListings);
 }
 
 interface SelectTierResponse {

@@ -298,13 +298,9 @@ function SocketConnection() {
       chatApi.disconnectFromSocket();
       return;
     }
-    try {
-      const stored = localStorage.getItem('ilesure_web_auth');
-      const token = stored ? JSON.parse(stored)?.accessToken : null;
-      if (token) chatApi.connectToSocket(token);
-    } catch {
-      // A malformed auth blob just means no socket; the app still works.
-    }
+    // The socket reads the current access token itself at every (re)connect, and
+    // reconnects after a token refresh, so nothing token-specific is passed here.
+    chatApi.connectToSocket();
     return () => { chatApi.disconnectFromSocket(); };
   }, [isAuthenticated]);
 

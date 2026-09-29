@@ -5,7 +5,7 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
-import { tiersApi } from '../../api/tiers';
+import { tiersApi, resolveMyTierUsage, catalogueMaxListings } from '../../api/tiers';
 import { useAuth } from '../../api/authContext';
 import { agentApi } from '../../api/agent';
 import { paymentsApi, Bank } from '../../api/payments';
@@ -141,27 +141,36 @@ export function AgentSettingsPage() {
       if (profileRes.success && profileRes.data) {
         const profileData: any = { ...profileRes.data };
 
+        // The listing cap comes from the server (GET /tiers/me entitlements, else its
+        // older listingsLimit field, else the public GET /tiers catalogue). This used to
+        // fall back to a hard-coded 3/10/50 table and invent "featured" counts
+        // (premium 2, enterprise 10) that the backend has never had.
+        const previousTier = typeof profileData.tier === 'object' && profileData.tier ? profileData.tier : null;
+        const featuredFromServer = typeof previousTier?.limits?.featuredListings === 'number'
+          ? { featuredListings: previousTier.limits.featuredListings }
+          : {};
         if (tierRes.success && tierRes.data) {
-          const tId = tierRes.data.tierId || 'free';
-          const tName = tierRes.data.name || (tId ? tId.charAt(0).toUpperCase() + tId.slice(1) : 'Free');
+          const usage = resolveMyTierUsage(tierRes.data);
+          const tId = usage.tierId;
+          const tName = tierRes.data.name || tId.charAt(0).toUpperCase() + tId.slice(1);
+          const maxListings = usage.limit ?? catalogueMaxListings((await tiersApi.getTiers()).data?.tiers, tId);
           profileData.tier = {
             name: tName,
-            billingCycle: profileData.tier?.billingCycle || 'monthly',
+            billingCycle: tierRes.data.billingCycle || previousTier?.billingCycle || 'monthly',
+            expiresAt: tierRes.data.expiresAt ?? previousTier?.expiresAt ?? null,
             limits: {
-              maxListings: tierRes.data.listingsLimit ?? (tId === 'premium' ? 10 : tId === 'enterprise' ? 50 : 3),
-              featuredListings: tId === 'premium' ? 2 : tId === 'enterprise' ? 10 : (profileData.tier?.limits?.featuredListings || 0),
+              ...(maxListings !== undefined ? { maxListings } : {}),
+              ...featuredFromServer,
             },
           };
         } else if (profileData.tier && typeof profileData.tier === 'string') {
           const tId = profileData.tier;
           const tName = tId.charAt(0).toUpperCase() + tId.slice(1);
+          const maxListings = catalogueMaxListings((await tiersApi.getTiers()).data?.tiers, tId);
           profileData.tier = {
             name: tName,
             billingCycle: 'monthly',
-            limits: {
-              maxListings: tId === 'premium' ? 10 : tId === 'enterprise' ? 50 : 3,
-              featuredListings: tId === 'premium' ? 2 : tId === 'enterprise' ? 10 : 0,
-            },
+            limits: maxListings !== undefined ? { maxListings } : {},
           };
         }
 
@@ -261,8 +270,18 @@ export function AgentSettingsPage() {
               <div>
                 <p className="font-semibold text-text-primary">{user?.fullName}</p>
                 <div className="flex flex-row gap-2 mt-2">
-                  <StatusBadge variant={user?.verificationStatus === 'verified' ? 'success' : 'warning'}>
-                    {user?.verificationStatus || 'unverified'}
+                  <StatusBadge
+                    variant={
+                      user?.verificationStatus === 'verified'
+                        ? 'success'
+                        : user?.verificationStatus === 'rejected'
+                          ? 'error'
+                          : 'warning'
+                    }
+                  >
+                    {user?.verificationStatus === 'more_info'
+                      ? 'more info needed'
+                      : user?.verificationStatus || 'unverified'}
                   </StatusBadge>
                   <div className="bg-[#E1AD01]/10 px-3 py-1 rounded-full border border-[#E1AD01]/20 flex items-center gap-1">
                     <span className="text-xs font-bold text-[#E1AD01]">{user?.rewardPoints || 0} Points</span>
@@ -499,12 +518,14 @@ export function AgentSettingsPage() {
                 <div className="mt-4 space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-text-tertiary">Max Listings:</span>
-                    <span className="font-medium">{user?.tier?.limits?.maxListings || 3}</span>
+                    <span className="font-medium">{user?.tier?.limits?.maxListings ?? '—'}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-text-tertiary">Featured:</span>
-                    <span className="font-medium">{user?.tier?.limits?.featuredListings || 0}</span>
-                  </div>
+                  {typeof user?.tier?.limits?.featuredListings === 'number' && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-text-tertiary">Featured:</span>
+                      <span className="font-medium">{user.tier.limits.featuredListings}</span>
+                    </div>
+                  )}
                   {tierExpiresDate && (
                     <div className="flex justify-between text-sm">
                       <span className="text-text-tertiary">Expires On:</span>

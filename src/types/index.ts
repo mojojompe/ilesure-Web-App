@@ -64,7 +64,7 @@ export interface User {
   avatar?: string;
   isEmailVerified?: boolean;
   status?: 'active' | 'pending' | 'inactive';
-  verificationStatus?: 'verified' | 'pending' | 'unverified';
+  verificationStatus?: VerificationStatus;
   ninVerified?: boolean;
   bvnVerified?: boolean;
   /**
@@ -77,9 +77,12 @@ export interface User {
   tier?: {
     name: string;
     billingCycle: string;
+    expiresAt?: string | null;
     limits: {
-      maxListings: number;
-      featuredListings: number;
+      /** From GET /tiers/me (entitlements.limit / listingsLimit); undefined until known. */
+      maxListings?: number;
+      /** Only when the backend supplies it; the client no longer invents a number. */
+      featuredListings?: number;
     };
   };
   company?: {
@@ -105,7 +108,7 @@ export interface Agent {
   avatar: string;
   rating: number;
   reviewCount: number;
-  verificationStatus: 'verified' | 'pending' | 'unverified';
+  verificationStatus: VerificationStatus;
   company?: {
     id: string;
     name: string;
@@ -180,7 +183,8 @@ export interface Tier {
   isPopular?: boolean;
 }
 
-export type VerificationStatus = 'unverified' | 'pending' | 'approved' | 'rejected';
+/** Mirrors the backend User.verificationStatus enum. There is no 'approved'. */
+export type VerificationStatus = 'pending' | 'verified' | 'more_info' | 'rejected';
 
 export interface VerificationDocuments {
   idCard?: string;

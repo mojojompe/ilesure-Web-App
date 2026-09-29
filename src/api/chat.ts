@@ -37,6 +37,16 @@ interface MessagesResponse {
   error?: { message: string };
 }
 
+/** Payload of the server's `messages_read` event. */
+export interface ReadReceipt {
+  chatId: string;
+  /** Present only for a single-message receipt; absent means "everything up to now". */
+  messageId?: string;
+  /** Who read the messages. Receipts for one's own reading must be ignored. */
+  readerId?: string;
+  readAt?: string;
+}
+
 export const chatApi = {
   async getChats(): Promise<ChatsResponse> {
     try {
@@ -116,10 +126,16 @@ export const chatApi = {
     }
   },
 
-  connectToSocket(token: string): void {
-    socketService.connect(token);
+  /** Opens the app-wide socket (idempotent). The current access token is read at every (re)connect. */
+  connectToSocket(): void {
+    socketService.connect();
   },
 
+  /**
+   * Closes the app-wide socket. Sign-out only (App.tsx `SocketConnection`): pages must
+   * not call this, the same socket carries calls, presence and `kyc_status_changed`.
+   * Pages unsubscribe with the functions the on* helpers return and leave their rooms.
+   */
   disconnectFromSocket(): void {
     socketService.disconnect();
   },
@@ -136,28 +152,28 @@ export const chatApi = {
     socketService.sendTyping(chatId, isTyping);
   },
 
-  onMessage(callback: (data: { chatId: string; message: any }) => void): void {
-    socketService.on('message', callback);
+  onMessage(callback: (data: { chatId: string; message: any }) => void): () => void {
+    return socketService.on('message', callback);
   },
 
-  onTyping(callback: (data: { chatId: string; userId: string; isTyping: boolean }) => void): void {
-    socketService.on('typing', callback);
+  onTyping(callback: (data: { chatId: string; userId: string; isTyping: boolean }) => void): () => void {
+    return socketService.on('typing', callback);
   },
 
-  onRead(callback: (data: { chatId: string; messageId: string; userId: string }) => void): void {
-    socketService.on('read', callback);
+  onRead(callback: (data: ReadReceipt) => void): () => void {
+    return socketService.on('read', callback);
   },
 
-  onOnline(callback: (data: { userId: string; isOnline: boolean }) => void): void {
-    socketService.on('online', callback);
+  onOnline(callback: (data: { userId: string; isOnline: boolean }) => void): () => void {
+    return socketService.on('online', callback);
   },
 
-  onConnect(callback: () => void): void {
-    socketService.on('connect', callback);
+  onConnect(callback: () => void): () => void {
+    return socketService.on('connect', callback);
   },
 
-  onDisconnect(callback: () => void): void {
-    socketService.on('disconnect', callback);
+  onDisconnect(callback: () => void): () => void {
+    return socketService.on('disconnect', callback);
   },
 
   offMessage(callback: (data: { chatId: string; message: any }) => void): void {
@@ -168,7 +184,7 @@ export const chatApi = {
     socketService.off('typing', callback);
   },
 
-  offRead(callback: (data: { chatId: string; messageId: string; userId: string }) => void): void {
+  offRead(callback: (data: ReadReceipt) => void): void {
     socketService.off('read', callback);
   },
 

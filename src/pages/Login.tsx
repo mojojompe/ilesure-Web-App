@@ -12,7 +12,12 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>({});
+  // The API client lands a suspended account here with ?reason=suspended.
+  const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>(() =>
+    new URLSearchParams(window.location.search).get('reason') === 'suspended'
+      ? { general: 'This account has been suspended. Contact support.' }
+      : {}
+  );
 
   const validate = () => {
     const e: { email?: string; password?: string } = {};
