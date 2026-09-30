@@ -33,6 +33,6 @@
     "tailwindcss": "^3.4.19",
     "typescript": "^5.2.2",
     "vite": "^5.1.4",
-    "vitest": "^2.1.9"
+    "vitest": "^3.2.7"
   }
 }
