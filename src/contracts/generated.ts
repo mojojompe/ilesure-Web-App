@@ -218,7 +218,8 @@ export const LISTER_ROLES = ['landlord', 'agent', 'company', 'company_admin', 's
 /** Roles that rent (the PWA / mobile audience). */
 export const RENTER_ROLES = ['student', 'individual'] as const satisfies readonly UserRole[];
 
-export const ACCOUNT_STATUSES = ['active', 'pending', 'suspended', 'inactive'] as const;
+// 'deleted' is a soft-deleted account awaiting reactivation (/auth/reactivate/*).
+export const ACCOUNT_STATUSES = ['active', 'pending', 'suspended', 'inactive', 'deleted'] as const;
 export type AccountStatus = (typeof ACCOUNT_STATUSES)[number];
 
 /** KYC review state of a user (`User.verificationStatus`). */
