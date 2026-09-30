@@ -8,6 +8,7 @@ import { useAuth } from '../api/authContext';
 import type { UserRole } from '../types';
 import userApi from '../api/user';
 import { getApiErrorMessage } from '../api/apiError';
+import { socketService } from '../api/socket';
 
 interface VerificationProps {
   role: UserRole;
@@ -150,6 +151,17 @@ export function VerificationPage({ role }: VerificationProps) {
 
   const isCompany = role === 'company';
   const currentUser = user;
+
+  // The backend pushes `kyc_status_changed` when a Dojah webhook lands (the widget reports to
+  // Dojah, not to us), so the checks tick over without the agent refreshing the page.
+  useEffect(() => {
+    const handleKycChange = (data: { ninVerified?: boolean; bvnVerified?: boolean }) => {
+      if (data?.ninVerified) setNinDone(true);
+      if (data?.bvnVerified) setBvnDone(true);
+    };
+    socketService.on('kyc_status_changed', handleKycChange);
+    return () => { socketService.off('kyc_status_changed', handleKycChange); };
+  }, []);
 
   useEffect(() => {
     if (!isCompany && !document.getElementById('dojah-script')) {
@@ -362,8 +374,8 @@ export function VerificationPage({ role }: VerificationProps) {
                   </p>
                 )}
 
-                <Button onClick={handleSkip} variant="secondary" className="w-full">
-                  Skip for now
+                <Button onClick={handleSkip} variant={ninDone && bvnDone ? 'primary' : 'secondary'} className="w-full">
+                  {ninDone && bvnDone ? 'Continue to dashboard' : 'Skip for now'}
                 </Button>
               </div>
             )}

@@ -412,7 +412,7 @@ const renderStep2 = () => (
   <div className="space-y-4">
     <div>
       <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-        TelephoneIcon Number
+        Telephone Number
       </label>
       <div className="relative">
         <TelephoneIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />

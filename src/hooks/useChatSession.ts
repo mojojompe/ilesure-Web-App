@@ -20,6 +20,8 @@ export function useChatSession(userId: string | undefined) {
   // Socket callbacks are registered once; they read the latest values through refs.
   const selectedRef = useRef<string | null>(null);
   const userIdRef = useRef(userId);
+  // Chat ids currently in the list, read by the socket handlers registered once on mount.
+  const knownChatIdsRef = useRef<Set<string>>(new Set());
   selectedRef.current = state.selectedChatId;
   userIdRef.current = userId;
 
@@ -27,7 +29,7 @@ export function useChatSession(userId: string | undefined) {
 
   useEffect(() => {
     let cancelled = false;
-    (async () => {
+    const loadChats = async () => {
       const response = await chatApi.getChats();
       if (cancelled) return;
       if (response.success && response.data) {
@@ -36,7 +38,8 @@ export function useChatSession(userId: string | undefined) {
         console.error('Failed to fetch chats:', response.error?.message);
       }
       setLoading(false);
-    })();
+    };
+    void loadChats();
 
     const unsubscribe = [
       // A reconnect is a new server-side connection with no rooms; rejoin the open chat.
@@ -46,6 +49,11 @@ export function useChatSession(userId: string | undefined) {
       chatApi.onMessage((data) => {
         dispatch({ type: 'messageReceived', chatId: data.chatId, message: data.message });
         if (data.chatId === selectedRef.current) void chatApi.markAsRead(data.chatId);
+      }),
+      // A message in a chat this list has never seen (someone just started it) arrives only as a
+      // notification to our own room, so reload the list to show the new conversation.
+      chatApi.onNotification((data) => {
+        if (!knownChatIdsRef.current.has(data.chatId)) void loadChats();
       }),
       chatApi.onTyping((data) => dispatch({ type: 'typing', chatId: data.chatId, isTyping: data.isTyping })),
       chatApi.onRead((receipt) =>
@@ -117,6 +125,7 @@ export function useChatSession(userId: string | undefined) {
     }
   }, []);
 
+  knownChatIdsRef.current = new Set(state.chats.map((chat) => chat.id));
   const selectedChat = state.chats.find((chat) => chat.id === state.selectedChatId) ?? null;
 
   return {
