@@ -5,6 +5,7 @@ import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 import authApi from '../api/authApi';
+import { getApiErrorMessage } from '../api/apiError';
 
 const RESEND_COOLDOWN = 60;
 
@@ -68,7 +69,7 @@ export function ReactivateAccountPage() {
       setCountdown(RESEND_COOLDOWN);
       setCanResend(false);
     } catch (err: any) {
-      setError(err.message || 'Failed to send the reactivation code. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to send the reactivation code. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -86,7 +87,7 @@ export function ReactivateAccountPage() {
       setInfo(`A new code has been sent to ${email}.`);
       inputRefs.current[0]?.focus();
     } catch (err: any) {
-      setError(err.message || 'Failed to resend the code. Please try again.');
+      setError(getApiErrorMessage(err, 'Failed to resend the code. Please try again.'));
     } finally {
       setResending(false);
     }

@@ -1,6 +1,6 @@
-import axios from 'axios';
 import apiClient from './client';
 import type { Tier } from '../types';
+import { toApiFailure } from './apiError';
 
 interface TiersResponse {
   success: boolean;
@@ -75,14 +75,8 @@ export const tiersApi = {
     try {
       const response = await apiClient.get<TiersResponse>('/tiers');
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to fetch tiers' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to fetch tiers');
     }
   },
 
@@ -90,14 +84,8 @@ export const tiersApi = {
     try {
       const response = await apiClient.get<MyTierResponse>('/tiers/me');
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to fetch your tier' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to fetch your tier');
     }
   },
 
@@ -112,14 +100,8 @@ export const tiersApi = {
         callbackUrl: resolvedCallbackUrl,
       });
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to select tier' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to select tier');
     }
   },
 };

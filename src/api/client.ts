@@ -1,5 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import API_BASE_URL from './config';
+import { ERROR_CODE, getApiError } from './apiError';
+
+export { ERROR_CODE, getApiError, getApiErrorMessage, getErrorDetail, hasErrorCode, isKnownErrorCode, toApiFailure, ApiRequestError, CLIENT_ERROR_CODES } from './apiError';
+export type { ApiError, ApiFailure } from './apiError';
 
 const STORAGE_KEY = 'ilesure_web_auth';
 
@@ -27,11 +31,12 @@ type RetriableRequest = InternalAxiosRequestConfig & { _retry?: boolean };
  * fallback only for a response that carries no code at all.
  */
 export function isAccountSuspendedError(error: unknown): boolean {
-  const body = axios.isAxiosError(error) ? (error.response?.data as any) : undefined;
-  const code = body?.error?.code;
-  if (code) return code === 'ACCOUNT_SUSPENDED';
-  const message = body?.error?.message;
-  return typeof message === 'string' && message.toLowerCase().includes('suspend');
+  if (!axios.isAxiosError(error) || !error.response) return false;
+  const body = error.response.data as { error?: { code?: unknown } } | undefined;
+  if (body?.error && typeof body.error === 'object' && body.error.code) {
+    return getApiError(error).code === ERROR_CODE.ACCOUNT_SUSPENDED;
+  }
+  return getApiError(error, '').message.toLowerCase().includes('suspend');
 }
 
 /** The bearer token a request was sent with, if any. */

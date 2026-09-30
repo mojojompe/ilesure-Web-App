@@ -7,9 +7,9 @@ import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
 import authApi from '../api/authApi';
 import paymentsApi from '../api/payments';
-import agentApi from '../api/agent';
-import companyApi from '../api/company';
+import { ownerApi } from '../api/owner';
 import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
+import { getApiErrorMessage } from '../api/apiError';
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -108,7 +108,7 @@ export function SignupPage() {
     } catch (err: any) {
       // QA-AGT-001: surface the failure inline instead of silently doing nothing.
       setAccountName('');
-      setBankError(err?.message || 'We could not verify this account. Check the bank and account number and try again.');
+      setBankError(getApiErrorMessage(err, 'We could not verify this account. Check the bank and account number and try again.'));
     }
     setBankLoading(false);
   };
@@ -229,10 +229,8 @@ export function SignupPage() {
               accountNumber,
               accountName,
             };
-            const subRes = isCompany
-              ? await companyApi.setupSubaccount(subaccountData)
-              : await agentApi.setupSubaccount(subaccountData);
-            if (!subRes.success) warnings.push(subRes.error?.message || 'Bank account could not be saved. You can add it from Settings.');
+            const subRes = await ownerApi(isCompany ? 'company' : 'agent').setupSubaccount(subaccountData);
+            if (!subRes.success) warnings.push(subRes.error.message || 'Bank account could not be saved. You can add it from Settings.');
           } catch (subErr: any) {
             warnings.push(subErr?.message || 'Bank account could not be saved. You can add it from Settings.');
           }

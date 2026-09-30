@@ -1,4 +1,22 @@
-export type UserRole = 'student' | 'landlord' | 'agent' | 'company' | 'company_admin' | 'sub_agent';
+import type {
+  AccountStatus,
+  BillingCycle,
+  BookingStatus,
+  DistanceBucket,
+  Furnishing,
+  GenderRestriction,
+  InstallmentInterval,
+  ListingStatus,
+  PaymentFrequency,
+  PowerSource,
+  PropertyType,
+  StayUnit,
+  WaterSource,
+} from '../contracts/generated';
+
+// Vocabulary shared with the backend lives in the API contract; re-exported for existing imports.
+export type { UserRole, VerificationStatus } from '../contracts/generated';
+import type { UserRole, VerificationStatus } from '../contracts/generated';
 
 // ── AI Roommate Matching Types ──────────────────────────────────────
 
@@ -63,7 +81,7 @@ export interface User {
   bio?: string;
   avatar?: string;
   isEmailVerified?: boolean;
-  status?: 'active' | 'pending' | 'inactive';
+  status?: AccountStatus;
   verificationStatus?: VerificationStatus;
   ninVerified?: boolean;
   bvnVerified?: boolean;
@@ -133,7 +151,7 @@ export interface Company {
 export interface CompanyPlan {
   name: string;
   price: number;
-  billingCycle: 'monthly' | 'annually';
+  billingCycle: BillingCycle;
   features: string[];
   slotUsage: {
     used: number;
@@ -145,7 +163,7 @@ export interface CompanyPlan {
 export interface TierDetails {
   name: string;
   price: number;
-  billingCycle: 'monthly' | 'annually';
+  billingCycle: BillingCycle;
   limits: {
     maxListings: number;
     featuredListings: number;
@@ -168,7 +186,7 @@ export interface Tier {
   name: string;
   description: string;
   price: number;
-  billingCycle: 'monthly' | 'annually';
+  billingCycle: BillingCycle;
   features: {
     maxListings: number;
     analytics?: string;
@@ -183,8 +201,6 @@ export interface Tier {
   isPopular?: boolean;
 }
 
-/** Mirrors the backend User.verificationStatus enum. There is no 'approved'. */
-export type VerificationStatus = 'pending' | 'verified' | 'more_info' | 'rejected';
 
 export interface VerificationDocuments {
   idCard?: string;
@@ -261,17 +277,17 @@ export interface Listing {
   description: string;
   rentAnnual: number;
   areaCluster: string;
-  distanceBucket: string;
+  distanceBucket: DistanceBucket | (string & {});
   address?: string;
   city?: string;
   landmark?: string;
-  propertyType: 'self_con' | '1_bed' | '2_bed' | '3_bed' | 'mini_flat' | 'studio' | 'penthouse' | 'hostel_room' | 'shared_apartment' | 'shortlet';
-  furnishing: 'fully_furnished' | 'semi_furnished' | 'unfurnished';
-  power: 'constant' | 'gen_dependent' | 'solar_backed' | 'hybrid';
-  water: 'borehole' | 'public' | 'tank';
+  propertyType: PropertyType;
+  furnishing: Furnishing;
+  power: PowerSource;
+  water: WaterSource;
   maxOccupants: number;
-  genderRestriction: 'any' | 'male_only' | 'female_only' | 'mixed';
-  status: 'pending_approval' | 'active' | 'needs_roommate' | 'fully_booked' | 'archived' | 'rejected';
+  genderRestriction: GenderRestriction;
+  status: ListingStatus;
   images: string[];
   agentId?: string;
   companyId?: string;
@@ -279,10 +295,10 @@ export interface Listing {
   cautionFee?: number;
   agencyFee?: number;
   additionalNotes?: string;
-  paymentFrequency?: 'annually' | 'bi-annually' | 'quarterly' | 'monthly' | 'custom';
+  paymentFrequency?: PaymentFrequency;
   customPaymentPlan?: {
     installments: number;
-    interval: 'monthly' | 'bi-monthly';
+    interval: InstallmentInterval;
     amountPerInstallment: number;
   };
   totalMoveinCost?: number;
@@ -293,9 +309,9 @@ export interface Listing {
     monthly?: number;
   };
   minStay?: number;
-  minStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  minStayUnit?: StayUnit;
   maxStay?: number;
-  maxStayUnit?: 'hour' | 'day' | 'week' | 'month';
+  maxStayUnit?: StayUnit;
   hasWifi?: boolean;
   securityType?: string;
   distanceFromLCU?: string;
@@ -307,7 +323,7 @@ export interface Booking {
   _id: string;
   listingId: { _id: string; title: string; images: string[]; rentAnnual: number; areaCluster: string; paymentFrequency?: string; customPaymentPlan?: { installments: number; interval: string; amountPerInstallment: number } };
   userId: { _id: string; fullName: string; email: string; phone: string };
-  status: 'pending' | 'confirmed' | 'rejected' | 'completed' | 'cancelled';
+  status: BookingStatus;
   moveInDate: string;
   duration?: string;
   message?: string;
@@ -460,7 +476,7 @@ export interface SubscriptionPayment {
   tierName: string;
   amount: number;
   currency: string;
-  billingCycle: 'monthly' | 'annually';
+  billingCycle: BillingCycle;
   status: 'pending' | 'success' | 'failed';
   createdAt: string;
   paidAt?: string;

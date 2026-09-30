@@ -5,8 +5,14 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import inquiriesApi, { Inquiry } from '../../api/inquiries';
+import type { OwnerRole } from '../../api/owner';
+import { formatDate } from '../../utils/format';
 
-export function CompanyInquiriesPage() {
+/**
+ * Inquiries go through the role-agnostic /inquiries API (the backend scopes them to the
+ * caller), so role only chooses the layout.
+ */
+export function OwnerInquiriesPage({ role }: { role: OwnerRole }) {
   const [inquiries, setInquiries] = useState<Inquiry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -37,7 +43,7 @@ export function CompanyInquiriesPage() {
   const filteredInquiries = inquiries.filter(inquiry => {
     const matchesSearch = 
       (inquiry.user?.fullName || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inquiry.question.toLowerCase().includes(searchQuery.toLowerCase());
+      (inquiry.question || '').toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filter === 'all' || inquiry.status === filter;
     return matchesSearch && matchesFilter;
   });
@@ -48,14 +54,6 @@ export function CompanyInquiriesPage() {
       case 'answered': return 'info';
       case 'closed': return 'success';
     }
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
   };
 
   const handleReply = async () => {
@@ -72,7 +70,7 @@ export function CompanyInquiriesPage() {
       );
       setToast({ message: 'Reply sent successfully', type: 'success' });
     } else {
-      setToast({ message: 'Failed to send reply', type: 'error' });
+      setToast({ message: response.error?.message || 'Failed to send reply', type: 'error' });
     }
     setSending(false);
     setTimeout(() => setToast(null), 3000);
@@ -80,7 +78,7 @@ export function CompanyInquiriesPage() {
 
   if (loading) {
     return (
-      <AppLayout role="company" title="Inquiries" subtitle="Messages from potential clients">
+      <AppLayout role={role} title="Inquiries" subtitle="Messages from potential clients">
         <div className="clay-card p-6 flex items-center justify-center py-12">
           <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
         </div>
@@ -89,7 +87,7 @@ export function CompanyInquiriesPage() {
   }
 
   return (
-    <AppLayout role="company" title="Inquiries" subtitle="Messages from potential clients">
+    <AppLayout role={role} title="Inquiries" subtitle="Messages from potential clients">
       {toast && (
         <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${
           toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
@@ -160,9 +158,9 @@ export function CompanyInquiriesPage() {
                       <p className="text-sm text-text-secondary mt-1 line-clamp-2">{inquiry.question}</p>
                       <div className="flex items-center gap-4 mt-2 text-xs text-text-tertiary">
                         <span>{formatDate(inquiry.createdAt)}</span>
-                        {inquiry.user.phone && (
+                        {inquiry.user?.phone && (
                           <span className="flex items-center gap-1">
-                            <TelephoneIcon className="w-3 h-3" /> {inquiry.user.phone}
+                            <TelephoneIcon className="w-3 h-3" /> {inquiry.user?.phone}
                           </span>
                         )}
                       </div>
@@ -194,6 +192,12 @@ export function CompanyInquiriesPage() {
                         <p className="text-sm text-text-tertiary">{selectedInquiry.user?.phone || ''}</p>
                       </div>
                     </div>
+                    {selectedInquiry.listing && (
+                      <div className="bg-clay-border-light p-3 rounded-clay-sm">
+                        <p className="text-xs text-text-tertiary mb-1">Property</p>
+                        <p className="text-sm font-medium text-text-primary">{selectedInquiry.listing.title}</p>
+                      </div>
+                    )}
                   </div>
                   <div className="mb-4">
                     <p className="text-xs text-text-tertiary mb-2">Message</p>

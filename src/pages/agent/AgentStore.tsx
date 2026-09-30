@@ -3,6 +3,7 @@ import { ShoppingCart01Icon, Money01Icon, Store02Icon as Store01Icon, PlusSignCi
 import { AppLayout } from '../../components/layout/AppLayout';
 import { agentStoreService } from '../../api/agentStore';
 import { useAuth } from '../../api/authContext';
+import { getApiErrorMessage } from '../../api/apiError';
 
 export function AgentStorePage() {
   const { user } = useAuth();
@@ -48,7 +49,7 @@ export function AgentStorePage() {
         showToast(res.error?.message || res.message || 'Purchase failed', 'error');
       }
     } catch (err: any) {
-      showToast(err.message || 'Purchase failed', 'error');
+      showToast(getApiErrorMessage(err, 'Purchase failed'), 'error');
     } finally {
       setBuying(null);
     }

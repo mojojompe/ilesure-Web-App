@@ -4,6 +4,7 @@ import { Mail01Icon, LockIcon, ViewIcon, ViewOffIcon, ArrowRight01Icon, ArrowLef
 import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 import { API_BASE_URL } from '../api/config';
+import { ERROR_CODE } from '../api/apiError';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -48,12 +49,14 @@ export function LoginPage() {
         } else {
           navigate('/');
         }
-      } else if (result.errorCode === 'EMAIL_NOT_VERIFIED') {
+      } else if (result.errorCode === ERROR_CODE.EMAIL_NOT_VERIFIED) {
         // QA-AGT-031: the credentials were right; the address was never verified. Hand them to
         // the OTP screen with the address prefilled, it can resend a code, so an expired
         // original is not a dead end.
         navigate('/create-otp', { state: { email: result.email || email } });
-      } else if (result.errorCode === 'ACCOUNT_DELETED') {
+      } else if (result.errorCode === ERROR_CODE.ACCOUNT_DELETED) {
+        // Not in the API contract's ERROR_CODES: the current backend has no account-deletion
+        // flow and never sends this code. Kept for an older deployment that did.
         // The backend now refuses login outright for a deleted account. Send them to the
         // reactivation screen with the address prefilled instead of a dead-end error.
         navigate('/reactivate', { state: { email } });

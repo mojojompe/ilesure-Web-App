@@ -4,6 +4,7 @@ import { Loading02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import paymentsApi from '../api/payments';
 import { PaymentSafetyModal } from '../components/common/PaymentSafetyModal';
+import { getApiErrorMessage } from '../api/apiError';
 
 export function PaymentPage() {
   const navigate = useNavigate();
@@ -36,7 +37,7 @@ export function PaymentPage() {
       }
       window.location.href = result.authorizationUrl;
     } catch (err: any) {
-      setError(err.message || 'Failed to initialize payment');
+      setError(getApiErrorMessage(err, 'Failed to initialize payment'));
       setInitializing(false);
     }
   };

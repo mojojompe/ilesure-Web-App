@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { authApi } from '../../api/authApi';
 import { useAuth } from '../../api/authContext';
 import { useNavigate } from 'react-router-dom';
+import { getApiErrorMessage } from '../../api/apiError';
 
 interface DeleteAccountModalProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
       await authApi.requestAccountDeletion();
       setStep('otp');
     } catch (err: any) {
-      setError(err.message || 'Failed to request account deletion.');
+      setError(getApiErrorMessage(err, 'Failed to request account deletion.'));
     } finally {
       setLoading(false);
     }
@@ -51,7 +52,7 @@ export function DeleteAccountModal({ isOpen, onClose }: DeleteAccountModalProps)
         navigate('/login');
       }, 3000);
     } catch (err: any) {
-      setError(err.message || 'Invalid code. Try again.');
+      setError(getApiErrorMessage(err, 'Invalid code. Try again.'));
     } finally {
       setLoading(false);
     }

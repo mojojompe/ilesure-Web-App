@@ -5,11 +5,13 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { companyApi } from '../../api/company';
+import { ownerApi } from '../../api/owner';
 import { userApi } from '../../api/user';
 import { tiersApi, resolveMyTierUsage } from '../../api/tiers';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
+import { getApiErrorMessage } from '../../api/apiError';
 
 export function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -68,7 +70,7 @@ export function CompanySettingsPage() {
   };
 
   const loadSubaccount = async () => {
-    const res = await companyApi.getSubaccount();
+    const res = await ownerApi('company').getSubaccount();
     if (res.success && res.data) {
       setSubaccount(res.data);
       if (res.data.subaccountCode) {
@@ -92,7 +94,7 @@ export function CompanySettingsPage() {
       setResolved(true);
     } catch (err: any) {
       setResolved(false);
-      showToast(err.message || 'Failed to resolve account', 'error');
+      showToast(getApiErrorMessage(err, 'Failed to resolve account'), 'error');
     } finally {
       setResolving(false);
     }
@@ -105,7 +107,7 @@ export function CompanySettingsPage() {
     }
     setSetupLoading(true);
     try {
-      const res = await companyApi.setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
+      const res = await ownerApi('company').setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
       if (res.success) {
         setSubaccount(res.data || null);
         showToast('Company bank account and subaccount setup successfully!');
@@ -113,7 +115,7 @@ export function CompanySettingsPage() {
         showToast(res.error?.message || 'Failed to setup subaccount', 'error');
       }
     } catch (err: any) {
-      showToast(err.message || 'Failed to setup subaccount', 'error');
+      showToast(getApiErrorMessage(err, 'Failed to setup subaccount'), 'error');
     } finally {
       setSetupLoading(false);
     }

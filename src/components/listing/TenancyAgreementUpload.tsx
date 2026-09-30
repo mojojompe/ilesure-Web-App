@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react';
 import { Note01Icon, Upload01Icon, Cancel02Icon, Loading02Icon, CheckmarkBadge02Icon } from '@hugeicons/react';
-import agentApi, { TenancyAgreementDocument } from '../../api/agent';
+import { ownerApi, type OwnerRole, type TenancyAgreementDocument } from '../../api/owner';
 
 interface TenancyAgreementUploadProps {
+  role: OwnerRole;
   value: TenancyAgreementDocument | null;
   onChange: (document: TenancyAgreementDocument | null) => void;
 }
@@ -24,7 +25,7 @@ function formatSize(bytes: number): string {
  * The file is uploaded immediately and the returned metadata is held in form
  * state, because the listing does not exist yet at this point in the wizard.
  */
-export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUploadProps) {
+export function TenancyAgreementUpload({ role, value, onChange }: TenancyAgreementUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
@@ -47,17 +48,13 @@ export function TenancyAgreementUpload({ value, onChange }: TenancyAgreementUplo
     }
 
     setUploading(true);
-    try {
-      const uploaded = await agentApi.uploadTenancyAgreement(file);
-      onChange(uploaded);
-    } catch (err: any) {
-      setError(
-        err?.response?.data?.error?.message ||
-          'Could not upload the tenancy agreement. Please try again.'
-      );
-    } finally {
-      setUploading(false);
+    const uploaded = await ownerApi(role).uploadTenancyAgreement(file);
+    if (uploaded.success) {
+      onChange(uploaded.data);
+    } else {
+      setError(uploaded.error.message);
     }
+    setUploading(false);
   };
 
   return (

@@ -7,10 +7,11 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
 import { tiersApi, resolveMyTierUsage, catalogueMaxListings } from '../../api/tiers';
 import { useAuth } from '../../api/authContext';
-import { agentApi } from '../../api/agent';
+import { ownerApi } from '../../api/owner';
 import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
+import { getApiErrorMessage } from '../../api/apiError';
 
 export function AgentSettingsPage() {
   const { user: authUser, updateUser } = useAuth();
@@ -79,7 +80,7 @@ export function AgentSettingsPage() {
   };
 
   const loadSubaccount = async () => {
-    const res = await agentApi.getSubaccount();
+    const res = await ownerApi('agent').getSubaccount();
     if (res.success && res.data) {
       setSubaccount(res.data);
       if (res.data.subaccountCode) {
@@ -103,7 +104,7 @@ export function AgentSettingsPage() {
       setResolved(true);
     } catch (err: any) {
       setResolved(false);
-      showToast(err.message || 'Failed to resolve account', 'error');
+      showToast(getApiErrorMessage(err, 'Failed to resolve account'), 'error');
     } finally {
       setResolving(false);
     }
@@ -117,7 +118,7 @@ export function AgentSettingsPage() {
     setSetupLoading(true);
     try {
       // QA-AGT-005: this is the call that persists the verified account server-side.
-      const res = await agentApi.setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
+      const res = await ownerApi('agent').setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
       if (res.success) {
         setSubaccount(res.data || null);
         showToast('Bank account and subaccount setup successfully!');
@@ -125,7 +126,7 @@ export function AgentSettingsPage() {
         showToast(res.error?.message || 'Failed to setup subaccount', 'error');
       }
     } catch (err: any) {
-      showToast(err.message || 'Failed to setup subaccount', 'error');
+      showToast(getApiErrorMessage(err, 'Failed to setup subaccount'), 'error');
     } finally {
       setSetupLoading(false);
     }

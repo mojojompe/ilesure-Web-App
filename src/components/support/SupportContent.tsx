@@ -4,6 +4,7 @@ import { ClayCard } from '../ui/ClayCard';
 import { Button } from '../ui/Button';
 import { useAuth } from '../../api/authContext';
 import apiClient from '../../api/client';
+import { getApiErrorMessage } from '../../api/apiError';
 
 interface SupportContentProps {
   role: 'agent' | 'company';
@@ -74,11 +75,11 @@ export function SupportContent({ role }: SupportContentProps) {
         setTicketSubject('');
         setTicketMessage('');
       } else {
-        setTicketError(res.data?.error?.message || 'Failed to submit support ticket. Please try again.');
+        setTicketError(getApiErrorMessage(res.data, 'Failed to submit support ticket. Please try again.'));
       }
     } catch (err: any) {
       console.error('Failed to submit ticket', err);
-      setTicketError(err.response?.data?.error?.message || err.message || 'Error submitting ticket');
+      setTicketError(getApiErrorMessage(err, 'Error submitting ticket'));
     } finally {
       setTicketSubmitting(false);
     }

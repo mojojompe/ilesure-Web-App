@@ -17,31 +17,25 @@ import { TierPage } from './pages/Tiers';
 import { PaymentPage } from './pages/Payment';
 import { PaymentCallbackPage } from './pages/PaymentCallback';
 import { AgentDashboardPage } from './pages/agent/Dashboard';
-import { AgentListingsPage } from './pages/agent/Listings';
 import { AgentStorePage } from './pages/agent/AgentStore';
-import { AgentCreateListingPage } from './pages/agent/CreateListing';
-import { AgentBookingsPage } from './pages/agent/Bookings';
-import { AgentChatsPage } from './pages/agent/Chats';
-import { AgentInquiriesPage } from './pages/agent/Inquiries';
 import { AgentPaymentsPage } from './pages/agent/Payments';
 import { AgentAnalyticsPage } from './pages/agent/Analytics';
 import { AgentNotificationsPage } from './pages/agent/Notifications';
 import { AgentSettingsPage } from './pages/agent/Settings';
 import { CompanyDashboardPage } from './pages/company/Dashboard';
-import { CompanyListingsPage } from './pages/company/Listings';
-import { CompanyCreateListingPage } from './pages/company/CreateListing';
 import { CompanyAgentsPage } from './pages/company/Agents';
-import { CompanyBookingsPage } from './pages/company/Bookings';
-import { CompanyChatsPage } from './pages/company/Chats';
-import { CompanyInquiriesPage } from './pages/company/Inquiries';
 import { CompanyPaymentsPage } from './pages/company/Payments';
 import { CompanyAnalyticsPage } from './pages/company/Analytics';
 import { CompanyNotificationsPage } from './pages/company/Notifications';
 import { CompanySettingsPage } from './pages/company/Settings';
 import { RoommateProfilePage } from './pages/roommate/Profile';
 import { RoommateMatchesPage } from './pages/roommate/Matches';
-import { AgentArchivedPage } from './pages/agent/Archived';
-import { CompanyArchivedPage } from './pages/company/Archived';
+import { OwnerListingsPage } from './pages/owner/Listings';
+import { OwnerCreateListingPage } from './pages/owner/CreateListing';
+import { OwnerBookingsPage } from './pages/owner/Bookings';
+import { OwnerChatsPage } from './pages/owner/Chats';
+import { OwnerInquiriesPage } from './pages/owner/Inquiries';
+import { OwnerArchivedPage } from './pages/owner/Archived';
 import { AgentSupportPage } from './pages/agent/Support';
 import { CompanySupportPage } from './pages/company/Support';
 import { NotFound } from './pages/NotFound';
@@ -130,32 +124,32 @@ function AppRoutes() {
       } />
       <Route path="/agent/listings" element={
         <ProtectedRoute role="agent">
-          <AgentListingsPage />
+          <OwnerListingsPage role="agent" />
         </ProtectedRoute>
       } />
       <Route path="/agent/archived" element={
         <ProtectedRoute role="agent">
-          <AgentArchivedPage />
+          <OwnerArchivedPage role="agent" />
         </ProtectedRoute>
       } />
       <Route path="/agent/create-listing" element={
         <ProtectedRoute role="agent">
-          <AgentCreateListingPage />
+          <OwnerCreateListingPage role="agent" />
         </ProtectedRoute>
       } />
       <Route path="/agent/bookings" element={
         <ProtectedRoute role="agent">
-          <AgentBookingsPage />
+          <OwnerBookingsPage role="agent" />
         </ProtectedRoute>
       } />
       <Route path="/agent/chats" element={
         <ProtectedRoute role="agent">
-          <AgentChatsPage />
+          <OwnerChatsPage role="agent" />
         </ProtectedRoute>
       } />
       <Route path="/agent/inquiries" element={
         <ProtectedRoute role="agent">
-          <AgentInquiriesPage />
+          <OwnerInquiriesPage role="agent" />
         </ProtectedRoute>
       } />
       <Route path="/agent/payments" element={
@@ -196,17 +190,17 @@ function AppRoutes() {
       } />
       <Route path="/company/listings" element={
         <ProtectedRoute role="company">
-          <CompanyListingsPage />
+          <OwnerListingsPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/create-listing" element={
         <ProtectedRoute role="company">
-          <CompanyCreateListingPage />
+          <OwnerCreateListingPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/archived" element={
         <ProtectedRoute role="company">
-          <CompanyArchivedPage />
+          <OwnerArchivedPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/agents" element={
@@ -216,17 +210,17 @@ function AppRoutes() {
       } />
       <Route path="/company/bookings" element={
         <ProtectedRoute role="company">
-          <CompanyBookingsPage />
+          <OwnerBookingsPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/chats" element={
         <ProtectedRoute role="company">
-          <CompanyChatsPage />
+          <OwnerChatsPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/inquiries" element={
         <ProtectedRoute role="company">
-          <CompanyInquiriesPage />
+          <OwnerInquiriesPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/payments" element={

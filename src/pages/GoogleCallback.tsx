@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../api/authContext';
 import { authApi } from '../api/authApi';
+import { ERROR_CODE } from '../api/apiError';
 
 /**
  * Landing point for Google sign-in on the agent/company portal.
@@ -73,7 +74,7 @@ export function GoogleCallbackPage() {
         const res = await authApi.exchangeGoogleCode(code);
         const user: any = res?.user;
         if (!res?.success || !user || !res.accessToken) {
-          if (res?.error?.code === 'ACCOUNT_DELETED') {
+          if (res?.error?.code === ERROR_CODE.ACCOUNT_DELETED) {
             // Same contract as a normal login: the backend refuses a deleted account outright.
             // The Google exchange does not carry the address back on this error, so send the
             // user to the reactivation screen to enter it themselves.
@@ -81,7 +82,7 @@ export function GoogleCallbackPage() {
             return;
           }
           setError(
-            res?.error?.code === 'INVALID_CODE'
+            res?.error?.code === ERROR_CODE.INVALID_CODE
               ? 'That sign-in link has expired or was already used. Please try again.'
               : res?.error?.message || 'We could not complete your sign-in. Please try again.'
           );

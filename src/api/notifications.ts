@@ -1,5 +1,5 @@
-import axios from 'axios';
 import apiClient from './client';
+import { toApiFailure } from './apiError';
 
 export interface Notification {
   _id: string;
@@ -41,14 +41,8 @@ export const notificationsApi = {
         params: { page, limit },
       });
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to fetch notifications' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to fetch notifications');
     }
   },
 
@@ -56,14 +50,8 @@ export const notificationsApi = {
     try {
       const response = await apiClient.get<{ success: boolean; count: number }>('/notifications/unread-count');
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to fetch count' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to fetch count');
     }
   },
 
@@ -71,14 +59,8 @@ export const notificationsApi = {
     try {
       const response = await apiClient.patch<{ success: boolean }>(`/notifications/${notificationId}/read`);
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to mark as read' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to mark as read');
     }
   },
 
@@ -86,14 +68,8 @@ export const notificationsApi = {
     try {
       const response = await apiClient.patch<{ success: boolean }>('/notifications/read-all');
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to mark all as read' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to mark all as read');
     }
   },
 
@@ -101,14 +77,8 @@ export const notificationsApi = {
     try {
       const response = await apiClient.delete<{ success: boolean }>(`/notifications/${notificationId}`);
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to delete notification' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to delete notification');
     }
   },
 
@@ -116,14 +86,8 @@ export const notificationsApi = {
     try {
       const response = await apiClient.get<{ success: boolean; data: NotificationSettings }>('/notifications/settings');
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to fetch settings' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to fetch settings');
     }
   },
 
@@ -131,14 +95,8 @@ export const notificationsApi = {
     try {
       const response = await apiClient.put<{ success: boolean }>('/notifications/settings', settings);
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to update settings' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to update settings');
     }
   },
 };

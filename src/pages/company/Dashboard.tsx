@@ -5,6 +5,7 @@ import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { companyApi } from '../../api/company';
+import { ownerApi } from '../../api/owner';
 
 export function CompanyDashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -24,8 +25,8 @@ export function CompanyDashboardPage() {
         setOverview(response.data.overview);
       }
 
-      const listingsRes = await companyApi.getListings({ limit: 3 });
-      if (listingsRes.success && listingsRes.data) {
+      const listingsRes = await ownerApi('company').getListings({ limit: 3 });
+      if (listingsRes.success) {
         setListings(listingsRes.data.listings || []);
       }
 

@@ -2,51 +2,21 @@ import { useState, useEffect, useRef } from 'react';
 import { Search01Icon, SentIcon, MoreVerticalIcon, TelephoneIcon, Video01Icon, Loading02Icon, BubbleChatIcon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
-import { chatApi } from '../../api/chat';
-import type { ReadReceipt } from '../../api/chat';
 import { useAuth } from '../../api/authContext';
 import { callApi, type CallAvailability } from '../../api/callApi';
 import { useCall } from '../../contexts/CallContext';
+import type { OwnerRole } from '../../api/owner';
+import { useChatSession } from '../../hooks/useChatSession';
+import { filterChats, formatChatTime as formatTime, isOwnMessage } from '../../lib/chatSession';
 
-interface Chat {
-  id: string;
-  participant: {
-    id: string;
-    fullName: string;
-    avatar?: string;
-    online?: boolean;
-  };
-  listing?: {
-    id: string;
-    title: string;
-  };
-  lastMessage: string;
-  lastMessageAt: string;
-  unreadCount: number;
-}
-
-interface Message {
-  id: string;
-  senderId: string;
-  sender?: { _id: string; fullName: string };
-  text: string;
-  createdAt: string;
-  readAt?: string | null;
-}
-
-export function CompanyChatsPage() {
+/** Thin view over `useChatSession`; role only chooses the layout. */
+export function OwnerChatsPage({ role }: { role: OwnerRole }) {
   const { user } = useAuth();
-  const [selectedChat, setSelectedChat] = useState<Chat | null>(null);
+  const session = useChatSession(user?.id);
+  const { chats, selectedChat, messages, partnerTyping, loading, sending } = session;
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
-  const [chats, setChats] = useState<Chat[]>([]);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [sending, setSending] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
-  const [partnerTyping, setPartnerTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const call = useCall();
   // Fetched per conversation so the buttons can show the peer as busy before the user
@@ -71,196 +41,26 @@ export function CompanyChatsPage() {
     });
   };
 
-  const selectedChatRef = useRef(selectedChat);
-
-  useEffect(() => { selectedChatRef.current = selectedChat; }, [selectedChat]);
-
-  const userIdRef = useRef(user?.id);
-  useEffect(() => { userIdRef.current = user?.id; }, [user?.id]);
-
-  useEffect(() => {
-    fetchChats();
-
-    // The socket itself belongs to App.tsx `SocketConnection`, which holds it for the
-    // whole session (calls, presence, kyc_status_changed). This page only adds its own
-    // listeners and removes exactly those on unmount; it must never disconnect it.
-    const handleConnect = () => {
-      // A reconnect is a new server-side connection with no rooms; rejoin the open chat.
-      if (selectedChatRef.current) {
-        chatApi.joinChat(selectedChatRef.current.id);
-      }
-    };
-
-    const handleMessage = (data: { chatId: string; message: any }) => {
-      const isCurrentChat = selectedChatRef.current && data.chatId === selectedChatRef.current.id;
-      if (isCurrentChat) {
-        setMessages(prev => {
-          const msgId = data.message.id || data.message._id;
-          if (prev.some(m => m.id === msgId)) return prev;
-          return [...prev, data.message];
-        });
-        chatApi.markAsRead(data.chatId);
-      }
-      setChats(prev => prev.map(chat =>
-        chat.id === data.chatId
-          ? {
-              ...chat,
-              lastMessage: data.message.text,
-              lastMessageAt: data.message.createdAt,
-              unreadCount: isCurrentChat ? 0 : (chat.unreadCount || 0) + 1,
-            }
-          : chat
-      ));
-    };
-
-    const handleTyping = (data: { chatId: string; userId: string; isTyping: boolean }) => {
-      if (selectedChatRef.current && data.chatId === selectedChatRef.current.id) {
-        setPartnerTyping(data.isTyping);
-      }
-    };
-
-    // `messages_read` is broadcast to the whole room, including the reader. A receipt
-    // means the reader has seen everything the OTHER participant sent, so only messages
-    // not sent by the reader are marked, and our own reading is ignored.
-    const handleRead = (data: ReadReceipt) => {
-      if (!selectedChatRef.current || data.chatId !== selectedChatRef.current.id) return;
-      if (data.readerId && data.readerId === userIdRef.current) return;
-      const readAt = data.readAt || new Date().toISOString();
-      setMessages(prev => prev.map(msg => {
-        if (msg.readAt) return msg;
-        if (data.messageId && msg.id !== data.messageId) return msg;
-        const senderId = msg.senderId || msg.sender?._id;
-        if (data.readerId && senderId === data.readerId) return msg;
-        return { ...msg, readAt };
-      }));
-    };
-
-    const unsubscribe = [
-      chatApi.onConnect(handleConnect),
-      chatApi.onMessage(handleMessage),
-      chatApi.onTyping(handleTyping),
-      chatApi.onRead(handleRead),
-    ];
-
-    return () => {
-      unsubscribe.forEach(off => off());
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!selectedChat) return;
-    const chatId = selectedChat.id;
-    fetchMessages(chatId);
-    chatApi.joinChat(chatId);
-    chatApi.markAsRead(chatId);
-    setPartnerTyping(false);
-    // Immediately clear the unread badge in state
-    setChats(prev => prev.map(chat =>
-      chat.id === chatId ? { ...chat, unreadCount: 0 } : chat
-    ));
-    // Leave this chat's room when switching to another chat or leaving the page.
-    return () => { chatApi.leaveChat(chatId); };
-  }, [selectedChat?.id]);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const fetchChats = async () => {
-    setLoading(true);
-    try {
-      const response = await chatApi.getChats();
-      if (response.success && response.data) {
-        setChats(response.data.chats || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch chats:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchMessages = async (chatId: string) => {
-    try {
-      const response = await chatApi.getMessages(chatId);
-      if (response.success && response.data) {
-        setMessages(response.data.messages || []);
-      }
-    } catch (error) {
-      console.error('Failed to fetch messages:', error);
-    }
-  };
-
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedChat) return;
-    
-    setSending(true);
-    try {
-      const response = await chatApi.sendMessage(selectedChat.id, newMessage.trim());
-      if (response.success && response.message) {
-        setMessages(prev => {
-          const msgId = response.message.id || response.message._id;
-          if (prev.some(m => m.id === msgId)) return prev;
-          return [...prev, response.message];
-        });
-        setChats(prev => prev.map(chat => 
-          chat.id === selectedChat.id 
-            ? { ...chat, lastMessage: newMessage.trim(), lastMessageAt: new Date().toISOString() }
-            : chat
-        ));
-        setNewMessage('');
-      } else {
-        alert(response.error || 'Failed to send message');
-      }
-    } catch (error) {
-      console.error('Failed to send message:', error);
-    } finally {
-      setSending(false);
-    }
+    const error = await session.send(newMessage);
+    if (error) alert(error);
+    else setNewMessage('');
   };
 
   const handleTyping = (text: string) => {
     setNewMessage(text);
-    
-    if (selectedChat && !isTyping) {
-      setIsTyping(true);
-      chatApi.sendTyping(selectedChat.id, true);
-    }
-
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    typingTimeoutRef.current = setTimeout(() => {
-      if (selectedChat) {
-        chatApi.sendTyping(selectedChat.id, false);
-        setIsTyping(false);
-      }
-    }, 2000);
+    session.notifyTyping();
   };
 
-  const formatTime = (time: string) => {
-    const date = new Date(time);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-    
-    if (days === 0) {
-      return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-    } else if (days === 1) {
-      return 'Yesterday';
-    } else {
-      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    }
-  };
-
-  const filteredChats = chats.filter(chat =>
-    chat.participant.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    chat.lastMessage.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const setSelectedChat = (chat: { id: string } | null) => session.selectChat(chat ? chat.id : null);
+  const filteredChats = filterChats(chats, searchQuery);
 
   return (
-    <AppLayout role="company" title="Chats" subtitle="Messages from clients">
+    <AppLayout role={role} title="Chats" subtitle="Messages from clients">
       <div className="clay-card overflow-hidden h-[calc(100vh-10rem)]">
         <div className="flex h-full">
           <div className={clsx('w-full md:w-80 border-r border-clay-border flex flex-col', selectedChat ? 'hidden md:flex' : 'flex')}>
@@ -379,21 +179,21 @@ export function CompanyChatsPage() {
                     key={msg.id}
                     className={clsx(
                       'flex',
-                      (msg.senderId === user?.id || msg.sender?._id === user?.id) ? 'justify-end' : 'justify-start'
+                      isOwnMessage(msg, user?.id) ? 'justify-end' : 'justify-start'
                     )}
                   >
                     <div
                       className={clsx(
                         'max-w-[70%] rounded-clay-sm px-4 py-2',
-                        (msg.senderId === user?.id || msg.sender?._id === user?.id)
+                        isOwnMessage(msg, user?.id)
                           ? 'bg-mustard text-white'
                           : 'bg-clay-border-light text-text-primary'
                       )}
                     >
                       <p className="text-sm">{msg.text}</p>
-                      <p className={clsx('text-xs mt-1', (msg.senderId === user?.id || msg.sender?._id === user?.id) ? 'text-white/70' : 'text-text-tertiary')}>
+                      <p className={clsx('text-xs mt-1', isOwnMessage(msg, user?.id) ? 'text-white/70' : 'text-text-tertiary')}>
                         {formatTime(msg.createdAt)}
-                        {(msg.senderId === user?.id || msg.sender?._id === user?.id) && (
+                        {isOwnMessage(msg, user?.id) && (
                           <span className="ml-1">{msg.readAt ? '· Read' : '· Sent'}</span>
                         )}
                       </p>

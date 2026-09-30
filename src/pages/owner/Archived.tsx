@@ -3,75 +3,51 @@ import { Search01Icon, ReloadIcon, ViewIcon, Delete02Icon, Loading02Icon } from 
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
-import { companyApi } from '../../api/company';
-import type { Listing } from '../../types';
+import { ownerApi, type OwnerRole, type OwnerListing } from '../../api/owner';
+import { formatCurrency, formatDate } from '../../utils/format';
 
-export function CompanyArchivedPage() {
-  const [listings, setListings] = useState<Listing[]>([]);
+export function OwnerArchivedPage({ role }: { role: OwnerRole }) {
+  const api = ownerApi(role);
+  const [listings, setListings] = useState<OwnerListing[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [restoring, setRestoring] = useState<string | null>(null);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
+  const showToast = (message: string, type: 'success' | 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   useEffect(() => {
-    loadArchivedListings();
-  }, []);
+    (async () => {
+      setLoading(true);
+      const response = await api.getListings({ status: 'archived' });
+      if (response.success) setListings(response.data.listings);
+      else showToast(response.error.message, 'error');
+      setLoading(false);
+    })();
+  }, [role]);
 
-  const loadArchivedListings = async () => {
-    setLoading(true);
-    const response = await companyApi.getListings({ status: 'archived' });
-    if (response.success && response.data) {
-      setListings(response.data.listings);
-    }
-    setLoading(false);
-  };
-
-  const filteredListings = listings.filter(l =>
-    (l.title || '').toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  // BUGFIX (QA-CO-013): this was called with `listing.rentAnnual`, but the company
-  // listings endpoint serialises the price as `price`, so the argument was undefined
-  // and `.toLocaleString()` threw, blanking the entire app (there was no error
-  // boundary). Guard the value and accept either field, as Listings.tsx already does.
-  const formatCurrency = (amount?: number | null) =>
-    typeof amount === 'number' && Number.isFinite(amount) ? `₦${amount.toLocaleString('en-NG')}` : '—';
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  };
+  const filteredListings = listings.filter(l => (l.title || '').toLowerCase().includes(searchQuery.toLowerCase()));
 
   const handleRestore = async (id: string) => {
     setRestoring(id);
-    // BUGFIX (LL-P0-4): this called `updateListing(id, { status: 'active' })`. Both the agent
-    // and company update handlers whitelist editable fields and `status` is deliberately not
-    // among them, restoring through that route would let an unapproved listing launder itself
-    // live, so the request became an empty `$set: {}`, returned success, and changed nothing.
-    // The row below then vanished from the table behind a green "restored" toast while the
-    // listing stayed archived in the database, which is the worst of both: no effect, and no
-    // way for the user to tell.
-    //
-    // The dedicated endpoint exists precisely for this, and restores to `statusBeforeArchive`
-    // rather than blindly to 'active'.
-    const response = await companyApi.restoreListing(id);
-
+    // LL-P0-4: the dedicated endpoint restores to `statusBeforeArchive`; a generic update
+    // with `{ status: 'active' }` is ignored by the backend's field whitelist.
+    const response = await api.restoreListing(id);
     if (response.success) {
       setListings(prev => prev.filter(l => l._id !== id));
-      setToast({ message: 'Listing restored successfully', type: 'success' });
+      showToast('Listing restored successfully', 'success');
     } else {
-      setToast({ message: 'Failed to restore listing', type: 'error' });
+      showToast(response.error.message || 'Failed to restore listing', 'error');
     }
     setRestoring(null);
-    setTimeout(() => setToast(null), 3000);
   };
 
   if (loading) {
     return (
-      <AppLayout role="company" title="Archived Listings" subtitle="Previously archived properties">
+      <AppLayout role={role} title="Archived Listings" subtitle="Previously archived properties">
         <div className="clay-card p-12 flex items-center justify-center">
           <Loading02Icon className="w-6 h-6 animate-spin text-mustard" />
         </div>
@@ -80,10 +56,9 @@ export function CompanyArchivedPage() {
   }
 
   return (
-    <AppLayout role="company" title="Archived Listings" subtitle="Previously archived properties">
+    <AppLayout role={role} title="Archived Listings" subtitle="Previously archived properties">
       {toast && (
-        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'
-          }`}>
+        <div className={`fixed top-4 right-4 px-4 py-3 rounded-clay-sm shadow-clay z-50 ${toast.type === 'success' ? 'bg-status-success text-white' : 'bg-status-error text-white'}`}>
           {toast.message}
         </div>
       )}
@@ -126,7 +101,7 @@ export function CompanyArchivedPage() {
                 <div className="flex-1 min-w-0">
                   <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
                   <p className="text-sm text-text-tertiary">{listing.city}, {listing.address}</p>
-                  <p className="text-lg font-bold text-mustard mt-1">{formatCurrency((listing as any).price ?? listing.rentAnnual)}</p>
+                  <p className="text-lg font-bold text-mustard mt-1">{formatCurrency(listing.rentAnnual)}</p>
                   {listing.createdAt && (
                     <p className="text-xs text-text-tertiary mt-1">Archived: {formatDate(listing.createdAt)}</p>
                   )}

@@ -1,5 +1,5 @@
-import axios from 'axios';
 import apiClient from './client';
+import { ApiRequestError, getApiError, toApiFailure } from './apiError';
 import type { User, UserRole } from '../types';
 
 interface AuthResponse {
@@ -71,28 +71,21 @@ export const authApi = {
         };
       }
 
+      return toApiFailure(body, 'Login failed');
+    } catch (error: unknown) {
+      // QA-AGT-031: an unverified portal account is refused with 403 EMAIL_NOT_VERIFIED and
+      // a `verify_otp` next step. Flattening that to "Login failed" would leave the user
+      // staring at what looks like a wrong password with no way forward, so the code, the
+      // step and the address all travel with the failure. They arrive in `error.details`
+      // (the top-level `email` / `nextStep` mirror is deprecated on the backend).
+      const apiError = getApiError(error, 'Login failed');
+      const details = (apiError.details ?? {}) as { email?: unknown; nextStep?: unknown };
       return {
         success: false,
-        error: { message: body.error?.message || 'Login failed', code: body.error?.code },
+        error: { message: apiError.message, code: apiError.code },
+        nextStep: typeof details.nextStep === 'string' ? details.nextStep : undefined,
+        email: typeof details.email === 'string' ? details.email : undefined,
       };
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        // QA-AGT-031: an unverified portal account is refused with 403 EMAIL_NOT_VERIFIED and
-        // a `verify_otp` next step. Flattening that to "Login failed" would leave the user
-        // staring at what looks like a wrong password with no way forward, so the code, the
-        // step and the address all travel with the failure.
-        const body = error.response?.data;
-        return {
-          success: false,
-          error: {
-            message: body?.error?.message || 'Login failed',
-            code: body?.error?.code,
-          },
-          nextStep: body?.nextStep,
-          email: body?.email,
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
     }
   },
 
@@ -102,11 +95,7 @@ export const authApi = {
       const response = await apiClient.post<AuthResponse>('/auth/google/exchange', { code });
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        const body = error.response?.data;
-        return { success: false, error: { message: body?.error?.message || 'Sign-in failed', code: body?.error?.code } };
-      }
-      return { success: false, error: { message: 'Network error' } };
+      return toApiFailure(error, 'Sign-in failed');
     }
   },
 
@@ -130,20 +119,9 @@ export const authApi = {
         };
       }
 
-      return {
-        success: false,
-        error: { message: body.error?.message || 'Registration failed' },
-      };
+      return toApiFailure(body, 'Registration failed');
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: {
-            message: error.response?.data?.error?.message || 'Registration failed',
-          },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+      return toApiFailure(error, 'Registration failed');
     }
   },
 
@@ -152,13 +130,7 @@ export const authApi = {
       const response = await apiClient.post<SendOtpResponse>('/auth/resend-otp', { email });
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          message: error.response?.data?.error?.message || 'Failed to send OTP',
-        };
-      }
-      return { success: false, message: 'Network error' };
+      return toApiFailure(error, 'Failed to send OTP');
     }
   },
 
@@ -182,20 +154,9 @@ export const authApi = {
         };
       }
 
-      return {
-        success: false,
-        error: { message: body.error?.message || 'Verification failed' },
-      };
+      return toApiFailure(body, 'Verification failed');
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: {
-            message: error.response?.data?.error?.message || 'Verification failed',
-          },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+      return toApiFailure(error, 'Verification failed');
     }
   },
 
@@ -204,13 +165,7 @@ export const authApi = {
       const response = await apiClient.post<ForgotPasswordResponse>('/auth/forgot-password', { email, client: 'web' });
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          message: error.response?.data?.error?.message || 'Failed to request password reset',
-        };
-      }
-      return { success: false, message: 'Network error' };
+      return toApiFailure(error, 'Failed to request password reset');
     }
   },
 
@@ -219,13 +174,7 @@ export const authApi = {
       const response = await apiClient.post<ForgotPasswordResponse>('/auth/reset-password', { email, token, newPassword });
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          message: error.response?.data?.error?.message || 'Failed to reset password',
-        };
-      }
-      return { success: false, message: 'Network error' };
+      return toApiFailure(error, 'Failed to reset password');
     }
   },
 
@@ -247,10 +196,7 @@ export const authApi = {
       const response = await apiClient.post<{ success: boolean; message: string }>('/auth/delete-account/request');
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error?.message || error.response?.data?.message || 'Failed to request account deletion');
-      }
-      throw error;
+      throw new ApiRequestError(getApiError(error, 'Failed to request account deletion'));
     }
   },
 
@@ -259,10 +205,7 @@ export const authApi = {
       const response = await apiClient.post<{ success: boolean }>('/auth/delete-account/confirm', { otp, confirmText });
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error?.message || error.response?.data?.message || 'Invalid OTP or confirmation');
-      }
-      throw error;
+      throw new ApiRequestError(getApiError(error, 'Invalid OTP or confirmation'));
     }
   },
 
@@ -271,12 +214,7 @@ export const authApi = {
       const response = await apiClient.post<{ success: boolean; message?: string }>('/auth/reactivate/request', { email });
       return response.data;
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        // CONTRACT: the backend nests the message under `error.message`, like every other
-        // auth endpoint here, not top-level `message`.
-        throw new Error(error.response?.data?.error?.message || 'Failed to request reactivation');
-      }
-      throw error;
+      throw new ApiRequestError(getApiError(error, 'Failed to request reactivation'));
     }
   },
 
@@ -295,17 +233,9 @@ export const authApi = {
           nextStep: body.nextStep,
         };
       }
-      return { success: false, error: { message: body.error?.message || 'Reactivation failed' } };
+      return toApiFailure(body, 'Reactivation failed');
     } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        // CONTRACT: 400 INVALID_OTP/OTP_EXPIRED nest the message under `error.message`.
-        const body = error.response?.data;
-        return {
-          success: false,
-          error: { message: body?.error?.message || 'Invalid code', code: body?.error?.code },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+      return toApiFailure(error, 'Invalid code');
     }
   },
 };

@@ -1,5 +1,5 @@
-import axios from 'axios';
 import apiClient from './client';
+import { toApiFailure } from './apiError';
 
 export interface Inquiry {
   id: string;
@@ -54,14 +54,8 @@ export const inquiriesApi = {
         params: { listingId, page, limit },
       });
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to fetch inquiries' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to fetch inquiries');
     }
   },
 
@@ -72,14 +66,8 @@ export const inquiriesApi = {
         question,
       });
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to create inquiry' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to create inquiry');
     }
   },
 
@@ -89,14 +77,8 @@ export const inquiriesApi = {
         reply,
       });
       return response.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        return {
-          success: false,
-          error: { message: error.response?.data?.error?.message || 'Failed to send reply' },
-        };
-      }
-      return { success: false, error: { message: 'Network error' } };
+    } catch (error) {
+      return toApiFailure(error, 'Failed to send reply');
     }
   },
 };

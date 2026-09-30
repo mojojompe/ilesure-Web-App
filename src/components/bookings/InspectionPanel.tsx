@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Calendar02Icon, CheckmarkBadge02Icon, Cancel02Icon, Alert01Icon, Clock01Icon } from '@hugeicons/react';
 import { Button } from '../ui/Button';
+import type { InspectionStatus } from '../../contracts/generated';
 
 /**
  * The agent/landlord's view of a booking's viewing step.
@@ -14,7 +15,7 @@ interface InspectionPanelBooking {
   inspectionDate?: string;
   inspectionTime?: string;
   inspectorName?: string;
-  inspectionStatus?: 'pending' | 'scheduled' | 'completed' | 'missed';
+  inspectionStatus?: InspectionStatus;
   isVerified?: boolean;
   inspectionVerifiedBy?: 'tenant' | 'agent';
   inspectionVerifiedAt?: string;

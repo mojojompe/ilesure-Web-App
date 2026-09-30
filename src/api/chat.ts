@@ -1,5 +1,6 @@
 import apiClient from './client';
 import { socketService } from './socket';
+import { getApiErrorMessage, toApiFailure } from './apiError';
 
 interface ChatsResponse {
   success: boolean;
@@ -52,8 +53,8 @@ export const chatApi = {
     try {
       const response = await apiClient.get<ChatsResponse>('/chats');
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch chats' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch chats');
     }
   },
 
@@ -61,8 +62,8 @@ export const chatApi = {
     try {
       const response = await apiClient.get<MessagesResponse>(`/chats/${chatId}/messages`);
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch messages' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch messages');
     }
   },
 
@@ -86,8 +87,8 @@ export const chatApi = {
           },
         };
       }
-      if (res.data?.error?.message) {
-        return { success: false, error: res.data.error.message };
+      if (res.data?.success === false) {
+        return { success: false, error: getApiErrorMessage(res.data, 'Failed to send message') };
       }
     } catch (httpErr: any) {
       console.warn('[chatApi.sendMessage] REST failed, falling back to socket:', httpErr);
@@ -121,8 +122,8 @@ export const chatApi = {
       await apiClient.patch(`/chats/${chatId}/read`, messageId ? { messageId } : {});
       socketService.markAsRead(chatId, messageId);
       return { success: true };
-    } catch {
-      return { success: false };
+    } catch (err) {
+      return toApiFailure(err);
     }
   },
 

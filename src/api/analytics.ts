@@ -1,4 +1,5 @@
 import apiClient from './client';
+import { toApiFailure } from './apiError';
 
 interface AnalyticsResponse {
   success: boolean;
@@ -28,8 +29,8 @@ export const analyticsApi = {
     try {
       const response = await apiClient.get<AnalyticsResponse>('/agent/analytics');
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch analytics' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch analytics');
     }
   },
 
@@ -37,8 +38,8 @@ export const analyticsApi = {
     try {
       const response = await apiClient.get<AnalyticsResponse>(`/agent/analytics/views?period=${period}`);
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch views trend' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch views trend');
     }
   },
 
@@ -46,8 +47,8 @@ export const analyticsApi = {
     try {
       const response = await apiClient.get<AnalyticsResponse>('/agent/analytics/listings');
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch top listings' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch top listings');
     }
   },
 };

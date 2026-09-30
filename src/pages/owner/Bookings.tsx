@@ -5,10 +5,25 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
-import { agentApi } from '../../api/agent';
+import { ownerApi, type OwnerRole, type BookingDecision } from '../../api/owner';
+import { formatCurrency } from '../../utils/format';
 import { InspectionPanel } from '../../components/bookings/InspectionPanel';
 
-export function AgentBookingsPage() {
+const PAGE_COPY: Record<OwnerRole, { subtitle: string }> = {
+  agent: { subtitle: 'Manage your bookings' },
+  company: { subtitle: 'All company bookings' },
+};
+
+/** Text a booking row can be found by: listing title and tenant name/phone, either shape. */
+function bookingSearchText(booking: any): string {
+  return [
+    booking.listingId?.title, booking.listingTitle, booking.listingArea,
+    booking.userId?.fullName, booking.userName, booking.userId?.phone, booking.userPhone,
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
+  const api = ownerApi(role);
   const [filter, setFilter] = useState<'all' | 'pending' | 'confirmed' | 'completed' | 'shared'>('all');
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState<any[]>([]);
@@ -16,6 +31,8 @@ export function AgentBookingsPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [markingMissed, setMarkingMissed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchBookings();
@@ -23,93 +40,66 @@ export function AgentBookingsPage() {
 
   const fetchBookings = async () => {
     setLoading(true);
-    try {
-      if (filter === 'shared') {
-        const response = await agentApi.getSharedBookings();
-        if (response.success && response.data) {
-          setBookings(response.data.bookings || []);
-        }
-      } else {
-        const params: { status?: string } = {};
-        if (filter !== 'all') params.status = filter;
+    const response = filter === 'shared'
+      ? await api.getSharedBookings()
+      : await api.getBookings(filter !== 'all' ? { status: filter } : {});
+    if (response.success) {
+      setBookings(response.data.bookings as any[]);
+    } else {
+      console.error('Failed to fetch bookings:', response.error.message);
+    }
+    setLoading(false);
+  };
 
-        const response = await agentApi.getBookings(params);
-        if (response.success && response.data) {
-          setBookings(response.data.bookings || []);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to fetch bookings:', error);
-    } finally {
-      setLoading(false);
+  /** Runs a booking action; on success refresh and close, otherwise show why in the modal. */
+  const runAction = async (run: () => Promise<{ success: boolean; error?: { message: string } }>) => {
+    const result = await run();
+    if (result.success) {
+      setActionError(null);
+      fetchBookings();
+      setShowDetailModal(false);
+    } else {
+      setActionError(result.error?.message || 'Something went wrong');
     }
   };
 
   const handleMarkMissed = async (booking: any) => {
     setMarkingMissed(true);
-    try {
-      const response = await agentApi.markInspectionMissed(booking._id || booking.id);
-      if (response.success) {
-        fetchBookings();
-        setShowDetailModal(false);
-      } else {
-        console.error('Failed to mark inspection missed:', response.error?.message);
-      }
-    } finally {
-      setMarkingMissed(false);
-    }
+    await runAction(() => api.markInspectionMissed(booking._id || booking.id));
+    setMarkingMissed(false);
   };
 
   const handleReschedule = async (booking: any, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }) => {
     setUpdating(true);
-    try {
-      const bookingId = booking._id || booking.id;
-      const response = await agentApi.scheduleInspection(bookingId, data);
-      if (response.success) {
-        fetchBookings();
-        setShowDetailModal(false);
-      } else {
-        console.error('Failed to reschedule viewing:', response.error?.message);
-      }
-    } finally {
-      setUpdating(false);
-    }
+    await runAction(() => api.scheduleInspection(booking._id || booking.id, data));
+    setUpdating(false);
   };
 
-  const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
-
-  const handleStatusChange = async (booking: any, newStatus: string) => {
+  const handleStatusChange = async (booking: any, decision: BookingDecision) => {
     setUpdating(true);
-    try {
-      const bookingId = booking._id || booking.id;
-      const listingId = booking.listingId?._id || booking.listingId;
-      const response = await agentApi.updateBookingStatus(bookingId, newStatus, listingId);
-      if (response.success) {
-        fetchBookings();
-        setShowDetailModal(false);
-      } else {
-        console.error('Failed to update booking:', response.error?.message);
-      }
-    } catch (error) {
-      console.error('Failed to update booking:', error);
-    } finally {
-      setUpdating(false);
-    }
+    await runAction(() => api.decideBooking(booking._id || booking.id, decision));
+    setUpdating(false);
   };
 
   const handleView = (booking: any) => {
     setSelectedBooking(booking);
+    setActionError(null);
     setShowDetailModal(true);
   };
 
+  const term = searchQuery.trim().toLowerCase();
+  const visibleBookings = term ? bookings.filter(b => bookingSearchText(b).includes(term)) : bookings;
+
   return (
-    <AppLayout role="agent" title="Bookings" subtitle="Manage your bookings">
+    <AppLayout role={role} title="Bookings" subtitle={PAGE_COPY[role].subtitle}>
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
           <input
             type="text"
             placeholder="Search bookings..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
             className="clay-input w-full pl-11"
           />
         </div>
@@ -140,7 +130,7 @@ export function AgentBookingsPage() {
           <div className="flex items-center justify-center h-64">
             <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
           </div>
-        ) : bookings.length > 0 ? (
+        ) : visibleBookings.length > 0 ? (
           <div className="overflow-x-auto">
             {filter === 'shared' ? (
               <div className="overflow-x-auto w-full"><table className="clay-table">
@@ -157,7 +147,7 @@ export function AgentBookingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map((booking: any) => {
+                  {visibleBookings.map((booking: any) => {
                     const deadline = booking.paymentDeadline
                       ? new Date(booking.paymentDeadline).toLocaleDateString()
                       : '—';
@@ -165,7 +155,7 @@ export function AgentBookingsPage() {
                       ? Math.round((booking.totalPaid / booking.totalRequired) * 100)
                       : 0;
                     return (
-                      <tr key={booking.id}>
+                      <tr key={booking.id || booking._id}>
                         <td>
                           <p className="font-medium text-text-primary">{booking.listingTitle}</p>
                           <p className="text-xs text-text-tertiary">{booking.listingArea}</p>
@@ -233,7 +223,7 @@ export function AgentBookingsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {bookings.map(booking => {
+                  {visibleBookings.map(booking => {
                     const bookingId = booking._id || booking.id;
                     const listingTitle = booking.listingId?.title || booking.listingTitle || '—';
                     const tenantName = booking.userId?.fullName || booking.userName || '—';
@@ -477,6 +467,10 @@ export function AgentBookingsPage() {
                       onReschedule={(data) => handleReschedule(selectedBooking, data)}
                     />
                   </div>
+
+                  {actionError && (
+                    <p className="text-sm text-status-error">{actionError}</p>
+                  )}
 
                   {selectedBooking.status === 'pending' && (
                     <div className="flex gap-2 pt-4">

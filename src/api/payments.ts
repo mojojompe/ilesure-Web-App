@@ -1,5 +1,5 @@
-import axios from 'axios';
 import apiClient from './client';
+import { getApiError, ApiRequestError } from './apiError';
 
 export interface InitializePaymentRequest {
   tierId: string;
@@ -108,11 +108,8 @@ export const paymentsApi = {
         { accountNumber, bankCode }
       );
       return response.data.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error?.message || 'Failed to resolve account');
-      }
-      throw new Error('Network error');
+    } catch (error) {
+      throw new ApiRequestError(getApiError(error, 'Failed to resolve account'));
     }
   },
   async initialize(request: InitializePaymentRequest): Promise<InitializePaymentResponse> {
@@ -131,11 +128,8 @@ export const paymentsApi = {
         startedAt: Date.now(),
       });
       return response.data.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error?.message || 'Failed to initialize payment');
-      }
-      throw new Error('Network error');
+    } catch (error) {
+      throw new ApiRequestError(getApiError(error, 'Failed to initialize payment'));
     }
   },
 
@@ -145,11 +139,8 @@ export const paymentsApi = {
         `/payments/verify?reference=${reference}`
       );
       return response.data.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error?.message || 'Failed to verify payment');
-      }
-      throw new Error('Network error');
+    } catch (error) {
+      throw new ApiRequestError(getApiError(error, 'Failed to verify payment'));
     }
   },
 
@@ -159,11 +150,8 @@ export const paymentsApi = {
         `/payments/history?page=${page}&limit=${limit}${type ? `&type=${type}` : ''}`
       );
       return response.data.data;
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        throw new Error(error.response?.data?.error?.message || 'Failed to fetch payment history');
-      }
-      throw new Error('Network error');
+    } catch (error) {
+      throw new ApiRequestError(getApiError(error, 'Failed to fetch payment history'));
     }
   },
 };

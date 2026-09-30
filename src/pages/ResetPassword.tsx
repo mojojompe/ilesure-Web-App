@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { LockIcon, ArrowRight01Icon, CheckmarkBadge02Icon, Mail01Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import authApi from '../api/authApi';
+import { getApiErrorMessage } from '../api/apiError';
 
 export function ResetPasswordPage() {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function ResetPasswordPage() {
       }
     } catch (err: any) {
       console.error('Reset password error:', err);
-      setError(err.response?.data?.error?.message || 'Failed to reset password');
+      setError(getApiErrorMessage(err, 'Failed to reset password'));
     } finally {
       setLoading(false);
     }

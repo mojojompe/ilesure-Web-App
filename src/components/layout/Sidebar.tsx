@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { agentApi } from '../../api/agent';
-import { companyApi } from '../../api/company';
+import { ownerApi } from '../../api/owner';
 import { chatApi } from '../../api/chat';
 import { clsx } from 'clsx';
 import {
@@ -72,15 +71,9 @@ export function Sidebar({ isOpen, isCollapsed, onToggleCollapse, onClose, role }
   useEffect(() => {
     const fetchCounts = async () => {
       try {
-        const bookingsRes = role === 'company'
-          ? await companyApi.getBookings({ status: 'pending' })
-          : await agentApi.getBookings({ status: 'pending' });
-        
+        const bookingsRes = await ownerApi(role === 'company' ? 'company' : 'agent').getBookings({ status: 'pending' });
         if (bookingsRes.success) {
-          const total = (bookingsRes as any).pagination?.totalItems 
-            || (bookingsRes as any).data?.pagination?.totalItems 
-            || ((bookingsRes as any).bookings || (bookingsRes as any).data?.bookings || []).length;
-          setPendingBookings(total);
+          setPendingBookings(bookingsRes.data.pagination?.totalItems || bookingsRes.data.bookings.length);
         }
 
         const chatsRes = await chatApi.getChats();

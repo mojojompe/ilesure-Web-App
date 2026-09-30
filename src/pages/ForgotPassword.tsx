@@ -3,6 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { Mail01Icon, ArrowRight01Icon, CheckmarkBadge02Icon } from '@hugeicons/react';
 import { Button } from '../components/ui/Button';
 import authApi from '../api/authApi';
+import { getApiErrorMessage } from '../api/apiError';
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -21,7 +22,7 @@ export function ForgotPasswordPage() {
       }
     } catch (error: any) {
       console.error('Forgot password error:', error);
-      alert(error.response?.data?.error?.message || 'Failed to send reset email');
+      alert(getApiErrorMessage(error, 'Failed to send reset email'));
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,10 @@
+/**
+ * Company-only operations (dashboard, team, profile, subscription). Everything a company
+ * shares with an agent (listings, bookings, inspections, subaccount) lives in `./owner`.
+ */
 import apiClient from './client';
-import type { Listing, Booking, SharedBooking, CompanyAgent, Company } from '../types';
+import type { CompanyAgent, Company } from '../types';
+import { toApiFailure } from './apiError';
 
 interface CompanyDashboardResponse {
   success: boolean;
@@ -42,81 +47,14 @@ interface CompanyAgentsResponse {
   error?: { message: string };
 }
 
-interface CompanyListingsResponse {
-  success: boolean;
-  data?: {
-    listings: Listing[];
-    pagination: {
-      currentPage: number;
-      totalPages: number;
-      totalItems: number;
-    };
-  };
-  error?: { message: string };
-}
-
-export interface CompanySubaccountInfo {
-  subaccountCode: string | null;
-  bankCode: string | null;
-  accountNumber: string | null;
-  accountName: string | null;
-  bankName?: string | null;
-}
-
 export const companyApi = {
   async getDashboard(): Promise<CompanyDashboardResponse> {
     try {
       const response = await apiClient.get<CompanyDashboardResponse>('/company/dashboard');
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch dashboard' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch dashboard');
     }
-  },
-
-  async getListings(params?: { status?: string; search?: string; limit?: number; page?: number }): Promise<CompanyListingsResponse> {
-    try {
-      const searchParams = new URLSearchParams();
-      if (params?.status) searchParams.set('status', params.status);
-      if (params?.search) searchParams.set('search', params.search);
-      if (params?.limit) searchParams.set('limit', String(params.limit));
-      if (params?.page) searchParams.set('page', String(params.page));
-
-      const queryString = searchParams.toString();
-      const response = await apiClient.get<CompanyListingsResponse>(`/company/listings${queryString ? `?${queryString}` : ''}`);
-      return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch listings' } };
-    }
-  },
-
-  async getListing(id: string): Promise<{ success: boolean; data?: { listing: any }; error?: { message: string } }> {
-    try {
-      const response = await apiClient.get<any>(`/listings/${id}`);
-      return { success: true, data: { listing: response.data.data } };
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch listing' } };
-    }
-  },
-
-  async createListing(data: any): Promise<{ success: boolean; listing?: Listing; message?: string; details?: string[] }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; data: Listing }>('/company/listings', data);
-      return { success: true, listing: response.data.data };
-    } catch (err: any) {
-      // BUGFIX (QA-CO-014): see the note in api/agent.ts, the swallowed error made
-      // publishing fail with no message at all.
-      const apiError = err?.response?.data?.error;
-      return {
-        success: false,
-        message: apiError?.message || 'Failed to create listing',
-        details: apiError?.details,
-      };
-    }
-  },
-
-  async uploadImages(listingId: string, formData: FormData): Promise<string[]> {
-    const response = await apiClient.upload<{ success: boolean; data: string[] }>(`/listings/${listingId}/images`, formData);
-    return response.data.data;
   },
 
   async getAgents(params?: { search?: string; status?: string; limit?: number; page?: number }): Promise<CompanyAgentsResponse> {
@@ -130,8 +68,8 @@ export const companyApi = {
       const queryString = searchParams.toString();
       const response = await apiClient.get<CompanyAgentsResponse>(`/company/agents${queryString ? `?${queryString}` : ''}`);
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch agents' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch agents');
     }
   },
 
@@ -139,8 +77,8 @@ export const companyApi = {
     try {
       const response = await apiClient.post<{ success: boolean; message?: string }>('/company/agents/invite', { email, fullName });
       return response.data;
-    } catch {
-      return { success: false, message: 'Failed to invite agent' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to invite agent');
     }
   },
 
@@ -148,8 +86,8 @@ export const companyApi = {
     try {
       const response = await apiClient.put<{ success: boolean; message?: string }>(`/company/agents/${id}`, data);
       return response.data;
-    } catch {
-      return { success: false, message: 'Failed to update agent' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to update agent');
     }
   },
 
@@ -157,116 +95,8 @@ export const companyApi = {
     try {
       const response = await apiClient.delete<{ success: boolean; message?: string }>(`/company/agents/${id}`);
       return response.data;
-    } catch {
-      return { success: false, message: 'Failed to remove agent' };
-    }
-  },
-
-  /**
-   * BUGFIX (LL-P0-4): archive/restore live on the agent routes, which are mounted behind
-   * `agentOrCompanyMiddleware` and have always accepted company users, the backend's ownership
-   * filter was what rejected them, and that is fixed. The path says `/agent` because one
-   * handler serves both; duplicating it under `/company` would be a second URL for the same
-   * code. They are exposed here so a company page never has to reach into agentApi.
-   */
-  async archiveListing(id: string): Promise<{ success: boolean; message?: string }> {
-    try {
-      const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/archive`);
-      return response.data;
-    } catch {
-      return { success: false, message: 'Failed to archive listing' };
-    }
-  },
-
-  async markListingRented(id: string, reason = 'rented_off_platform'): Promise<{ success: boolean; message?: string; pointsAwarded?: number }> {
-    try {
-      const response = await apiClient.put<{ success: boolean; message?: string; pointsAwarded?: number }>(`/company/listings/${id}/mark-rented`, { reason });
-      return response.data;
-    } catch {
-      return { success: false, message: 'Failed to mark listing as rented' };
-    }
-  },
-
-  async restoreListing(id: string): Promise<{ success: boolean; message?: string }> {
-    try {
-      const response = await apiClient.put<{ success: boolean; message?: string }>(`/agent/listings/${id}/restore`);
-      return response.data;
-    } catch {
-      return { success: false, message: 'Failed to restore listing' };
-    }
-  },
-
-  async updateListing(id: string, data: { status?: string; title?: string; description?: string; price?: number }): Promise<{ success: boolean; message?: string }> {
-    try {
-      const response = await apiClient.put<{ success: boolean; message?: string }>(`/company/listings/${id}`, data);
-      return response.data;
-    } catch {
-      return { success: false, message: 'Failed to update listing' };
-    }
-  },
-
-  async getBookings(params?: { status?: string; limit?: number; page?: number }): Promise<{ success: boolean; bookings?: Booking[]; pagination?: any; message?: string }> {
-    try {
-      const searchParams = new URLSearchParams();
-      if (params?.status) searchParams.set('status', params.status);
-      if (params?.limit) searchParams.set('limit', String(params.limit));
-      if (params?.page) searchParams.set('page', String(params.page));
-
-      const queryString = searchParams.toString();
-      const response = await apiClient.get<{ success: boolean; data: { bookings: Booking[], pagination?: any } }>(`/company/bookings${queryString ? `?${queryString}` : ''}`);
-      return { success: true, bookings: response.data.data.bookings, pagination: response.data.data.pagination };
-    } catch {
-      return { success: false, message: 'Failed to fetch bookings' };
-    }
-  },
-
-  async updateBookingStatus(id: string, status: string): Promise<{ success: boolean; message?: string }> {
-    try {
-      const response = await apiClient.put<{ success: boolean; message?: string }>(`/company/bookings/${id}`, { status });
-      return response.data;
-    } catch {
-      return { success: false, message: 'Failed to update booking' };
-    }
-  },
-
-  /** Record that a scheduled viewing did not happen (company/agent only). */
-  async markInspectionMissed(bookingId: string): Promise<{ success: boolean; error?: { message: string } }> {
-    try {
-      const response = await apiClient.post<{ success: boolean }>(`/bookings/${bookingId}/inspection/missed`);
-      return response.data;
-    } catch (error: any) {
-      return {
-        success: false,
-        error: { message: error?.response?.data?.error?.message || 'Failed to mark the inspection as missed' },
-      };
-    }
-  },
-
-  /** Schedule or reschedule an inspection viewing. */
-  async scheduleInspection(bookingId: string, data: { inspectionDate: string; inspectionTime: string; inspectorName?: string }): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; data?: any }>(`/bookings/${bookingId}/inspection`, data);
-      return response.data;
-    } catch (error: any) {
-      return {
-        success: false,
-        error: { message: error?.response?.data?.error?.message || 'Failed to schedule viewing' },
-      };
-    }
-  },
-
-  async getSharedBookings(params?: { status?: string; limit?: number; page?: number }): Promise<{ success: boolean; data?: { bookings: SharedBooking[]; pagination: { currentPage: number; totalPages: number; totalItems: number } }; message?: string }> {
-    try {
-      const searchParams = new URLSearchParams();
-      if (params?.status) searchParams.set('status', params.status);
-      if (params?.limit) searchParams.set('limit', String(params.limit));
-      if (params?.page) searchParams.set('page', String(params.page));
-
-      const queryString = searchParams.toString();
-      const response = await apiClient.get<{ success: boolean; data: { bookings: SharedBooking[]; pagination: any } }>(`/company/shared-bookings${queryString ? `?${queryString}` : ''}`);
-      return { success: true, data: response.data.data };
-    } catch {
-      return { success: false, message: 'Failed to fetch shared bookings' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to remove agent');
     }
   },
 
@@ -275,8 +105,8 @@ export const companyApi = {
       const response = await apiClient.get<{ success: boolean; data: any }>('/company/profile');
       const company = response.data.data?.company || response.data.data;
       return { success: true, company };
-    } catch {
-      return { success: false, message: 'Failed to fetch company profile' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch company profile');
     }
   },
 
@@ -287,26 +117,8 @@ export const companyApi = {
       if (data.name) payload.tradingName = data.name;
       const response = await apiClient.put<{ success: boolean; message?: string }>('/company/profile', payload);
       return response.data;
-    } catch {
-      return { success: false, message: 'Failed to update company profile' };
-    }
-  },
-
-  async getSubaccount(): Promise<{ success: boolean; data?: CompanySubaccountInfo; error?: { message: string } }> {
-    try {
-      const response = await apiClient.get<{ success: boolean; data: CompanySubaccountInfo }>('/company/subaccount');
-      return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch company subaccount' } };
-    }
-  },
-
-  async setupSubaccount(data: { businessName: string; bankCode: string; accountNumber: string; accountName: string; bankName?: string }): Promise<{ success: boolean; data?: CompanySubaccountInfo; message?: string; error?: { message: string } }> {
-    try {
-      const response = await apiClient.post<{ success: boolean; data: CompanySubaccountInfo; message?: string }>('/company/subaccount', data);
-      return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to setup company subaccount' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to update company profile');
     }
   },
 
@@ -315,8 +127,8 @@ export const companyApi = {
       const response = await apiClient.get<{ success: boolean; data: any }>('/company/subscription');
       const subscription = response.data.data?.subscription || response.data.data?.plan;
       return { success: true, subscription };
-    } catch {
-      return { success: false, message: 'Failed to fetch subscription' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch subscription');
     }
   },
 };

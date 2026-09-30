@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useCa
 import type { User, UserRole, AuthState } from '../types';
 import { authApi } from './authApi';
 import { userApi } from './user';
+import { getApiErrorMessage } from './apiError';
 
 interface AuthContextType extends AuthState {
   login: (email: string, password: string) => Promise<{ success: boolean; user?: User; error?: string; errorCode?: string; nextStep?: string; email?: string }>;
@@ -112,8 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         nextStep: response.nextStep,
         email: response.email,
       };
-    } catch {
-      return { success: false, error: 'Network error' };
+    } catch (err) {
+      return { success: false, error: getApiErrorMessage(err, 'Login failed') };
     }
   };
 

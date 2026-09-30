@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 import type { UserRole } from '../types';
 import userApi from '../api/user';
+import { getApiErrorMessage } from '../api/apiError';
 
 interface VerificationProps {
   role: UserRole;
@@ -211,7 +212,7 @@ export function VerificationPage({ role }: VerificationProps) {
         setError(res.message || 'Failed to submit documents. Please try again.');
       }
     } catch (err: any) {
-      setError(err?.message || 'An unexpected error occurred. Please try again.');
+      setError(getApiErrorMessage(err, 'An unexpected error occurred. Please try again.'));
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,6 @@
 import apiClient from './client';
 import type { RoommateProfile, MatchResult } from '../types';
+import { getApiError } from './apiError';
 
 export interface MatchWithUser extends MatchResult {
   id: string;
@@ -45,7 +46,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to create profile' }
+        error: getApiError(error, 'Failed to create profile')
       };
     }
   },
@@ -57,7 +58,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to fetch profile' }
+        error: getApiError(error, 'Failed to fetch profile')
       };
     }
   },
@@ -69,7 +70,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to update profile' }
+        error: getApiError(error, 'Failed to update profile')
       };
     }
   },
@@ -82,7 +83,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to fetch matches' }
+        error: getApiError(error, 'Failed to fetch matches')
       };
     }
   },
@@ -98,7 +99,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to fetch match' }
+        error: getApiError(error, 'Failed to fetch match')
       };
     }
   },
@@ -114,7 +115,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to fetch mutual matches' }
+        error: getApiError(error, 'Failed to fetch mutual matches')
       };
     }
   },
@@ -132,7 +133,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to express interest' }
+        error: getApiError(error, 'Failed to express interest')
       };
     }
   },
@@ -145,7 +146,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to fetch requests' }
+        error: getApiError(error, 'Failed to fetch requests')
       };
     }
   },
@@ -162,7 +163,7 @@ export const roommateApi = {
     } catch (error: any) {
       return {
         success: false,
-        error: error.response?.data?.error || { code: 'SERVER_ERROR', message: 'Failed to update request' }
+        error: getApiError(error, 'Failed to update request')
       };
     }
   },

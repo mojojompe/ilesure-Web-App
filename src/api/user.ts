@@ -1,5 +1,6 @@
 import apiClient from './client';
 import type { User } from '../types';
+import { toApiFailure } from './apiError';
 
 interface ProfileResponse {
   success: boolean;
@@ -41,8 +42,8 @@ export const userApi = {
         accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : undefined
       );
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch profile' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch profile');
     }
   },
 
@@ -50,8 +51,8 @@ export const userApi = {
     try {
       const response = await apiClient.put<ProfileResponse>('/users/profile', data);
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to update profile' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to update profile');
     }
   },
 
@@ -59,8 +60,8 @@ export const userApi = {
     try {
       const response = await apiClient.get<NotificationSettingsResponse>('/users/notifications');
       return response.data;
-    } catch {
-      return { success: false };
+    } catch (err) {
+      return toApiFailure(err);
     }
   },
 
@@ -68,8 +69,8 @@ export const userApi = {
     try {
       const response = await apiClient.put<NotificationSettingsResponse>('/users/notifications', settings);
       return response.data;
-    } catch {
-      return { success: false };
+    } catch (err) {
+      return toApiFailure(err);
     }
   },
 
@@ -80,8 +81,8 @@ export const userApi = {
         newPassword,
       });
       return response.data;
-    } catch {
-      return { success: false, message: 'Failed to change password' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to change password');
     }
   },
 
@@ -98,8 +99,8 @@ export const userApi = {
         },
       });
       return response.data;
-    } catch (err: any) {
-      return { success: false, message: err?.response?.data?.error?.message || 'Failed to submit company documents' };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to submit company documents');
     }
   },
 
@@ -111,8 +112,8 @@ export const userApi = {
     try {
       const response = await apiClient.get<{ success: boolean; data?: KycStatus; error?: { message: string } }>('/kyc/status');
       return response.data;
-    } catch {
-      return { success: false, error: { message: 'Failed to fetch verification status' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to fetch verification status');
     }
   },
 
@@ -120,8 +121,8 @@ export const userApi = {
     try {
       const response = await apiClient.post<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string }; error?: { message: string } }>('/kyc/initialize', { type });
       return response.data;
-    } catch (err: any) {
-      return { success: false, error: { message: err?.response?.data?.error?.message || 'Failed to initialize verification' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to initialize verification');
     }
   },
 
@@ -129,8 +130,8 @@ export const userApi = {
     try {
       const response = await apiClient.post<{ success: boolean; data?: any; error?: { message: string } }>('/kyc/verify', { referenceId, type });
       return response.data;
-    } catch (err: any) {
-      return { success: false, error: { message: err?.response?.data?.error?.message || 'Failed to verify' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to verify');
     }
   },
 
@@ -138,8 +139,8 @@ export const userApi = {
     try {
       const response = await apiClient.post<{ success: boolean; data?: any; error?: { message: string } }>('/kyc/sync', type ? { type } : {});
       return response.data;
-    } catch (err: any) {
-      return { success: false, error: { message: err?.response?.data?.error?.message || 'Failed to sync verification' } };
+    } catch (err) {
+      return toApiFailure(err, 'Failed to sync verification');
     }
   },
 };
