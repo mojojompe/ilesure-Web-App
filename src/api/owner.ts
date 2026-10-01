@@ -66,13 +66,20 @@ export interface SubaccountInfo {
   accountNumber: string | null;
   accountName: string | null;
   bankName?: string | null;
+  /** When the payout account was last set or changed. */
+  changedAt?: string | null;
 }
 
+/**
+ * Setting up and changing the payout account are one call. The server resolves the holder
+ * name with Paystack and stores THAT (a client `accountName` is ignored); a holder that does
+ * not match the owner's verified name is refused with NAME_MISMATCH.
+ */
 export interface SubaccountSetup {
-  businessName: string;
+  businessName?: string;
   bankCode: string;
   accountNumber: string;
-  accountName: string;
+  accountName?: string;
   bankName?: string;
 }
 
@@ -123,6 +130,8 @@ export interface OwnerApi {
   markInspectionMissed(bookingId: string): Promise<OwnerResult<Booking | null>>;
   getSubaccount(): Promise<OwnerResult<SubaccountInfo>>;
   setupSubaccount(data: SubaccountSetup): Promise<OwnerResult<SubaccountInfo>>;
+  /** Refused with PAYOUT_ACCOUNT_IN_USE (409) while listings/bookings still pay into it. */
+  removeSubaccount(): Promise<OwnerResult<{ removed: boolean }>>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -381,6 +390,10 @@ export function createOwnerApi(role: OwnerRole, http: OwnerHttp = apiClient): Ow
 
     setupSubaccount(data) {
       return call('Failed to setup subaccount', () => http.post(ep.subaccount, data), (body) => body?.data);
+    },
+
+    removeSubaccount() {
+      return call('Failed to remove payout account', () => http.delete(ep.subaccount), (body) => ({ removed: Boolean(body?.data?.removed ?? true) }));
     },
   };
 }

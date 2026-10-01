@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Clock01Icon as Clock } from '@hugeicons/react';
+import { FloppyDiskIcon, Loading02Icon, SecurityIcon, Clock01Icon as Clock } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -7,11 +7,9 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { userApi } from '../../api/user';
 import { tiersApi, resolveMyTierUsage, catalogueMaxListings } from '../../api/tiers';
 import { useAuth } from '../../api/authContext';
-import { ownerApi } from '../../api/owner';
-import { paymentsApi, Bank } from '../../api/payments';
+import { PayoutAccountCard } from '../../components/payout/PayoutAccountCard';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
-import { getApiErrorMessage } from '../../api/apiError';
 
 export function AgentSettingsPage() {
   const { user: authUser, updateUser } = useAuth();
@@ -39,23 +37,8 @@ export function AgentSettingsPage() {
     bio: '',
   });
 
-  const [banks, setBanks] = useState<Bank[]>([]);
-  const [subaccount, setSubaccount] = useState<any>(null);
-  const [subaccountLoading, setSubaccountLoading] = useState(false);
-  const [bankForm, setBankForm] = useState({
-    businessName: '',
-    bankCode: '',
-    accountNumber: '',
-    accountName: '',
-  });
-  const [resolving, setResolving] = useState(false);
-  const [resolved, setResolved] = useState(false);
-  const [setupLoading, setSetupLoading] = useState(false);
-
   useEffect(() => {
     fetchProfile();
-    loadBanks();
-    loadSubaccount();
     loadNotificationSettings();
   }, []);
 
@@ -71,64 +54,6 @@ export function AgentSettingsPage() {
       }
     } catch {
       // Leave the defaults in place; the save path reports its own failures.
-    }
-  };
-
-  const loadBanks = async () => {
-    const bankList = await paymentsApi.listBanks();
-    setBanks(bankList);
-  };
-
-  const loadSubaccount = async () => {
-    const res = await ownerApi('agent').getSubaccount();
-    if (res.success && res.data) {
-      setSubaccount(res.data);
-      if (res.data.subaccountCode) {
-        setBankForm(prev => ({
-          businessName: prev.businessName,
-          bankCode: res.data!.bankCode || '',
-          accountNumber: res.data!.accountNumber || '',
-          accountName: res.data!.accountName || '',
-        }));
-        setResolved(true);
-      }
-    }
-  };
-
-  const handleResolveAccount = async () => {
-    if (!bankForm.bankCode || !bankForm.accountNumber || bankForm.accountNumber.length < 10) return;
-    setResolving(true);
-    try {
-      const result = await paymentsApi.resolveAccount(bankForm.accountNumber, bankForm.bankCode);
-      setBankForm(prev => ({ ...prev, accountName: result.accountName }));
-      setResolved(true);
-    } catch (err: any) {
-      setResolved(false);
-      showToast(getApiErrorMessage(err, 'Failed to resolve account'), 'error');
-    } finally {
-      setResolving(false);
-    }
-  };
-
-  const handleSetupSubaccount = async () => {
-    if (!bankForm.businessName || !bankForm.bankCode || !bankForm.accountNumber || !bankForm.accountName) {
-      showToast('Please fill in all bank details and resolve your account', 'error');
-      return;
-    }
-    setSetupLoading(true);
-    try {
-      // QA-AGT-005: this is the call that persists the verified account server-side.
-      const res = await ownerApi('agent').setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
-      if (res.success) {
-        setSubaccount(res.data || null);
-        showToast('Bank account and subaccount setup successfully!');
-      } else {
-        showToast(res.error?.message || 'Failed to setup subaccount', 'error');
-      }
-    } catch (err: any) {
-      showToast(getApiErrorMessage(err, 'Failed to setup subaccount'), 'error');
-    } finally {
-      setSetupLoading(false);
     }
   };
 
@@ -183,9 +108,6 @@ export function AgentSettingsPage() {
           whatsapp: profileData.whatsapp || '',
           bio: profileData.bio || '',
         });
-        // Default the payout business name to the account holder's name so the Setup button is usable.
-        const holder = profileData.fullName || '';
-        setBankForm(prev => ({ ...prev, businessName: prev.businessName || holder }));
       }
     } catch (error) {
       console.error('Failed to fetch profile:', error);
@@ -392,106 +314,15 @@ export function AgentSettingsPage() {
           </ClayCard>
 
           {user?.role !== 'sub_agent' && (
-            <ClayCard className="p-5">
-              <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-                <Money01Icon className="w-5 h-5 text-mustard" />
-                Bank Account for Payments
-              </h2>
-              {subaccount?.subaccountCode ? (
-                <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
-                  <div className="flex items-center gap-2 text-status-success font-medium">
-                    <CheckmarkBadge02Icon className="w-5 h-5" />
-                    Subaccount Active
-                  </div>
-                  <div className="text-sm text-text-secondary space-y-1">
-                    <p><span className="font-medium">Bank Name:</span> {banks.find(b => b.code === subaccount.bankCode)?.name || subaccount.bankCode}</p>
-                    <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
-                    <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
-                    <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
-                    <p className="text-xs text-text-tertiary mt-2">
-                      Rent payments will be settled automatically to your account.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-text-tertiary">
-                    Set up your bank account to receive rent payments directly.
-                  </p>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                      Business / Agency Name
-                    </label>
-                    <input
-                      type="text"
-                      value={bankForm.businessName}
-                      onChange={(e) => setBankForm({ ...bankForm, businessName: e.target.value })}
-                      className="clay-input w-full"
-                      placeholder="e.g. ABC Properties"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                      Bank
-                    </label>
-                    <select
-                      value={bankForm.bankCode}
-                      onChange={(e) => { setBankForm({ ...bankForm, bankCode: e.target.value }); setResolved(false); }}
-                      className="clay-input w-full"
-                    >
-                      <option value="">Select a bank</option>
-                      {banks.map(b => (
-                        <option key={b.code} value={b.code}>{b.name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                      Account Number
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        inputMode="numeric"
-                        name="nuban-account-number"
-                        autoComplete="off"
-                        data-lpignore="true"
-                        data-form-type="other"
-                        value={bankForm.accountNumber}
-                        onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
-                        className="clay-input flex-1"
-                        placeholder="0123456789"
-                        maxLength={10}
-                      />
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={handleResolveAccount}
-                        loading={resolving}
-                        disabled={!bankForm.bankCode || bankForm.accountNumber.length < 10}
-                      >
-                        Verify
-                      </Button>
-                    </div>
-                  </div>
-                  {resolved && bankForm.accountName && (
-                    <div className="p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
-                      <p className="text-sm font-medium text-status-success">Account verified</p>
-                      <p className="text-sm text-text-primary font-semibold">{bankForm.accountName}</p>
-                    </div>
-                  )}
-                  <Button
-                    variant="primary"
-                    className="w-full"
-                    onClick={handleSetupSubaccount}
-                    loading={setupLoading}
-                    disabled={!resolved || !bankForm.businessName}
-                  >
-                    <Money01Icon className="w-4 h-4 mr-2" /> Save Bank Account
-                  </Button>
-                </div>
-              )}
-            </ClayCard>
+            <PayoutAccountCard
+              role="agent"
+              title="Bank Account for Payments"
+              intro="Set up your bank account to receive rent payments directly. The account name must match your verified name."
+              activeNote="Rent payments will be settled automatically to your account."
+              businessLabel="Business / Agency Name"
+              businessPlaceholder="e.g. ABC Properties"
+              onToast={showToast}
+            />
           )}
         </div>
 
