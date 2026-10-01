@@ -12,6 +12,7 @@ import { paymentsApi, Bank } from '../../api/payments';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
 import { getApiErrorMessage } from '../../api/apiError';
+import { companyDocumentsState } from '../../lib/companyVerification';
 
 export function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,7 @@ export function CompanySettingsPage() {
   const [officeAddress, setOfficeAddress] = useState('');
   const [docUploading, setDocUploading] = useState(false);
   const [docSubmitted, setDocSubmitted] = useState(false);
+  const docsState = companyDocumentsState(company, docSubmitted);
 
   useEffect(() => {
     fetchData();
@@ -298,18 +300,27 @@ export function CompanySettingsPage() {
               <Note01Icon className="w-5 h-5 text-mustard" />
               Company Documents
             </h2>
-            {company?.status === 'verified' ? (
+            {docsState === 'verified' ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
                 <CheckmarkBadge02Icon className="w-4 h-4 text-status-success" />
                 <p className="text-sm font-medium text-status-success">Company is verified</p>
               </div>
-            ) : company?.documentsSubmitted || docSubmitted ? (
+            ) : docsState === 'under_review' ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-mustard/10 border border-mustard/20">
                 <Alert01Icon className="w-4 h-4 text-mustard" />
                 <p className="text-sm font-medium text-mustard">Documents submitted, under review</p>
               </div>
             ) : (
               <div className="space-y-4">
+                {docsState === 'rejected' && (
+                  <div className="p-3 rounded-clay-sm bg-status-error/10 border border-status-error/20">
+                    <p className="text-sm font-medium text-status-error">Your company verification was not approved.</p>
+                    {company?.rejectionReason && (
+                      <p className="text-sm text-text-secondary mt-1">Reason: {company.rejectionReason}</p>
+                    )}
+                    <p className="text-xs text-text-tertiary mt-1">Upload corrected documents below to resubmit.</p>
+                  </div>
+                )}
                 <p className="text-sm text-text-tertiary">
                   Upload your CAC certificate and business permit for verification.
                 </p>

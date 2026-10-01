@@ -119,6 +119,9 @@ export function CompanyAgentsPage() {
       if (response.success) {
         showToast('Agent removed', 'success');
         fetchAgents();
+      } else {
+        // A refused removal (404, 403) used to fail silently, the agent simply stayed listed.
+        showToast(response.message || 'Failed to remove agent', 'error');
       }
     } catch {
       showToast('Failed to remove agent', 'error');

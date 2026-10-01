@@ -7,7 +7,7 @@ import { useAuth } from '../api/authContext';
 
 export function UpdatePasswordPage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { logout } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -33,14 +33,11 @@ export function UpdatePasswordPage() {
     try {
       const result = await userApi.changePassword(currentPassword, newPassword);
       if (result.success) {
-        // Redirect based on role
-        if (user?.role === 'company_admin' || user?.role === 'company') {
-          navigate('/company');
-        } else if (user?.role === 'agent' || user?.role === 'sub_agent' || user?.role === 'landlord') {
-          navigate('/agent');
-        } else {
-          navigate('/');
-        }
+        // BUGFIX (company QA): PUT /users/password revokes every session (token version bump),
+        // so sending the invitee on to their dashboard only produced a wall of 401s and an
+        // unexplained bounce to the login screen. End the stale session here and say why.
+        logout();
+        navigate('/login?reason=password_changed', { replace: true });
       } else {
         setError(result.message || 'Failed to update password');
       }

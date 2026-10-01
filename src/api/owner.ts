@@ -154,8 +154,13 @@ const ENDPOINTS: Record<OwnerRole, Endpoints> = {
   },
   company: {
     listings: '/company/listings',
-    // No GET /company/listings/:id; the public detail route is what company pages used.
-    listing: (id) => `/listings/${id}`,
+    // No GET /company/listings/:id. This used the PUBLIC detail route, which answers 404 for a
+    // listing that is not live unless the caller is its landlord/agent, so a company could not
+    // open (or edit) a pending/rejected/archived listing one of its agents had created. The
+    // /agent route is mounted behind agentOrCompanyMiddleware and its ownership filter gives a
+    // company admin every listing carrying its companyId, the same shared-handler
+    // arrangement deleteListing uses below.
+    listing: (id) => `/agent/listings/${id}`,
     // No DELETE /company/listings/:id. The /agent route is mounted behind
     // agentOrCompanyMiddleware and its ownership filter accepts the caller's companyId
     // (agentController.listingOwnershipFilter), the same shared-handler arrangement
