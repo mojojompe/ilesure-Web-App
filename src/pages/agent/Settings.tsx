@@ -301,6 +301,11 @@ export function AgentSettingsPage() {
                   onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                   className="clay-input w-full"
                 />
+                {((user as any)?.ninVerified || (user as any)?.bvnVerified) && (
+                  <p className="text-xs text-text-tertiary mt-1">
+                    Must match the name on your verified ID. You can add a middle name or change the order.
+                  </p>
+                )}
               </div>
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
