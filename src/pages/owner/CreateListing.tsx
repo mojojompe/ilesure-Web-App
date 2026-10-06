@@ -30,6 +30,10 @@ import {
   waterOptions,
   genderOptions,
 } from '../../constants/listingVocabulary';
+import { PROPERTY_TYPE_LABELS, GENDER_LABELS, POWER_LABELS } from '../../contracts/generated';
+
+/** Display label for a vocabulary value, falling back to the raw value for anything unmapped. */
+const labelFor = (labels: Record<string, string>, value: string): string => labels[value] ?? value ?? '-';
 
 const labelClass = 'block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2';
 
@@ -540,7 +544,7 @@ function ReviewStep({ w }: { w: ListingWizard }) {
 
         <div className="space-y-3 text-sm">
           <ReviewRow label="Title"><span className="font-medium text-right max-w-[60%] truncate">{form.title || '-'}</span></ReviewRow>
-          <ReviewRow label="Type"><span className="font-medium capitalize">{form.propertyType}</span></ReviewRow>
+          <ReviewRow label="Type"><span className="font-medium">{labelFor(PROPERTY_TYPE_LABELS, form.propertyType)}</span></ReviewRow>
           {form.propertyType === 'shortlet' ? (
             <ReviewRow label="Pricing">
               <span className="font-medium text-right max-w-[60%]">
@@ -559,11 +563,11 @@ function ReviewStep({ w }: { w: ListingWizard }) {
               </ReviewRow>
             </>
           )}
-          <ReviewRow label="Location"><span className="font-medium text-right max-w-[60%]">{form.address}, {form.area}</span></ReviewRow>
+          <ReviewRow label="Location"><span className="font-medium text-right max-w-[60%]">{[form.address, form.area, form.city].filter(Boolean).join(', ')}</span></ReviewRow>
           <ReviewRow label="Landmark"><span className="font-medium text-right max-w-[60%]">{form.landmark || '-'}</span></ReviewRow>
           <ReviewRow label="Occupants"><span className="font-medium">{form.maxOccupants}</span></ReviewRow>
-          <ReviewRow label="Gender"><span className="font-medium capitalize">{form.gender}</span></ReviewRow>
-          <ReviewRow label="Power"><span className="font-medium capitalize">{form.power}</span></ReviewRow>
+          <ReviewRow label="Gender"><span className="font-medium">{labelFor(GENDER_LABELS, form.gender)}</span></ReviewRow>
+          <ReviewRow label="Power"><span className="font-medium">{labelFor(POWER_LABELS, form.power)}</span></ReviewRow>
           {form.additionalNotes && (
             <ReviewRow label="Notes"><span className="font-medium text-right max-w-[60%] truncate">{form.additionalNotes}</span></ReviewRow>
           )}

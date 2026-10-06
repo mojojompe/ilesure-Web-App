@@ -42,6 +42,7 @@ import { NotFound } from './pages/NotFound';
 import { CallProvider } from './contexts/CallContext';
 import { CallOverlay } from './components/call/CallOverlay';
 import chatApi from './api/chat';
+import { socketService } from './api/socket';
 
 function ProtectedRoute({ children, role, excludeRole }: { children: React.ReactNode; role?: 'agent' | 'company'; excludeRole?: string }) {
   // DECISION (W-M1): `isAuthenticated` and `role` originate from the client-controlled
@@ -285,7 +286,22 @@ function AppRoutes() {
  * anywhere except that one screen.
  */
 function SocketConnection() {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, updateUser } = useAuth();
+
+  // Keep the signed-in user's verification flags current when a Dojah webhook lands, so
+  // gates that read them (the dashboard's "verify to create listings" banner, the listing
+  // wizard) open without a page reload.
+  useEffect(() => {
+    const handleKycChange = (data: { ninVerified?: boolean; bvnVerified?: boolean; verificationStatus?: string }) => {
+      const patch: Record<string, unknown> = {};
+      if (typeof data?.ninVerified === 'boolean') patch.ninVerified = data.ninVerified;
+      if (typeof data?.bvnVerified === 'boolean') patch.bvnVerified = data.bvnVerified;
+      if (data?.verificationStatus) patch.verificationStatus = data.verificationStatus;
+      if (Object.keys(patch).length) updateUser(patch as any);
+    };
+    socketService.on('kyc_status_changed', handleKycChange);
+    return () => { socketService.off('kyc_status_changed', handleKycChange); };
+  }, [updateUser]);
 
   useEffect(() => {
     if (!isAuthenticated) {

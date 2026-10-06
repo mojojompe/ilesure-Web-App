@@ -10,6 +10,10 @@ import { ownerApi, type OwnerRole, type OwnerListing, type MarkRentedReason } fr
 import { propertyTypes } from '../../constants/listingVocabulary';
 import { formatCurrency } from '../../utils/format';
 
+/** 'pending_approval' -> 'Pending approval'. */
+const statusLabel = (status?: string): string =>
+  status ? status.charAt(0).toUpperCase() + status.slice(1).replace(/_/g, ' ') : '';
+
 const amenityOptions = ['WiFi', 'Security', 'Water', 'Electricity', 'Parking', 'AC', 'Laundry', 'Generator', 'Balcony', 'Common Room'];
 
 const PAGE_COPY: Record<OwnerRole, { title: string; subtitle: string }> = {
@@ -574,7 +578,7 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
                     {/* Progressive Gradient Fade to White */}
                     <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white via-white/80 to-transparent z-0"></div>
                     <div className="absolute top-3 right-3 z-10">
-                      <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>{listing.status}</StatusBadge>
+                      <StatusBadge variant={listing.status === 'active' ? 'success' : 'warning'}>{statusLabel(listing.status)}</StatusBadge>
                     </div>
                   </div>
                   <div className="relative z-10 p-4 -mt-6">

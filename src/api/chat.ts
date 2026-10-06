@@ -173,6 +173,11 @@ export const chatApi = {
     return socketService.on('connect', callback);
   },
 
+  /** Server `message_notification` to the recipient's own room, for chats not yet joined. */
+  onNotification(callback: (data: { chatId: string; senderId: string; preview: string; createdAt: string }) => void): () => void {
+    return socketService.on('notification', callback);
+  },
+
   onDisconnect(callback: () => void): () => void {
     return socketService.on('disconnect', callback);
   },

@@ -66,6 +66,15 @@ const socketSignalling: SignallingPort = {
     socket.on('call:busy', onBusy);
     socket.on('call:error', onError);
 
+    // Asks the server to re-send what these listeners may have missed: a call ringing for
+    // us (the push that woke the app arrives before the socket does) or the end of our own
+    // call while the socket was down. On every (re)connect, and now if already connected.
+    const onConnect = () => {
+      socket.emit('call:sync');
+    };
+    socket.on('connect', onConnect);
+    if (socket.connected) onConnect();
+
     return () => {
       socket.off('call:incoming', onIncoming);
       socket.off('call:accepted', onAccepted);
@@ -75,6 +84,7 @@ const socketSignalling: SignallingPort = {
       socket.off('call:ended', onEnded);
       socket.off('call:busy', onBusy);
       socket.off('call:error', onError);
+      socket.off('connect', onConnect);
     };
   },
 };

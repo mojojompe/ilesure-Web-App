@@ -66,13 +66,20 @@ export interface SubaccountInfo {
   accountNumber: string | null;
   accountName: string | null;
   bankName?: string | null;
+  /** When the payout account was last set or changed. */
+  changedAt?: string | null;
 }
 
+/**
+ * Setting up and changing the payout account are one call. The server resolves the holder
+ * name with Paystack and stores THAT (a client `accountName` is ignored); a holder that does
+ * not match the owner's verified name is refused with NAME_MISMATCH.
+ */
 export interface SubaccountSetup {
-  businessName: string;
+  businessName?: string;
   bankCode: string;
   accountNumber: string;
-  accountName: string;
+  accountName?: string;
   bankName?: string;
 }
 
@@ -123,6 +130,8 @@ export interface OwnerApi {
   markInspectionMissed(bookingId: string): Promise<OwnerResult<Booking | null>>;
   getSubaccount(): Promise<OwnerResult<SubaccountInfo>>;
   setupSubaccount(data: SubaccountSetup): Promise<OwnerResult<SubaccountInfo>>;
+  /** Refused with PAYOUT_ACCOUNT_IN_USE (409) while listings/bookings still pay into it. */
+  removeSubaccount(): Promise<OwnerResult<{ removed: boolean }>>;
 }
 
 // ---------------------------------------------------------------------------------------
@@ -154,8 +163,13 @@ const ENDPOINTS: Record<OwnerRole, Endpoints> = {
   },
   company: {
     listings: '/company/listings',
-    // No GET /company/listings/:id; the public detail route is what company pages used.
-    listing: (id) => `/listings/${id}`,
+    // No GET /company/listings/:id. This used the PUBLIC detail route, which answers 404 for a
+    // listing that is not live unless the caller is its landlord/agent, so a company could not
+    // open (or edit) a pending/rejected/archived listing one of its agents had created. The
+    // /agent route is mounted behind agentOrCompanyMiddleware and its ownership filter gives a
+    // company admin every listing carrying its companyId, the same shared-handler
+    // arrangement deleteListing uses below.
+    listing: (id) => `/agent/listings/${id}`,
     // No DELETE /company/listings/:id. The /agent route is mounted behind
     // agentOrCompanyMiddleware and its ownership filter accepts the caller's companyId
     // (agentController.listingOwnershipFilter), the same shared-handler arrangement
@@ -376,6 +390,10 @@ export function createOwnerApi(role: OwnerRole, http: OwnerHttp = apiClient): Ow
 
     setupSubaccount(data) {
       return call('Failed to setup subaccount', () => http.post(ep.subaccount, data), (body) => body?.data);
+    },
+
+    removeSubaccount() {
+      return call('Failed to remove payout account', () => http.delete(ep.subaccount), (body) => ({ removed: Boolean(body?.data?.removed ?? true) }));
     },
   };
 }

@@ -145,7 +145,11 @@ export interface Company {
   description: string;
   logo: string;
   cacNumber: string;
-  status: 'verified' | 'pending' | 'unverified';
+  /** The contract's COMPANY_STATUSES ('unverified' kept for older payloads). */
+  status: 'verified' | 'pending' | 'rejected' | 'suspended' | 'unverified';
+  documentsSubmitted?: boolean;
+  documentsSubmittedAt?: string | null;
+  rejectionReason?: string | null;
 }
 
 export interface CompanyPlan {

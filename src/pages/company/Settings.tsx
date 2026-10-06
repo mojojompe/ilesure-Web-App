@@ -1,17 +1,20 @@
 import { useState, useEffect } from 'react';
+<<<<<<< HEAD
 import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
+=======
+import { FloppyDiskIcon, Loading02Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock } from '@hugeicons/react';
+>>>>>>> 21ce651445f5a3ea146e667ef4a319f0a9b7327f
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { companyApi } from '../../api/company';
-import { ownerApi } from '../../api/owner';
 import { userApi } from '../../api/user';
 import { tiersApi, resolveMyTierUsage } from '../../api/tiers';
-import { paymentsApi, Bank } from '../../api/payments';
+import { PayoutAccountCard } from '../../components/payout/PayoutAccountCard';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { DeleteAccountModal } from '../../components/common/DeleteAccountModal';
-import { getApiErrorMessage } from '../../api/apiError';
+import { companyDocumentsState } from '../../lib/companyVerification';
 
 export function CompanySettingsPage() {
   const [loading, setLoading] = useState(true);
@@ -41,6 +44,7 @@ export function CompanySettingsPage() {
     logo: '',
   });
 
+<<<<<<< HEAD
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -68,74 +72,18 @@ export function CompanySettingsPage() {
   const [resolved, setResolved] = useState(false);
   const [setupLoading, setSetupLoading] = useState(false);
 
+=======
+>>>>>>> 21ce651445f5a3ea146e667ef4a319f0a9b7327f
   const [cacFile, setCacFile] = useState<File | null>(null);
   const [permitFile, setPermitFile] = useState<File | null>(null);
   const [officeAddress, setOfficeAddress] = useState('');
   const [docUploading, setDocUploading] = useState(false);
   const [docSubmitted, setDocSubmitted] = useState(false);
+  const docsState = companyDocumentsState(company, docSubmitted);
 
   useEffect(() => {
     fetchData();
-    loadBanks();
-    loadSubaccount();
   }, []);
-
-  const loadBanks = async () => {
-    const bankList = await paymentsApi.listBanks();
-    setBanks(bankList);
-  };
-
-  const loadSubaccount = async () => {
-    const res = await ownerApi('company').getSubaccount();
-    if (res.success && res.data) {
-      setSubaccount(res.data);
-      if (res.data.subaccountCode) {
-        setBankForm(prev => ({
-          businessName: prev.businessName,
-          bankCode: res.data!.bankCode || '',
-          accountNumber: res.data!.accountNumber || '',
-          accountName: res.data!.accountName || '',
-        }));
-        setResolved(true);
-      }
-    }
-  };
-
-  const handleResolveAccount = async () => {
-    if (!bankForm.bankCode || !bankForm.accountNumber || bankForm.accountNumber.length < 10) return;
-    setResolving(true);
-    try {
-      const result = await paymentsApi.resolveAccount(bankForm.accountNumber, bankForm.bankCode);
-      setBankForm(prev => ({ ...prev, accountName: result.accountName }));
-      setResolved(true);
-    } catch (err: any) {
-      setResolved(false);
-      showToast(getApiErrorMessage(err, 'Failed to resolve account'), 'error');
-    } finally {
-      setResolving(false);
-    }
-  };
-
-  const handleSetupSubaccount = async () => {
-    if (!bankForm.businessName || !bankForm.bankCode || !bankForm.accountNumber || !bankForm.accountName) {
-      showToast('Please fill in all bank details and resolve your account', 'error');
-      return;
-    }
-    setSetupLoading(true);
-    try {
-      const res = await ownerApi('company').setupSubaccount({ ...bankForm, bankName: banks.find(b => b.code === bankForm.bankCode)?.name });
-      if (res.success) {
-        setSubaccount(res.data || null);
-        showToast('Company bank account and subaccount setup successfully!');
-      } else {
-        showToast(res.error?.message || 'Failed to setup subaccount', 'error');
-      }
-    } catch (err: any) {
-      showToast(getApiErrorMessage(err, 'Failed to setup subaccount'), 'error');
-    } finally {
-      setSetupLoading(false);
-    }
-  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -152,7 +100,6 @@ export function CompanySettingsPage() {
 
       if (companyRes.success && companyRes.company) {
         setCompany(companyRes.company);
-        setBankForm(prev => ({ ...prev, businessName: prev.businessName || companyRes.company!.tradingName || companyRes.company!.name || '' }));
         setFormData({
           name: companyRes.company.name || '',
           phone: companyRes.company.phone || '',
@@ -338,18 +285,27 @@ export function CompanySettingsPage() {
               <Note01Icon className="w-5 h-5 text-mustard" />
               Company Documents
             </h2>
-            {company?.status === 'verified' ? (
+            {docsState === 'verified' ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
                 <CheckmarkBadge02Icon className="w-4 h-4 text-status-success" />
                 <p className="text-sm font-medium text-status-success">Company is verified</p>
               </div>
-            ) : company?.documentsSubmitted || docSubmitted ? (
+            ) : docsState === 'under_review' ? (
               <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-mustard/10 border border-mustard/20">
                 <Alert01Icon className="w-4 h-4 text-mustard" />
                 <p className="text-sm font-medium text-mustard">Documents submitted, under review</p>
               </div>
             ) : (
               <div className="space-y-4">
+                {docsState === 'rejected' && (
+                  <div className="p-3 rounded-clay-sm bg-status-error/10 border border-status-error/20">
+                    <p className="text-sm font-medium text-status-error">Your company verification was not approved.</p>
+                    {company?.rejectionReason && (
+                      <p className="text-sm text-text-secondary mt-1">Reason: {company.rejectionReason}</p>
+                    )}
+                    <p className="text-xs text-text-tertiary mt-1">Upload corrected documents below to resubmit.</p>
+                  </div>
+                )}
                 <p className="text-sm text-text-tertiary">
                   Upload your CAC certificate and business permit for verification.
                 </p>
@@ -460,106 +416,15 @@ export function CompanySettingsPage() {
             </div>
           </ClayCard>
 
-          <ClayCard className="p-5">
-            <h2 className="font-bold text-text-primary mb-4 flex items-center gap-2">
-              <Money01Icon className="w-5 h-5 text-mustard" />
-              Company Bank Account
-            </h2>
-            {subaccount?.subaccountCode ? (
-              <div className="space-y-3 p-4 rounded-clay-sm bg-status-success/10">
-                <div className="flex items-center gap-2 text-status-success font-medium">
-                  <CheckmarkBadge02Icon className="w-5 h-5" />
-                  Subaccount Active
-                </div>
-                <div className="text-sm text-text-secondary space-y-1">
-                  <p><span className="font-medium">Bank Name:</span> {banks.find(b => b.code === subaccount.bankCode)?.name || subaccount.bankCode}</p>
-                  <p><span className="font-medium">Bank Code:</span> {subaccount.bankCode}</p>
-                  <p><span className="font-medium">Account Number:</span> {subaccount.accountNumber}</p>
-                  <p><span className="font-medium">Account Name:</span> {subaccount.accountName}</p>
-                  <p className="text-xs text-text-tertiary mt-2">
-                    Rent payments are split automatically, the iléSure service fee to us, the balance to your company account.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <p className="text-sm text-text-tertiary">
-                  Set up your company bank account to receive rent payments directly. iléSure deducts its service fee from each payment.
-                </p>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    Business Name
-                  </label>
-                  <input
-                    type="text"
-                    value={bankForm.businessName}
-                    onChange={(e) => setBankForm({ ...bankForm, businessName: e.target.value })}
-                    className="clay-input w-full"
-                    placeholder="e.g. ABC Properties Ltd"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    Bank
-                  </label>
-                  <select
-                    value={bankForm.bankCode}
-                    onChange={(e) => { setBankForm({ ...bankForm, bankCode: e.target.value }); setResolved(false); }}
-                    className="clay-input w-full"
-                  >
-                    <option value="">Select a bank</option>
-                    {banks.map(b => (
-                      <option key={b.code} value={b.code}>{b.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-                    Account Number
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      inputMode="numeric"
-                      name="nuban-account-number"
-                      autoComplete="off"
-                      data-lpignore="true"
-                      data-form-type="other"
-                      value={bankForm.accountNumber}
-                      onChange={(e) => { setBankForm({ ...bankForm, accountNumber: e.target.value.replace(/\D/g, '').slice(0, 10) }); setResolved(false); }}
-                      className="clay-input flex-1"
-                      placeholder="0123456789"
-                      maxLength={10}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleResolveAccount}
-                      loading={resolving}
-                      disabled={!bankForm.bankCode || bankForm.accountNumber.length < 10}
-                    >
-                      Verify
-                    </Button>
-                  </div>
-                </div>
-                {resolved && bankForm.accountName && (
-                  <div className="p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
-                    <p className="text-sm font-medium text-status-success">Account verified</p>
-                    <p className="text-sm text-text-primary font-semibold">{bankForm.accountName}</p>
-                  </div>
-                )}
-                <Button
-                  variant="primary"
-                  className="w-full"
-                  onClick={handleSetupSubaccount}
-                  loading={setupLoading}
-                  disabled={!resolved || !bankForm.businessName}
-                >
-                  <Money01Icon className="w-4 h-4 mr-2" /> Setup Subaccount
-                </Button>
-              </div>
-            )}
-          </ClayCard>
+          <PayoutAccountCard
+            role="company"
+            title="Company Bank Account"
+            intro="Set up your company bank account to receive rent payments directly. iléSure deducts its service fee from each payment. The account name must match your company's registered or trading name, or your own verified name."
+            activeNote="Rent payments are split automatically, the iléSure service fee to us, the balance to your company account."
+            businessLabel="Business Name"
+            businessPlaceholder="e.g. ABC Properties Ltd"
+            onToast={showToast}
+          />
         </div>
 
         <div className="space-y-6">

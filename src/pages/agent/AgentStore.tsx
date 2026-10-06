@@ -111,7 +111,7 @@ export function AgentStorePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {products.map((product: any) => (
-                <div key={product._id} className="bg-white rounded-clay overflow-hidden shadow-clay hover:shadow-clay-lg transition-all duration-300 border border-clay-border flex flex-col group">
+                <div key={product.id} className="bg-white rounded-clay overflow-hidden shadow-clay hover:shadow-clay-lg transition-all duration-300 border border-clay-border flex flex-col group">
                   <div className="bg-clay-bg-light p-6 flex flex-col items-center justify-center border-b border-clay-border relative overflow-hidden">
                     <div className="absolute -right-4 -top-4 w-24 h-24 bg-mustard/10 rounded-full blur-xl group-hover:bg-mustard/20 transition-all duration-500"></div>
                     {product.type === 'listing_slots' ? (
@@ -129,20 +129,20 @@ export function AgentStorePage() {
                       <div className="flex flex-col">
                         <span className="text-xs text-text-tertiary uppercase font-bold tracking-wider">Cost</span>
                         <span className="text-xl font-bold text-burnt-brown flex items-center gap-1">
-                          {product.pointsCost} <span className="text-sm font-medium text-burnt-brown/70">pts</span>
+                          {product.cost} <span className="text-sm font-medium text-burnt-brown/70">pts</span>
                         </span>
                       </div>
                       
                       <button
-                        onClick={() => handleBuy(product._id)}
-                        disabled={buying === product._id || points < product.pointsCost}
+                        onClick={() => handleBuy(product.id)}
+                        disabled={buying === product.id || points < product.cost}
                         className={`px-6 py-2.5 rounded-pill font-bold shadow-sm transition-all flex items-center gap-2 ${
-                          points < product.pointsCost
+                          points < product.cost
                             ? 'bg-clay-border text-text-tertiary cursor-not-allowed'
                             : 'bg-burnt-brown text-white hover:bg-burnt-brown-dark hover:shadow-md hover:-translate-y-0.5'
                         }`}
                       >
-                        {buying === product._id ? (
+                        {buying === product.id ? (
                           <>
                             <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                             Processing...

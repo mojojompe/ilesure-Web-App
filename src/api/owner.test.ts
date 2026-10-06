@@ -162,11 +162,20 @@ describe('owner API: listings are normalised at the seam', () => {
 
   it('unwraps both detail shapes ({data:{listing}} and {data})', async () => {
     const agent = stubHttp({ 'GET /agent/listings/x': { success: true, data: { listing: { _id: 'x', annualRent: 7 } } } });
-    const company = stubHttp({ 'GET /listings/x': { success: true, data: { _id: 'x', price: 7 } } });
+    const bare = stubHttp({ 'GET /agent/listings/x': { success: true, data: { _id: 'x', price: 7 } } });
     const a = await createOwnerApi('agent', agent.http).getListing('x');
-    const c = await createOwnerApi('company', company.http).getListing('x');
+    const c = await createOwnerApi('company', bare.http).getListing('x');
     expect(a.success && a.data.rentAnnual).toBe(7);
     expect(c.success && c.data.rentAnnual).toBe(7);
+  });
+
+  it('a company reads its own listing through the owner route, not the public one', async () => {
+    // The public /listings/:id hides a non-live listing from everyone but its landlord/agent,
+    // so a company could not open a pending listing created by one of its agents.
+    const { http, calls } = stubHttp({ 'GET /agent/listings/p1': { success: true, data: { listing: { _id: 'p1', status: 'pending_approval', rentAnnual: 5 } } } });
+    const res = await createOwnerApi('company', http).getListing('p1');
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toEqual(['GET /agent/listings/p1']);
+    expect(res.success && res.data.status).toBe('pending_approval');
   });
 
   it('normalizeListing tolerates a listing with no price at all', () => {

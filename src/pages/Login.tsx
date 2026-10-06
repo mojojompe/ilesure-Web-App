@@ -19,6 +19,11 @@ export function LoginPage() {
       ? { general: 'This account has been suspended. Contact support.' }
       : {}
   );
+  // UpdatePassword lands here with ?reason=password_changed: changing a password ends every
+  // session server-side, so the user signs in again with the new one.
+  const notice = new URLSearchParams(window.location.search).get('reason') === 'password_changed'
+    ? 'Password updated. Sign in with your new password.'
+    : '';
 
   const validate = () => {
     const e: { email?: string; password?: string } = {};
@@ -85,6 +90,11 @@ export function LoginPage() {
         </div>
 
         <div className="clay-card p-6">
+          {notice && !errors.general && (
+            <div className="mb-4 p-3 rounded-clay-sm bg-status-success/10 text-status-success text-sm flex items-center gap-2" role="status">
+              <span>{notice}</span>
+            </div>
+          )}
           {errors.general && (
             <div className="mb-4 p-3 rounded-clay-sm bg-status-error/10 text-status-error text-sm flex items-center gap-2">
               <span>{errors.general}</span>

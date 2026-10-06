@@ -208,7 +208,7 @@ export interface SignallingHandlers {
   ice(payload: CallSignalEvent): void;
   ended(payload: CallEndedEvent): void;
   busy(payload?: { chatId?: string } | null): void;
-  error(payload?: { message?: string } | null): void;
+  error(payload?: { message?: string; callId?: string } | null): void;
 }
 
 export interface InitiateResult {
@@ -280,6 +280,7 @@ const INITIATE_FAILURES: Record<string, string> = {
   FORBIDDEN: 'You cannot call this person',
   SOCKET_DISCONNECTED: 'You appear to be offline',
   TIMEOUT: 'Could not reach the server',
+  PEER_UNAVAILABLE: 'This person cannot take calls right now',
 };
 
 const ENDED_REASONS: Record<string, string> = {
@@ -796,6 +797,13 @@ export function createCallSession<TStream extends StreamLike>(deps: CallSessionD
 
     accepted(payload) {
       if (!payload || payload.callId !== callId) return;
+      // The server tells all of the callee's devices when one of them accepts. A device
+      // that is still ringing did not accept: the call was answered somewhere else, so
+      // this one stops ringing quietly, without declining a call that is now in progress.
+      if (!isCaller && state.phase === 'incoming') {
+        finish('Answered on another device');
+        return;
+      }
       if (state.phase === 'outgoing') update({ phase: 'connecting' });
       // Only the caller offers, see note 3 at the top of this file.
       if (isCaller) void sendOffer(payload.callId, generation);
@@ -856,8 +864,11 @@ export function createCallSession<TStream extends StreamLike>(deps: CallSessionD
     },
 
     error(payload) {
-      // call:error carries no call id; it only means something while a call is live.
+      // call:error only means something while a call is live, and when it names a call it
+      // must be this one: a late event about an earlier call (an accept for a call that
+      // already ended) must not tear down the call in progress.
       if (!LIVE_PHASES.has(state.phase)) return;
+      if (payload?.callId && payload.callId !== callId) return;
       finish(payload?.message || 'Call failed');
     },
   };
