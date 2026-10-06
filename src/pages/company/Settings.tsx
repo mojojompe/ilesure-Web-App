@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
-=======
-import { FloppyDiskIcon, Loading02Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock } from '@hugeicons/react';
->>>>>>> 21ce651445f5a3ea146e667ef4a319f0a9b7327f
+import { FloppyDiskIcon, Loading02Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -44,7 +40,6 @@ export function CompanySettingsPage() {
     logo: '',
   });
 
-<<<<<<< HEAD
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -59,21 +54,6 @@ export function CompanySettingsPage() {
       reader.readAsDataURL(file);
     }
   };
-
-  const [banks, setBanks] = useState<Bank[]>([]);
-  const [subaccount, setSubaccount] = useState<any>(null);
-  const [bankForm, setBankForm] = useState({
-    businessName: '',
-    bankCode: '',
-    accountNumber: '',
-    accountName: '',
-  });
-  const [resolving, setResolving] = useState(false);
-  const [resolved, setResolved] = useState(false);
-  const [setupLoading, setSetupLoading] = useState(false);
-
-=======
->>>>>>> 21ce651445f5a3ea146e667ef4a319f0a9b7327f
   const [cacFile, setCacFile] = useState<File | null>(null);
   const [permitFile, setPermitFile] = useState<File | null>(null);
   const [officeAddress, setOfficeAddress] = useState('');

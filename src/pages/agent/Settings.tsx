@@ -1,9 +1,5 @@
 import { useState, useEffect } from 'react';
-<<<<<<< HEAD
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
-=======
-import { FloppyDiskIcon, Loading02Icon, SecurityIcon, Clock01Icon as Clock } from '@hugeicons/react';
->>>>>>> 21ce651445f5a3ea146e667ef4a319f0a9b7327f
+import { FloppyDiskIcon, Loading02Icon, SecurityIcon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -42,7 +38,6 @@ export function AgentSettingsPage() {
     avatar: '',
   });
 
-<<<<<<< HEAD
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -57,22 +52,6 @@ export function AgentSettingsPage() {
       reader.readAsDataURL(file);
     }
   };
-
-  const [banks, setBanks] = useState<Bank[]>([]);
-  const [subaccount, setSubaccount] = useState<any>(null);
-  const [subaccountLoading, setSubaccountLoading] = useState(false);
-  const [bankForm, setBankForm] = useState({
-    businessName: '',
-    bankCode: '',
-    accountNumber: '',
-    accountName: '',
-  });
-  const [resolving, setResolving] = useState(false);
-  const [resolved, setResolved] = useState(false);
-  const [setupLoading, setSetupLoading] = useState(false);
-
-=======
->>>>>>> 21ce651445f5a3ea146e667ef4a319f0a9b7327f
   useEffect(() => {
     fetchProfile();
     loadNotificationSettings();
