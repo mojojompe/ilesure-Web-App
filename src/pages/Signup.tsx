@@ -172,13 +172,17 @@ export function SignupPage() {
     }
   };
 
-  /** Bank setup is optional: clear anything half-entered and create the account without a payout account. */
+  /**
+   * Bank setup is optional: create the account WITHOUT a payout account, even if bank details
+   * were half-entered. The skip is passed explicitly because clearing the fields with setState
+   * does not take effect before handleSubmit runs, so it used to set the account up anyway.
+   */
   const handleSkipBank = async () => {
     setSelectedBank(null);
     setAccountNumber('');
     setAccountName('');
     setBankError('');
-    await handleSubmit();
+    await handleSubmit({ skipBank: true });
   };
 
   const handleBack = () => {
@@ -187,7 +191,7 @@ export function SignupPage() {
 
   const [error, setError] = useState('');
 
-  const handleSubmit = async () => {
+  const handleSubmit = async ({ skipBank = false }: { skipBank?: boolean } = {}) => {
     if (!acceptedTerms) {
       setError('Please accept the Terms of Service and Privacy Policy to continue.');
       return;
@@ -220,7 +224,7 @@ export function SignupPage() {
         const warnings: string[] = [];
 
         // QA-AGT-005: persist the verified bank account server-side right away.
-        if (selectedBank && accountNumber && accountName) {
+        if (!skipBank && selectedBank && accountNumber && accountName) {
           try {
             const subaccountData = {
               businessName: isCompany ? companyName : formData.fullName,
@@ -647,7 +651,7 @@ return (
               Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
             </Button>
           ) : (
-            <Button type="button" variant="primary" onClick={handleSubmit} className="flex-1" loading={loading} disabled={!acceptedTerms}>
+            <Button type="button" variant="primary" onClick={() => handleSubmit()} className="flex-1" loading={loading} disabled={!acceptedTerms}>
               Complete <ArrowRight01Icon className="w-4 h-4 ml-2" />
               </Button>
             )}
