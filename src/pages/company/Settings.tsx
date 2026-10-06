@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock } from '@hugeicons/react';
+import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Note01Icon, Upload01Icon, Cancel02Icon, Alert01Icon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -38,7 +38,23 @@ export function CompanySettingsPage() {
     phone: '',
     address: '',
     description: '',
+    logo: '',
   });
+
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image too large. Max 5MB', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, logo: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [banks, setBanks] = useState<Bank[]>([]);
   const [subaccount, setSubaccount] = useState<any>(null);
@@ -140,8 +156,9 @@ export function CompanySettingsPage() {
         setFormData({
           name: companyRes.company.name || '',
           phone: companyRes.company.phone || '',
-          address: (companyRes.company as any).officeAddress || companyRes.company.address || '',
+          address: (companyRes.company as any).officeAddress || (companyRes.company as any).address || '',
           description: companyRes.company.description || '',
+          logo: (companyRes.company as any).logo || (companyRes.company as any).avatar || '',
         });
       }
       if (subRes.success && subRes.subscription) {
@@ -231,6 +248,29 @@ export function CompanySettingsPage() {
         <div className="lg:col-span-2 space-y-6">
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Company Information</h2>
+            <div className="flex items-center gap-4 mb-6">
+              <div className="relative group cursor-pointer" onClick={() => document.getElementById('logo-upload')?.click()}>
+                {formData.logo || company?.logo || company?.avatar ? (
+                  <img src={formData.logo || company?.logo || company?.avatar} alt="Logo" className="w-20 h-20 rounded-full object-cover border-2 border-mustard" />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-2xl font-bold border-2 border-transparent">
+                    {(company?.tradingName || company?.name || 'C').charAt(0)}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                   <Camera01Icon className="w-6 h-6 text-white" />
+                </div>
+                <input id="logo-upload" type="file" accept="image/*" className="hidden" onChange={handleLogoSelect} />
+              </div>
+              <div>
+                <p className="font-semibold text-text-primary">{company?.tradingName || company?.name}</p>
+                <div className="mt-2">
+                  <StatusBadge variant={company?.verified ? 'success' : 'default'}>
+                    {company?.verified ? 'Verified' : 'Unverified'}
+                  </StatusBadge>
+                </div>
+              </div>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">Company Name</label>

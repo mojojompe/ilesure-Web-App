@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Clock01Icon as Clock } from '@hugeicons/react';
+import { FloppyDiskIcon, Loading02Icon, Money01Icon, CheckmarkBadge02Icon, SecurityIcon, Clock01Icon as Clock, Camera01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
@@ -37,7 +37,23 @@ export function AgentSettingsPage() {
     phone: '',
     whatsapp: '',
     bio: '',
+    avatar: '',
   });
+
+  const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        showToast('Image too large. Max 5MB', 'error');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, avatar: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const [banks, setBanks] = useState<Bank[]>([]);
   const [subaccount, setSubaccount] = useState<any>(null);
@@ -182,6 +198,7 @@ export function AgentSettingsPage() {
           phone: profileData.phone || '',
           whatsapp: profileData.whatsapp || '',
           bio: profileData.bio || '',
+          avatar: profileData.avatar || '',
         });
         // Default the payout business name to the account holder's name so the Setup button is usable.
         const holder = profileData.fullName || '';
@@ -209,6 +226,7 @@ export function AgentSettingsPage() {
             phone: saved.phone || '',
             whatsapp: saved.whatsapp || '',
             bio: saved.bio || '',
+            avatar: saved.avatar || '',
           });
           updateUser({ fullName: saved.fullName, phone: saved.phone, whatsapp: saved.whatsapp, bio: saved.bio, avatar: saved.avatar });
         }
@@ -265,8 +283,18 @@ export function AgentSettingsPage() {
           <ClayCard className="p-5">
             <h2 className="font-bold text-text-primary mb-4">Profile Information</h2>
             <div className="flex items-center gap-4 mb-6">
-              <div className="w-20 h-20 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-2xl font-bold">
-                {user?.fullName?.charAt(0) || 'U'}
+              <div className="relative group cursor-pointer" onClick={() => document.getElementById('avatar-upload')?.click()}>
+                {formData.avatar || user?.avatar ? (
+                  <img src={formData.avatar || user.avatar} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-2 border-mustard" />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-mustard-light flex items-center justify-center text-burnt-brown-dark text-2xl font-bold border-2 border-transparent">
+                    {user?.fullName?.charAt(0) || 'U'}
+                  </div>
+                )}
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                   <Camera01Icon className="w-6 h-6 text-white" />
+                </div>
+                <input id="avatar-upload" type="file" accept="image/*" className="hidden" onChange={handleAvatarSelect} />
               </div>
               <div>
                 <p className="font-semibold text-text-primary">{user?.fullName}</p>

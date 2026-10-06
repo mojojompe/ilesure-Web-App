@@ -110,7 +110,7 @@ export const companyApi = {
     }
   },
 
-  async updateProfile(data: { name?: string; phone?: string; address?: string; description?: string }): Promise<{ success: boolean; message?: string }> {
+  async updateProfile(data: { name?: string; phone?: string; address?: string; description?: string; logo?: string; avatar?: string }): Promise<{ success: boolean; message?: string }> {
     try {
       const payload: any = { ...data };
       if (data.address) payload.officeAddress = data.address;
