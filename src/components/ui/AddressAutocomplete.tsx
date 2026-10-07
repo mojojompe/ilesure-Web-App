@@ -11,6 +11,8 @@ interface AddressAutocompleteProps {
    */
   onSelectCoordinates: (coordinates: [number, number] | null) => void;
   placeholder?: string;
+  /** The listing's city; suggestions are limited to around it once known. */
+  city?: string;
 }
 
 /**
@@ -19,16 +21,32 @@ interface AddressAutocompleteProps {
  * Picking a suggestion pins the property exactly. Typing free text and moving on
  * still works, the backend geocodes the address on save, so this never blocks
  * the wizard, it just produces a better pin when used.
+ *
+ * A suggestion only replaces the text when it completes what was typed ("Agbo"
+ * -> "Agbowo, Ibadan"). When the lister has typed more detail than Google knows
+ * ("No 1 Real Large Street, Elebu" and they pick "Elebu, Ibadan"), their full
+ * address is kept and the suggestion is used for the pin only.
  */
+export function keepsTypedAddress(typed: string, suggestion: string): boolean {
+  const t = typed.trim().toLowerCase();
+  return t.length > 0 && !suggestion.trim().toLowerCase().startsWith(t);
+}
+
 export function AddressAutocomplete({
   value,
   onChange,
   onSelectCoordinates,
-  placeholder = 'Street address',
+  placeholder = 'Full address, e.g. No 1 Real Large Street, Elebu',
+  city,
 }: AddressAutocompleteProps) {
   const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
   const [loading, setLoading] = useState(false);
   const [pinned, setPinned] = useState(false);
+  // Set when the pin came from a suggestion but the typed address was kept.
+  const [pinnedTo, setPinnedTo] = useState<string | null>(null);
+
+  const cityRef = useRef(city);
+  cityRef.current = city;
 
   // Skips the lookup for the value we just wrote ourselves after a pick.
   const suppressNextLookup = useRef(false);
@@ -41,6 +59,7 @@ export function AddressAutocomplete({
 
     // Any manual edit invalidates a previous pin; the server will re-geocode.
     setPinned(false);
+    setPinnedTo(null);
     onSelectCoordinates(null);
 
     if (value.trim().length < 3) {
@@ -53,7 +72,7 @@ export function AddressAutocomplete({
     // The endpoint is rate-limited and billed per call, so wait for a pause in
     // typing rather than firing on every character.
     const timer = setTimeout(async () => {
-      const results = await mapsApi.autocomplete(value);
+      const results = await mapsApi.autocomplete(value, cityRef.current);
       if (ignore) return;
       setPredictions(results);
       setLoading(false);
@@ -69,8 +88,13 @@ export function AddressAutocomplete({
   }, [value]);
 
   const handlePick = async (prediction: PlacePrediction) => {
-    suppressNextLookup.current = true;
-    onChange(prediction.description);
+    const keepTyped = keepsTypedAddress(value, prediction.description);
+    if (!keepTyped) {
+      // Only suppress when the value really changes; otherwise the flag would
+      // swallow the lister's next real edit.
+      suppressNextLookup.current = prediction.description !== value;
+      onChange(prediction.description);
+    }
     setPredictions([]);
     setLoading(true);
 
@@ -79,9 +103,11 @@ export function AddressAutocomplete({
 
     if (result) {
       setPinned(true);
+      setPinnedTo(keepTyped ? prediction.description : null);
       onSelectCoordinates([result.lng, result.lat]);
     } else {
       setPinned(false);
+      setPinnedTo(null);
       onSelectCoordinates(null);
     }
   };
@@ -108,7 +134,9 @@ export function AddressAutocomplete({
 
       {pinned && (
         <p className="mt-1 text-xs text-text-tertiary">
-          Exact location pinned, renters searching near a campus will find this listing.
+          {pinnedTo
+            ? `Location pinned to ${pinnedTo}. Your full address is kept as typed.`
+            : 'Exact location pinned, renters searching near a campus will find this listing.'}
         </p>
       )}
 

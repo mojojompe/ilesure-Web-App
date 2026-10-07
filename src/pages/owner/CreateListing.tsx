@@ -144,15 +144,16 @@ function LocationStep({ w }: { w: ListingWizard }) {
   const { form, setField } = w;
   return (
     <div className="space-y-4">
-      <div>
-        <label className={labelClass}>Address</label>
-        <div className="relative">
-          <AddressAutocomplete value={form.address} onChange={v => setField('address', v)} onSelectCoordinates={w.setCoordinates} />
-        </div>
-      </div>
+      {/* City first: address suggestions are limited to around it. */}
       <div>
         <label className={labelClass}>City</label>
         <input type="text" value={form.city} onChange={e => setField('city', e.target.value)} placeholder="e.g., Ibadan" className="clay-input w-full" />
+      </div>
+      <div>
+        <label className={labelClass}>Address</label>
+        <div className="relative">
+          <AddressAutocomplete value={form.address} onChange={v => setField('address', v)} onSelectCoordinates={w.setCoordinates} city={form.city} />
+        </div>
       </div>
       <div>
         <label className={labelClass}>Landmarks Around</label>

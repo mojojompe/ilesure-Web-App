@@ -24,11 +24,12 @@ export interface GeocodeResult {
 }
 
 export const mapsApi = {
-  async autocomplete(input: string): Promise<PlacePrediction[]> {
+  async autocomplete(input: string, city?: string): Promise<PlacePrediction[]> {
     if (!input || input.trim().length < 2) return [];
     try {
       const response = await apiClient.get<{ success: boolean; data: PlacePrediction[] }>(
-        `/maps/autocomplete?input=${encodeURIComponent(input.trim())}`
+        `/maps/autocomplete?input=${encodeURIComponent(input.trim())}` +
+          (city?.trim() ? `&city=${encodeURIComponent(city.trim())}` : '')
       );
       return response.data.data || [];
     } catch {
