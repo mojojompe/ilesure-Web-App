@@ -7,6 +7,8 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { DojahKYCSection } from '../../components/kyc/DojahKYCSection';
 import { TenancyAgreementUpload } from '../../components/listing/TenancyAgreementUpload';
 import { AddressAutocomplete } from '../../components/ui/AddressAutocomplete';
+import { InfoTip } from '../../components/ui/InfoTip';
+import { describeSavedAt } from '../../lib/listingDraft';
 import { useAuth } from '../../api/authContext';
 import { userApi } from '../../api/user';
 import type { OwnerRole } from '../../api/owner';
@@ -257,15 +259,30 @@ function PricingStep({ w }: { w: ListingWizard }) {
       ) : (
         <>
           <div>
-            <label className={labelClass}>Annual Rent (₦)</label>
+            <label className={labelClass}>
+              Annual Rent (₦)
+              <InfoTip title="Annual Rent">
+                The rent for one year of this property. If the lease is longer than a year, the tenant pays this amount for each year.
+              </InfoTip>
+            </label>
             <MoneyInput value={form.annualRent} onChange={v => setField('annualRent', v)} placeholder="250000" />
           </div>
           <div>
-            <label className={labelClass}>Rent Duration</label>
+            <label className={labelClass}>
+              Rent Duration
+              <InfoTip title="Rent Duration">
+                How you describe the rent period to tenants, in your own words, e.g. "1 Year" or "1 Year (renewable)". It is shown on the listing's details as written. It does not change what the tenant pays or how long the tenancy lasts; Lease Duration below sets that.
+              </InfoTip>
+            </label>
             <input type="text" value={form.rentDuration || ''} onChange={e => setField('rentDuration', e.target.value)} placeholder="e.g. 1 Year, 6 Months" className="clay-input w-full mb-4" />
           </div>
           <div>
-            <label className={labelClass}>Lease Duration</label>
+            <label className={labelClass}>
+              Lease Duration
+              <InfoTip title="Lease Duration">
+                How long the tenancy runs: 1, 2, 3 or 5 years, or a custom length. This term is written into the tenancy agreement the tenant signs. The first year is paid at move-in; each later year is a renewal the tenant pays on iléSure, with reminders before it is due. E.g. a 3-year lease is paid as Year 1 at move-in, then Year 2 and Year 3 renewals. Lengths in months are rounded up to whole years for renewals.
+              </InfoTip>
+            </label>
             <div className="grid grid-cols-4 gap-2">
               {['1', '2', '3', '5'].map(yrs => (
                 <button
@@ -292,7 +309,18 @@ function PricingStep({ w }: { w: ListingWizard }) {
             </div>
           </div>
           <div>
-            <label className={labelClass}>Payment Frequency</label>
+            <label className={labelClass}>
+              Payment Frequency
+              <InfoTip title="Payment Frequency">
+                How often the tenant pays the annual rent:
+                <span className="block mt-1">• <b>Yearly</b>: the full year at once.</span>
+                <span className="block">• <b>Bi-annually</b>: 2 payments, every 6 months.</span>
+                <span className="block">• <b>Quarterly</b>: 4 payments, every 3 months.</span>
+                <span className="block">• <b>Monthly</b>: 12 payments, every month.</span>
+                <span className="block">• <b>Custom</b>: you set the number of instalments, how far apart they are, and the amount of each.</span>
+                <span className="block mt-1">Tenants see the plan and the amount per payment on the listing and at checkout.</span>
+              </InfoTip>
+            </label>
             <OptionGrid options={paymentFrequencyOptions} value={form.paymentFrequency} onChange={v => setField('paymentFrequency', v)} columns={2} />
             {form.paymentFrequency === 'custom' && (
               <div className="mt-3 space-y-3 p-3 border-2 border-mustard rounded-clay-sm bg-mustard-pale/30">
@@ -326,11 +354,21 @@ function PricingStep({ w }: { w: ListingWizard }) {
           <p className="text-xs font-semibold text-text-secondary uppercase tracking-wider mb-3">Fees</p>
           <div className="space-y-3">
             <div>
-              <label className="block text-xs text-text-secondary mb-1">Caution Fee (Optional)</label>
+              <label className="block text-xs text-text-secondary mb-1">
+                Caution Fee (Optional)
+                <InfoTip title="Caution Fee">
+                  A refundable security deposit paid at move-in. It covers damage or unpaid bills and is returned to the tenant when they move out, less any deductions.
+                </InfoTip>
+              </label>
               <MoneyInput value={form.cautionFee} onChange={v => setField('cautionFee', v)} placeholder="50000" />
             </div>
             <div>
-              <label className="block text-xs text-text-secondary mb-1">Agency Fee (Optional)</label>
+              <label className="block text-xs text-text-secondary mb-1">
+                Agency Fee (Optional)
+                <InfoTip title="Agency Fee">
+                  Your one-time fee for finding and arranging the property, paid by the tenant at move-in together with the first rent payment. It is not refundable.
+                </InfoTip>
+              </label>
               <MoneyInput value={form.agencyFee} onChange={v => setField('agencyFee', v)} placeholder="25000" />
             </div>
           </div>
@@ -623,7 +661,7 @@ export function OwnerCreateListingPage({ role }: { role: OwnerRole }) {
   const { user } = useAuth();
   const userRole = user?.role || role;
   const { verified, recheck } = useListingVerification(userRole, user?.verificationStatus === 'verified');
-  const w = useListingWizard(role, () => navigate(`/${role}/listings`));
+  const w = useListingWizard(role, () => navigate(`/${role}/listings`), user?.id);
 
   if (verified === null) {
     return (
@@ -659,6 +697,18 @@ export function OwnerCreateListingPage({ role }: { role: OwnerRole }) {
 
           <h2 className="text-lg font-bold text-text-primary text-center mb-6">{w.stepTitle}</h2>
 
+          {w.restoredDraft && (
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-2 rounded-clay-sm border border-mustard bg-mustard-pale/40 p-3 text-sm">
+              <span className="text-text-primary">
+                Continuing your draft from {describeSavedAt(w.restoredDraft.savedAt)}.
+              </span>
+              <span className="flex gap-3">
+                <button type="button" onClick={w.discardDraft} className="text-xs font-semibold text-status-error hover:underline">Start over</button>
+                <button type="button" onClick={w.dismissRestoredNotice} className="text-xs font-semibold text-text-secondary hover:underline">Dismiss</button>
+              </span>
+            </div>
+          )}
+
           {stepViews[w.step - 1]}
 
           {/* QA-AGT-010 / QA-CO-014: per-step problems and server rejections both show here. */}
@@ -684,6 +734,13 @@ export function OwnerCreateListingPage({ role }: { role: OwnerRole }) {
                 {w.uploading ? 'Uploading Photos...' : 'Publish Listing'}
               </Button>
             )}
+          </div>
+
+          {/* Progress is already saved as a draft on every change; this is just a clear way out. */}
+          <div className="mt-4 text-center">
+            <button type="button" onClick={() => navigate(`/${role}/listings`)} className="text-xs font-semibold text-text-secondary hover:text-mustard hover:underline">
+              Save draft &amp; finish later
+            </button>
           </div>
         </div>
       </div>
