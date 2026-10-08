@@ -68,7 +68,6 @@ export interface ListingFormData {
   studentsOnly: boolean;
   leaseDurationValue: string;
   leaseDurationUnit: 'year' | 'month';
-  rentDuration: string;
   availableDays: string[];
   availableTimeSlots: string[];
   inspectionNotes: string;
@@ -113,7 +112,6 @@ export const initialFormData: ListingFormData = {
   studentsOnly: false,
   leaseDurationValue: '1',
   leaseDurationUnit: 'year',
-  rentDuration: '',
   availableDays: [...DEFAULT_DAYS],
   availableTimeSlots: [...DEFAULT_SLOTS],
   inspectionNotes: '',
@@ -242,7 +240,6 @@ export function buildListingPayload(form: ListingFormData, extras: PayloadExtras
     leaseDurationValue: isShortlet ? undefined : Number(form.leaseDurationValue) || 1,
     leaseDurationUnit: isShortlet ? undefined : form.leaseDurationUnit,
     leaseDuration: isShortlet ? undefined : leaseLabel(form),
-    rentDuration: form.rentDuration || undefined,
     additionalNotes: form.additionalNotes || undefined,
     shortletRates: isShortlet
       ? validShortletRates(form).map((r) => ({

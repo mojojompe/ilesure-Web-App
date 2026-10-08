@@ -269,15 +269,6 @@ function PricingStep({ w }: { w: ListingWizard }) {
           </div>
           <div>
             <label className={labelClass}>
-              Rent Duration
-              <InfoTip title="Rent Duration">
-                How you describe the rent period to tenants, in your own words, e.g. "1 Year" or "1 Year (renewable)". It is shown on the listing's details as written. It does not change what the tenant pays or how long the tenancy lasts; Lease Duration below sets that.
-              </InfoTip>
-            </label>
-            <input type="text" value={form.rentDuration || ''} onChange={e => setField('rentDuration', e.target.value)} placeholder="e.g. 1 Year, 6 Months" className="clay-input w-full mb-4" />
-          </div>
-          <div>
-            <label className={labelClass}>
               Lease Duration
               <InfoTip title="Lease Duration">
                 How long the tenancy runs: 1, 2, 3 or 5 years, or a custom length. This term is written into the tenancy agreement the tenant signs. The first year is paid at move-in; each later year is a renewal the tenant pays on iléSure, with reminders before it is due. E.g. a 3-year lease is paid as Year 1 at move-in, then Year 2 and Year 3 renewals. Lengths in months are rounded up to whole years for renewals.
