@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ownerApi, type OwnerRole, type TenancyAgreementDocument } from '../api/owner';
 import {
   initialFormData,
@@ -13,6 +13,7 @@ import {
   type ListingFormData,
   type ShortletRateForm,
 } from '../lib/listingWizard';
+import { draftKey, loadDraft, saveDraft, clearDraft, hasProgress, saveDraftPhotos, loadDraftPhotos } from '../lib/listingDraft';
 
 type BooleanField = { [K in keyof ListingFormData]: ListingFormData[K] extends boolean ? K : never }[keyof ListingFormData];
 
@@ -20,17 +21,63 @@ type BooleanField = { [K in keyof ListingFormData]: ListingFormData[K] extends b
  * State and actions for the Create Listing wizard. The page renders; this owns the form,
  * step navigation, photo/agreement selection and publishing through the owner API.
  * `onPublished` runs after the listing (and its photos) are saved.
+ *
+ * Progress is saved as a draft on every change (see lib/listingDraft), so a lister who
+ * leaves midway picks up where they stopped. Publishing clears the draft.
  */
-export function useListingWizard(role: OwnerRole, onPublished: () => void) {
+export function useListingWizard(role: OwnerRole, onPublished: () => void, userId?: string) {
   const api = ownerApi(role);
-  const [step, setStep] = useState(1);
-  const [form, setForm] = useState<ListingFormData>(initialFormData);
-  const [coordinates, setCoordinates] = useState<[number, number] | null>(null);
+  const key = draftKey(role, userId);
+  const [initialDraft] = useState(() => loadDraft(key));
+  const [restoredDraft, setRestoredDraft] = useState(initialDraft ? { savedAt: initialDraft.savedAt } : null);
+  const [step, setStep] = useState(initialDraft?.step ?? 1);
+  const [form, setForm] = useState<ListingFormData>(initialDraft?.form ?? initialFormData);
+  const [coordinates, setCoordinates] = useState<[number, number] | null>(initialDraft?.coordinates ?? null);
   const [photoFiles, setPhotoFiles] = useState<File[]>([]);
-  const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(null);
+  const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(initialDraft?.tenancyAgreement ?? null);
+  const [photosLoaded, setPhotosLoaded] = useState(false);
+  const published = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+
+  // Photos are stored separately (IndexedDB) and come back asynchronously.
+  useEffect(() => {
+    let cancelled = false;
+    loadDraftPhotos(key).then((files) => {
+      if (cancelled) return;
+      if (files.length) setPhotoFiles((prev) => (prev.length ? prev : files));
+      setPhotosLoaded(true);
+    });
+    return () => { cancelled = true; };
+  }, [key]);
+
+  useEffect(() => {
+    if (published.current) return;
+    if (hasProgress(form, photoFiles.length, Boolean(tenancyAgreement))) {
+      saveDraft(key, { step, form, coordinates, tenancyAgreement });
+    } else {
+      try { localStorage.removeItem(key); } catch { /* ignore */ }
+    }
+  }, [key, step, form, coordinates, tenancyAgreement, photoFiles.length]);
+
+  useEffect(() => {
+    // Wait for the stored photos first, or the empty initial list would wipe them.
+    if (!photosLoaded || published.current) return;
+    void saveDraftPhotos(key, photoFiles);
+  }, [key, photoFiles, photosLoaded]);
+
+  /** Throws the draft away and starts a blank listing. */
+  const discardDraft = () => {
+    clearDraft(key);
+    setForm(initialFormData);
+    setStep(1);
+    setCoordinates(null);
+    setPhotoFiles([]);
+    setTenancyAgreement(null);
+    setError(null);
+    setRestoredDraft(null);
+  };
 
   const setField = useCallback(<K extends keyof ListingFormData>(field: K, value: ListingFormData[K]) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -98,6 +145,9 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void) {
         setError(describeSubmitError(created.error));
         return;
       }
+      // The listing exists now; a leftover draft would invite publishing it twice.
+      published.current = true;
+      clearDraft(key);
       if (photoFiles.length > 0) {
         setUploading(true);
         const uploaded = await api.uploadListingImages(created.data._id, photoFiles);
@@ -138,6 +188,9 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void) {
     next,
     back,
     submit,
+    restoredDraft,
+    dismissRestoredNotice: () => setRestoredDraft(null),
+    discardDraft,
   };
 }
 
