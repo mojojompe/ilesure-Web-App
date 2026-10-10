@@ -41,7 +41,7 @@ describe('owner API: endpoint prefix comes from role', () => {
   it.each([
     ['agent', 'PUT /agent/listings/l1/archive'],
     ['company', 'PUT /company/listings/l1/archive'],
-  ] as const)('%s archives through its own prefix', async (role, route) => {
+  ] as const)('%s archives through its own prefix', async (role: any, route: any) => {
     const { http, calls } = stubHttp({ [route]: { success: true, data: { _id: 'l1', rentAnnual: 5 } } });
     const result = await createOwnerApi(role, http).archiveListing('l1');
     expect(result.success).toBe(true);
@@ -51,7 +51,7 @@ describe('owner API: endpoint prefix comes from role', () => {
   it.each([
     ['agent', 'PUT /agent/bookings/b1'],
     ['company', 'PUT /company/bookings/b1'],
-  ] as const)('%s decides a booking via PUT /{role}/bookings/:id with the decision as status', async (role, route) => {
+  ] as const)('%s decides a booking via PUT /{role}/bookings/:id with the decision as status', async (role: any, route: any) => {
     const { http, calls } = stubHttp({ [route]: { success: true, data: { _id: 'b1', status: 'rejected' } } });
     const result = await createOwnerApi(role, http).decideBooking('b1', 'rejected');
     expect(result).toMatchObject({ success: true, data: { status: 'rejected' } });

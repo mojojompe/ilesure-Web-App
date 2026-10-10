@@ -56,6 +56,19 @@ export const userApi = {
     }
   },
 
+  async uploadAvatar(formData: FormData): Promise<{ success: boolean; data?: { avatar: string }; error?: { message: string } }> {
+    try {
+      const response = await apiClient.post<{ success: boolean; data?: { avatar: string } }>('/users/me/avatar', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+      return response.data;
+    } catch (err) {
+      return toApiFailure(err, 'Failed to upload avatar');
+    }
+  },
+
   async getNotificationSettings(): Promise<NotificationSettingsResponse> {
     try {
       const response = await apiClient.get<NotificationSettingsResponse>('/users/notifications');

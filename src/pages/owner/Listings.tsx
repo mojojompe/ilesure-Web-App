@@ -173,6 +173,19 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
       )}
 
       {/* Status and Price Banner */}
+      {(rawStatus === 'rejected' || rawStatus === 'changes_requested') && listing.rejectionReason && (
+        <div className="p-4 bg-status-error/10 border border-status-error/30 rounded-clay-sm flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-status-error font-bold">
+            <Alert01Icon size={18} strokeWidth={2.5} />
+            <span>Admin Message ({statusText})</span>
+          </div>
+          <p className="text-sm text-text-secondary">{listing.rejectionReason}</p>
+          <div className="mt-1">
+            <Button variant="primary" size="sm" onClick={onEdit}>Edit Listing</Button>
+          </div>
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3 p-3.5 bg-mustard-pale/30 rounded-clay-sm border border-mustard/20 flex-wrap">
         <div className="flex items-center gap-2">
           <StatusBadge variant={statusVariant}>{statusText}</StatusBadge>

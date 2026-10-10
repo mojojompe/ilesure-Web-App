@@ -52,7 +52,7 @@ describe('validateStep', () => {
     ['', 'Please enter the annual rent.'],
     ['-50000', 'Annual rent must be at least ₦10,000.'],
     ['9999', 'Annual rent must be at least ₦10,000.'],
-  ])('rejects rent %j', (rent, message) => {
+  ])('rejects rent %j', (rent: any, message: any) => {
     expect(validateStep('pricing', { ...complete, annualRent: rent })).toBe(message);
   });
 

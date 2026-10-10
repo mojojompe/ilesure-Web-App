@@ -38,6 +38,8 @@ export function AgentSettingsPage() {
     avatar: '',
   });
 
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   const handleAvatarSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -45,6 +47,7 @@ export function AgentSettingsPage() {
         showToast('Image too large. Max 5MB', 'error');
         return;
       }
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setFormData(prev => ({ ...prev, avatar: reader.result as string }));
@@ -135,9 +138,24 @@ export function AgentSettingsPage() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      const response = await userApi.updateProfile(formData);
+      let finalAvatarUrl = formData.avatar;
+      if (avatarFile) {
+        const uploadData = new FormData();
+        uploadData.append('avatar', avatarFile);
+        const avatarRes = await userApi.uploadAvatar(uploadData);
+        if (avatarRes.success && avatarRes.data?.avatar) {
+          finalAvatarUrl = avatarRes.data.avatar;
+        } else {
+          showToast(avatarRes.error?.message || 'Failed to upload avatar', 'error');
+          setSaving(false);
+          return;
+        }
+      }
+      
+      const response = await userApi.updateProfile({ ...formData, avatar: finalAvatarUrl });
       if (response.success) {
         showToast('Profile saved successfully!');
+        setAvatarFile(null);
         // QA-AGT-004: reflect the values the server actually persisted and mirror them into the
         // cached session so the header/sidebar and the next refresh show what was saved.
         const saved = response.data;

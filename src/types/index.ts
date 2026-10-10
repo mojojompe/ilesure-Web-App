@@ -321,6 +321,7 @@ export interface Listing {
   distanceFromLCU?: string;
   createdAt: string;
   updatedAt: string;
+  rejectionReason?: string;
 }
 
 export interface Booking {
