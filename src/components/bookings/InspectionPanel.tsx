@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Calendar02Icon, CheckmarkBadge02Icon, Cancel02Icon, Alert01Icon, Clock01Icon } from '@hugeicons/react';
 import { Button } from '../ui/Button';
+import { InfoTip } from '../ui/InfoTip';
 import type { InspectionStatus } from '../../contracts/generated';
 
 /**
@@ -112,7 +113,7 @@ export function InspectionPanel({ booking, onMarkMissed, onReschedule, busy = fa
 
   return (
     <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
-      <p className="text-xs text-text-tertiary mb-1">Inspection</p>
+      <p className="text-xs text-text-tertiary mb-1">Inspection<InfoTip title="Inspection">The tenant books a viewing, attends it, then confirms in their app that the apartment matches the listing. Only the tenant can confirm, and payment opens once they do. You can reschedule the viewing, or mark it missed if it did not happen.</InfoTip></p>
 
       <div className="flex items-start gap-2">
         {summary.icon}

@@ -115,6 +115,8 @@ export const ERROR_CODES = [
   'FEE_NOT_APPLICABLE_TO_SHORTLET',
   'INVALID_IMAGE_PAYLOAD',
   'IN_USE',
+  'AGREEMENT_VERSION_MISMATCH',
+  'LISTING_AGREEMENT_REQUIRED',
   'LISTING_FULLY_BOOKED',
   'LISTING_NOT_FOUND',
   'LISTING_NOT_PRICED',
@@ -170,6 +172,7 @@ export const ERROR_CODES = [
   'PAYMENT_INIT_REJECTED',
   'PAYMENT_MISMATCH',
   'PAYOUT_ACCOUNT_IN_USE',
+  'PAYOUT_ACCOUNT_REQUIRED',
   'PAYSTACK_ERROR',
   'PRICE_UNAVAILABLE',
   'REFERENCE_MISMATCH',
@@ -443,6 +446,8 @@ export const PAYMENT_BLOCKERS = [
   // The listing's owner (landlord/agent user, or company) is suspended.
   'LISTING_UNAVAILABLE',
   'INSPECTION_NOT_VERIFIED',
+  // The listing's payee has no payout subaccount, so the charge could not be split to them.
+  'PAYOUT_ACCOUNT_REQUIRED',
 ] as const satisfies readonly ErrorCode[];
 export type PaymentBlocker = (typeof PAYMENT_BLOCKERS)[number];
 
@@ -455,6 +460,7 @@ export const PAYMENT_BLOCKER_STATUS: Record<PaymentBlocker, 400 | 404 | 409> = {
   LISTING_FULLY_BOOKED: 409,
   LISTING_UNAVAILABLE: 409,
   INSPECTION_NOT_VERIFIED: 409,
+  PAYOUT_ACCOUNT_REQUIRED: 409,
 };
 
 export type PaymentEligibility =
