@@ -171,6 +171,7 @@ export const ERROR_CODES = [
   'NOT_YET_PAYABLE',
   'PAYMENT_INIT_REJECTED',
   'PAYMENT_MISMATCH',
+  'PAYMENTS_NOT_LIVE',
   'PAYOUT_ACCOUNT_IN_USE',
   'PAYOUT_ACCOUNT_REQUIRED',
   'PAYSTACK_ERROR',
@@ -448,6 +449,8 @@ export const PAYMENT_BLOCKERS = [
   'INSPECTION_NOT_VERIFIED',
   // The listing's payee has no payout subaccount, so the charge could not be split to them.
   'PAYOUT_ACCOUNT_REQUIRED',
+  // Online payment has not been switched on yet (Paystack is not live).
+  'PAYMENTS_NOT_LIVE',
 ] as const satisfies readonly ErrorCode[];
 export type PaymentBlocker = (typeof PAYMENT_BLOCKERS)[number];
 
@@ -461,6 +464,7 @@ export const PAYMENT_BLOCKER_STATUS: Record<PaymentBlocker, 400 | 404 | 409> = {
   LISTING_UNAVAILABLE: 409,
   INSPECTION_NOT_VERIFIED: 409,
   PAYOUT_ACCOUNT_REQUIRED: 409,
+  PAYMENTS_NOT_LIVE: 409,
 };
 
 export type PaymentEligibility =

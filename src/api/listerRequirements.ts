@@ -14,6 +14,11 @@ export interface ListerRequirements {
   requiresListingAgreement: boolean;
   /** False when rent for this lister's listings has no payout account to be settled into. */
   payoutAccountReady: boolean;
+  /**
+   * Whether online payment is open. Before it is, a missing payout account is a reminder;
+   * once it is, listings without one are hidden from renters and cannot be booked.
+   */
+  paymentsLive?: boolean;
 }
 
 export interface ListingAgreementDocument {

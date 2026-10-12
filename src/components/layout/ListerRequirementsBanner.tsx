@@ -38,17 +38,25 @@ export function ListerRequirementsBanner({ role }: { role: UserRole }) {
   // A sub-agent's rent is paid to their company, whose admin owns the payout account.
   const ownsPayoutAccount = user?.role !== 'sub_agent';
   const settingsPath = role === 'company' || role === 'company_admin' ? '/company/settings' : '/agent/settings';
+  // Older backends do not send the field; they enforce the rule, so treat that as live.
+  const live = requirements.paymentsLive !== false;
 
   return (
     <div className="space-y-3 mb-4">
       {!requirements.payoutAccountReady && (
         <div className="rounded-clay border border-mustard bg-mustard-pale p-4 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="flex-1">
-            <p className="text-sm font-bold text-text-primary">Your listings cannot take bookings or payments yet</p>
+            <p className="text-sm font-bold text-text-primary">
+              {live ? 'Your listings are hidden from renters and cannot take bookings' : 'Add your payout account before online payments open'}
+            </p>
             <p className="text-sm text-text-secondary mt-0.5">
-              {ownsPayoutAccount
-                ? 'Add your payout bank account. Rent is paid straight into it by Paystack, so tenants cannot book or pay until it is set up.'
-                : 'Your company has not added a payout bank account. Ask your company admin to add one in Settings so tenants can book and pay.'}
+              {live
+                ? (ownsPayoutAccount
+                  ? 'Add your payout bank account. Rent is paid straight into it by Paystack, so your listings are not shown to renters until it is set up.'
+                  : 'Your company has not added a payout bank account. Ask your company admin to add one in Settings so your listings are shown to renters again.')
+                : (ownsPayoutAccount
+                  ? 'Online payments are opening soon. Rent will be paid straight into your bank account by Paystack. Listings without a payout account will be hidden from renters when payments open.'
+                  : 'Online payments are opening soon. Ask your company admin to add the company payout bank account in Settings; listings without one will be hidden from renters when payments open.')}
             </p>
           </div>
           {ownsPayoutAccount && (
