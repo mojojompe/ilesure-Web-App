@@ -130,7 +130,7 @@ export const userApi = {
     }
   },
 
-  async initializeKyc(type: 'nin' | 'bvn'): Promise<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string }; error?: { message: string } }> {
+  async initializeKyc(type: KycCheck): Promise<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string }; error?: { message: string } }> {
     try {
       const response = await apiClient.post<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string }; error?: { message: string } }>('/kyc/initialize', { type });
       return response.data;
@@ -139,7 +139,7 @@ export const userApi = {
     }
   },
 
-  async verifyKyc(referenceId: string, type: 'nin' | 'bvn'): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
+  async verifyKyc(referenceId: string, type: KycCheck): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
     try {
       const response = await apiClient.post<{ success: boolean; data?: any; error?: { message: string } }>('/kyc/verify', { referenceId, type });
       return response.data;
@@ -148,7 +148,7 @@ export const userApi = {
     }
   },
 
-  async syncKyc(type?: 'nin' | 'bvn'): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
+  async syncKyc(type?: KycCheck): Promise<{ success: boolean; data?: any; error?: { message: string } }> {
     try {
       const response = await apiClient.post<{ success: boolean; data?: any; error?: { message: string } }>('/kyc/sync', type ? { type } : {});
       return response.data;
@@ -167,8 +167,20 @@ interface KycStatus {
   bvnVerifiedAt?: string;
   ninPhoto?: string;
   bvnPhoto?: string;
+  /** True for a company owner or admin whose company has the CAC check to clear. */
+  cacRequired?: boolean;
+  cacVerified?: boolean;
+  cacVerifiedAt?: string | null;
+  /** `passed`, or why the last company check was refused (name_mismatch, rc_mismatch, ...). */
+  cacCheckStatus?: string | null;
+  /** The company name CAC returned on the last check. */
+  cacRegisteredName?: string | null;
+  companyStatus?: string | null;
 }
 
-export type { KycStatus };
+/** The checks run through Dojah: the person's NIN and BVN, and their company's CAC record. */
+type KycCheck = 'nin' | 'bvn' | 'cac';
+
+export type { KycStatus, KycCheck };
 
 export default userApi;
