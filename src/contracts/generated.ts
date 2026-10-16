@@ -517,6 +517,7 @@ export const ADMIN_RESOURCES = [
   'reports',
   'settings',
   'shared-bookings',
+  'support',
   'tiers',
   'users',
   'verifications',
@@ -558,6 +559,7 @@ export const ADMIN_ACTION_PERMISSIONS = {
   'emails.send': 'write:emails',
   'settings.manage': 'write:settings',
   'waitlist.manage': 'write:waitlist',
+  'support.reply': 'write:support',
 } as const satisfies Record<string, AdminPermission>;
 export type AdminAction = keyof typeof ADMIN_ACTION_PERMISSIONS;
 
