@@ -106,6 +106,7 @@ export const ERROR_CODES = [
   'DOJAH_ERROR',
   'KYC_REQUIRED',
   'NAME_MISMATCH',
+  'RC_NUMBER_MISMATCH',
   'NOT_VERIFIED',
   'VERIFICATION_FAILED',
   'VERIFICATION_NOT_FOUND',
@@ -115,6 +116,8 @@ export const ERROR_CODES = [
   'FEE_NOT_APPLICABLE_TO_SHORTLET',
   'INVALID_IMAGE_PAYLOAD',
   'IN_USE',
+  'AGREEMENT_VERSION_MISMATCH',
+  'LISTING_AGREEMENT_REQUIRED',
   'LISTING_FULLY_BOOKED',
   'LISTING_NOT_FOUND',
   'LISTING_NOT_PRICED',
@@ -169,7 +172,9 @@ export const ERROR_CODES = [
   'NOT_YET_PAYABLE',
   'PAYMENT_INIT_REJECTED',
   'PAYMENT_MISMATCH',
+  'PAYMENTS_NOT_LIVE',
   'PAYOUT_ACCOUNT_IN_USE',
+  'PAYOUT_ACCOUNT_REQUIRED',
   'PAYSTACK_ERROR',
   'PRICE_UNAVAILABLE',
   'REFERENCE_MISMATCH',
@@ -443,6 +448,10 @@ export const PAYMENT_BLOCKERS = [
   // The listing's owner (landlord/agent user, or company) is suspended.
   'LISTING_UNAVAILABLE',
   'INSPECTION_NOT_VERIFIED',
+  // The listing's payee has no payout subaccount, so the charge could not be split to them.
+  'PAYOUT_ACCOUNT_REQUIRED',
+  // Online payment has not been switched on yet (Paystack is not live).
+  'PAYMENTS_NOT_LIVE',
 ] as const satisfies readonly ErrorCode[];
 export type PaymentBlocker = (typeof PAYMENT_BLOCKERS)[number];
 
@@ -455,6 +464,8 @@ export const PAYMENT_BLOCKER_STATUS: Record<PaymentBlocker, 400 | 404 | 409> = {
   LISTING_FULLY_BOOKED: 409,
   LISTING_UNAVAILABLE: 409,
   INSPECTION_NOT_VERIFIED: 409,
+  PAYOUT_ACCOUNT_REQUIRED: 409,
+  PAYMENTS_NOT_LIVE: 409,
 };
 
 export type PaymentEligibility =
@@ -506,6 +517,7 @@ export const ADMIN_RESOURCES = [
   'reports',
   'settings',
   'shared-bookings',
+  'support',
   'tiers',
   'users',
   'verifications',
@@ -547,6 +559,7 @@ export const ADMIN_ACTION_PERMISSIONS = {
   'emails.send': 'write:emails',
   'settings.manage': 'write:settings',
   'waitlist.manage': 'write:waitlist',
+  'support.reply': 'write:support',
 } as const satisfies Record<string, AdminPermission>;
 export type AdminAction = keyof typeof ADMIN_ACTION_PERMISSIONS;
 
