@@ -8,6 +8,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ownerApi, type OwnerRole, type BookingDecision } from '../../api/owner';
 import { formatCurrency } from '../../utils/format';
 import { InspectionPanel } from '../../components/bookings/InspectionPanel';
+import { InfoTip } from '../../components/ui/InfoTip';
 
 const PAGE_COPY: Record<OwnerRole, { subtitle: string }> = {
   agent: { subtitle: 'Manage your bookings' },
@@ -138,11 +139,11 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                   <tr>
                     <th>Listing</th>
                     <th>Participants</th>
-                    <th>Paid</th>
+                    <th>Paid<InfoTip title="Paid">How many of the roommates sharing this unit have paid their share.</InfoTip></th>
                     <th>Total</th>
-                    <th>Progress</th>
-                    <th>Deadline</th>
-                    <th>Status</th>
+                    <th>Progress<InfoTip title="Progress">How much of the total has been paid so far by all the roommates sharing this unit.</InfoTip></th>
+                    <th>Deadline<InfoTip title="Deadline">The date by which each roommate must pay for their own place. A place not paid for by then is released back to your listing. A roommate who has already paid keeps their confirmed place, and you are paid for it.</InfoTip></th>
+                    <th>Status<InfoTip title="Status">Each roommate books and pays for their own place. Partially paid: at least one place is paid for and confirmed, and another is still open. Confirmed: nobody is left to pay; see the participants for which places were taken. Expired, cancelled and refunded bookings are closed.</InfoTip></th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -217,8 +218,8 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     <th>Tenant</th>
                     <th>Price</th>
                     <th>Move-in Date</th>
-                    <th>Status</th>
-                    <th>Payment</th>
+                    <th>Status<InfoTip title="Status">Pending: a new request waiting for you to confirm or reject. Confirmed: you accepted the request. Completed: the tenant has paid. Cancelled or rejected: the booking is closed.</InfoTip></th>
+                    <th>Payment<InfoTip title="Payment">Whether the tenant has paid for this booking on iléSure. For long-term rentals the tenant can only pay after viewing the apartment and confirming it matches the listing.</InfoTip></th>
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -335,7 +336,7 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                         <p className="text-xs text-text-tertiary">of ₦{selectedBooking.totalRequired?.toLocaleString()}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-text-tertiary">Payment Deadline</p>
+                        <p className="text-xs text-text-tertiary">Payment Deadline<InfoTip title="Payment Deadline">The date by which each roommate must pay for their own place. A place not paid for by then is released back to your listing. A roommate who has already paid keeps their confirmed place, and you are paid for it.</InfoTip></p>
                         <p className="text-sm text-text-primary">
                           {selectedBooking.paymentDeadline
                             ? new Date(selectedBooking.paymentDeadline).toLocaleDateString()
@@ -345,7 +346,7 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     </div>
 
                     <div>
-                      <p className="text-xs text-text-tertiary mb-2">Payment Progress</p>
+                      <p className="text-xs text-text-tertiary mb-2">Payment Progress<InfoTip title="Payment Progress">How much of the total has been paid so far by all the roommates sharing this unit.</InfoTip></p>
                       <div className="h-3 bg-clay-border-light rounded-full overflow-hidden">
                         <div
                           className={`h-3 rounded-full transition-all ${
@@ -358,7 +359,7 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     </div>
 
                     <div>
-                      <p className="text-xs text-text-tertiary mb-2">Participants</p>
+                      <p className="text-xs text-text-tertiary mb-2">Participants<InfoTip title="Participants">The roommates sharing this unit. Each one pays only their own share, and you can see who has paid and who is still pending.</InfoTip></p>
                       <div className="space-y-2">
                         {selectedBooking.participants?.map((p: any, idx: number) => (
                           <div key={idx} className="flex items-center justify-between p-2 bg-clay-border-light/30 rounded-lg">
@@ -368,7 +369,7 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                             </div>
                             <div className="text-right">
                               <p className="text-sm font-medium text-text-primary">₦{p.amountPaid?.toLocaleString()} / ₦{p.amountDue?.toLocaleString()}</p>
-                              <StatusBadge variant={p.status === 'paid' ? 'success' : 'warning'}>
+                              <StatusBadge variant={p.status === 'paid' ? 'success' : p.status === 'pending' ? 'warning' : 'default'}>
                                 {p.status}
                               </StatusBadge>
                             </div>
@@ -451,7 +452,7 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     
                     {/* Timeline Info */}
                     <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
-                      <p className="text-xs text-text-tertiary">Timeline Status</p>
+                      <p className="text-xs text-text-tertiary">Timeline Status<InfoTip title="Timeline Status">Where this booking is in the process. Step 1: the tenant requested the booking. Step 2: the tenant books a viewing and visits the apartment. Step 3: the tenant has reported whether the apartment matches the listing; payment opens if it does. Step 4: the tenant has paid.</InfoTip></p>
                       <p className="text-sm font-semibold text-text-primary">
                         {selectedBooking.timelineStep === 3 && 'Step 3: Inspection Verified (Ready for Payment)'}
                         {selectedBooking.timelineStep === 4 && 'Step 4: Paid / Completed'}

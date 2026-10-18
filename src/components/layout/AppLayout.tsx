@@ -4,6 +4,7 @@ import { useLocation } from 'react-router-dom';
 import { clsx } from 'clsx';
 import { Sidebar } from './Sidebar';
 import { TopHeader } from './TopHeader';
+import { ListerRequirementsBanner } from './ListerRequirementsBanner';
 import { FloatingAIChat } from '../support/FloatingAIChat';
 import type { UserRole } from '../../types';
 
@@ -70,6 +71,7 @@ export function AppLayout({ children, role, title, subtitle, onReload }: AppLayo
           isCollapsed={isCollapsed}
         />
         <main className="flex-1 p-4 pt-24 md:px-6 md:pt-[6rem] overflow-x-hidden">
+          <ListerRequirementsBanner role={role} />
           {children}
         </main>
       </div>

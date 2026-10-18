@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { InformationCircleIcon } from '@hugeicons/react';
 
 /**
  * A small (i) button that opens a short explanation under it. Click or tap to open (no
  * hover, so it works the same on phones); click outside, scroll or press Escape to close.
  * The panel is placed against the viewport and clamped to it, so an icon near the right
- * edge of a phone screen still opens a fully visible panel.
+ * edge of a phone screen still opens a fully visible panel. It is portalled to <body> so a
+ * clipping or transformed ancestor (a table card, a modal) cannot cut it off or restyle it.
  */
 const PANEL_WIDTH = 288;
 const GUTTER = 12;
@@ -15,6 +17,7 @@ export function InfoTip({ title, children }: { title: string; children: ReactNod
   const open = pos !== null;
   const ref = useRef<HTMLSpanElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const panel = useRef<HTMLSpanElement>(null);
 
   const toggle = () => {
     if (open || !button.current) return setPos(null);
@@ -29,7 +32,9 @@ export function InfoTip({ title, children }: { title: string; children: ReactNod
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent | TouchEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) close();
+      const t = e.target as Node;
+      if (ref.current?.contains(t) || panel.current?.contains(t)) return;
+      close();
     };
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
     document.addEventListener('mousedown', onDown);
@@ -59,16 +64,18 @@ export function InfoTip({ title, children }: { title: string; children: ReactNod
       >
         <InformationCircleIcon className="w-4 h-4" />
       </button>
-      {pos && (
+      {pos && createPortal(
         <span
+          ref={panel}
           id={id}
           role="tooltip"
           style={{ top: pos.top, left: pos.left, width: pos.width }}
-          className="fixed z-50 rounded-clay-sm border border-clay-border bg-white p-3 text-xs leading-relaxed text-text-secondary shadow-clay"
+          className="fixed z-[70] rounded-clay-sm border border-clay-border bg-white p-3 text-left text-xs font-normal normal-case tracking-normal whitespace-normal leading-relaxed text-text-secondary shadow-clay"
         >
           <span className="block font-semibold text-text-primary mb-1">{title}</span>
           {children}
-        </span>
+        </span>,
+        document.body,
       )}
     </span>
   );

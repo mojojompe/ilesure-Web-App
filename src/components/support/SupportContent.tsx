@@ -17,7 +17,7 @@ const FAQS = [
   },
   {
     q: 'When and how do I receive rent payouts?',
-    a: 'Tenant payments made through iléSure are held securely in escrow until move-in verification. Funds are then automatically settled to your configured Paystack subaccount within 24 hours of successful check-in.'
+    a: 'Each tenant payment is split by Paystack at the moment it is made: your share goes straight to your Paystack subaccount and is paid into your bank account on Paystack\'s normal settlement schedule. iléSure does not hold your rent. You need a payout account before your listings can take bookings; add it in Settings.'
   },
   {
     q: 'How do I connect my bank account for automatic payouts?',
@@ -120,7 +120,7 @@ export function SupportContent({ role }: SupportContentProps) {
             <ShieldCheck className="w-6 h-6" />
           </div>
           <div>
-            <span className="text-sm font-bold text-text-primary">Escrow & Verification</span>
+            <span className="text-sm font-bold text-text-primary">Payouts & Verification</span>
             <p className="text-xs text-text-tertiary mt-0.5">Dedicated dispute management and payout security.</p>
           </div>
         </ClayCard>

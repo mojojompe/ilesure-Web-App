@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { SecurityIcon, CheckmarkBadge02Icon, Clock02Icon, Loading02Icon, Alert01Icon, ArrowRight01Icon } from '@hugeicons/react';
 import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/StatusBadge';
-import { userApi, type KycStatus } from '../../api/user';
+import { userApi, type KycStatus, type KycCheck } from '../../api/user';
 import { socketService } from '../../api/socket';
 
 interface DojahKYCSectionProps {
@@ -31,7 +31,7 @@ function loadDojahScript(): Promise<void> {
 export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: DojahKYCSectionProps) {
   const [kycStatus, setKycStatus] = useState<KycStatus | null>(null);
   const [loading, setLoading] = useState(true);
-  const [verifying, setVerifying] = useState<'nin' | 'bvn' | null>(null);
+  const [verifying, setVerifying] = useState<KycCheck | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState('');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
@@ -72,7 +72,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
     }
   };
 
-  const openDojahWidget = async (type: 'nin' | 'bvn') => {
+  const openDojahWidget = async (type: KycCheck) => {
     setError('');
     setVerifying(type);
 
@@ -103,6 +103,20 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           try {
             setVerifying(type);
             const refId = response.reference_id || referenceId;
+
+            // The company check has an answer worth showing: when CAC's record does not match
+            // the company on the account, the server says exactly what differs.
+            if (type === 'cac') {
+              const res = await userApi.verifyKyc(refId, 'cac');
+              if (res.success) {
+                showToast(res.data?.companyVerified ? 'Your company is verified!' : 'Company (CAC) check passed.');
+              } else {
+                setError(res.error?.message || 'Company verification could not be completed. Please try again.');
+              }
+              await fetchKycStatus();
+              onVerified?.();
+              return;
+            }
 
             try {
               await userApi.verifyKyc(refId, type);
@@ -183,7 +197,12 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
   const bvnDone = kycStatus?.bvnVerified ?? false;
   const isFullyVerified = kycStatus?.verificationStatus === 'verified';
   const bothRequired = requiresBvn;
-  const allDone = bothRequired ? (ninDone && bvnDone) : ninDone;
+  // The company's own check, shown to whoever runs a company (the server decides who).
+  const cacRequired = kycStatus?.cacRequired ?? false;
+  const cacDone = kycStatus?.cacVerified ?? false;
+  const cacRefused = !cacDone && Boolean(kycStatus?.cacCheckStatus) && kycStatus?.cacCheckStatus !== 'passed';
+  const identityDone = bothRequired ? (ninDone && bvnDone) : ninDone;
+  const allDone = identityDone && (!cacRequired || cacDone);
 
   return (
     <>
@@ -268,8 +287,47 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           </div>
         )}
 
+        {/* Company (CAC) verification: company owners and admins only */}
+        {cacRequired && (
+          <div className="flex items-center justify-between p-4 rounded-clay-sm bg-clay-border-light">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-clay-sm flex items-center justify-center ${cacDone ? 'bg-status-success/10' : 'bg-mustard-pale'}`}>
+                {cacDone ? <CheckmarkBadge02Icon className="w-5 h-5 text-status-success" /> : <SecurityIcon className="w-5 h-5 text-mustard" />}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-text-primary">Company (CAC) Verification</p>
+                <p className="text-xs text-text-tertiary">
+                  {cacDone
+                    ? `Verified${kycStatus?.cacRegisteredName ? ` as ${kycStatus.cacRegisteredName}` : ''}`
+                    : cacRefused
+                      ? 'Your company details did not match CAC. Check your company name and RC number, then try again.'
+                      : 'Confirms your company with the Corporate Affairs Commission'}
+                  {kycStatus?.cacVerifiedAt && cacDone && (
+                    <span className="ml-1">— {new Date(kycStatus.cacVerifiedAt).toLocaleDateString()}</span>
+                  )}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {cacDone ? (
+                <StatusBadge variant="success">Verified</StatusBadge>
+              ) : (
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={() => openDojahWidget('cac')}
+                  loading={verifying === 'cac'}
+                  disabled={verifying !== null}
+                >
+                  {cacRefused ? 'Try again' : 'Verify'} <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Pending Review Banner */}
-        {kycStatus?.verificationStatus === 'pending' && !isFullyVerified && (
+        {kycStatus?.verificationStatus === 'pending' && !isFullyVerified && !identityDone && (
           <div className="flex items-center gap-3 p-4 rounded-clay-sm bg-amber-50 border border-amber-200">
             <Clock02Icon className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
             <div>
@@ -286,13 +344,15 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           <div className="flex items-center gap-2 p-3 rounded-clay-sm bg-status-success/10 border border-status-success/20">
             <CheckmarkBadge02Icon className="w-4 h-4 text-status-success flex-shrink-0" />
             <p className="text-sm font-medium text-status-success">
-              {isFullyVerified ? 'Your identity is fully verified' : 'Verification submitted, pending review'}
+              {cacRequired
+                ? (kycStatus?.companyStatus === 'verified' ? 'Your company is fully verified' : 'All checks passed')
+                : isFullyVerified ? 'Your identity is fully verified' : 'Verification submitted, pending review'}
             </p>
           </div>
         )}
 
         {/* Sync button for pending states */}
-        {!allDone && !verifying && (kycStatus?.verificationStatus === 'pending' || ninDone !== bvnDone) && (
+        {!allDone && !verifying && (kycStatus?.verificationStatus === 'pending' || ninDone !== bvnDone || (cacRequired && !cacDone)) && (
           <Button
             variant="secondary"
             size="sm"
