@@ -181,6 +181,7 @@ export const ERROR_CODES = [
   'REFUND_FAILED',
   'RESOLVE_ERROR',
   // chat, calls, reviews, maps
+  'WEB_PUSH_DISABLED',
   'ALREADY_REVIEWED',
   'CALL_ERROR',
   'INVALID_CHAT_ID',
