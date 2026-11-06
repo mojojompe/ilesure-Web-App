@@ -151,6 +151,14 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
   const mapQuery = [address, city, landmark, stateOrArea].filter(Boolean).join(' ') || listing.title || '';
   const rawStatus = (listing.status || 'active').toLowerCase();
   const statusText = rawStatus.replace(/_/g, ' ').toUpperCase();
+  // The open change request or rejection from an admin (the API sends `adminMessage`);
+  // older payloads carried only rejectionReason.
+  const adminMessage: { type: string; message: string } | null =
+    listing.adminMessage?.message
+      ? listing.adminMessage
+      : rawStatus === 'rejected' && listing.rejectionReason
+        ? { type: 'rejected', message: listing.rejectionReason }
+        : null;
   const statusVariant = rawStatus === 'active' ? 'success' : rawStatus === 'fully_booked' ? 'default' : 'warning';
   const typeValue = listing.propertyType || listing.type;
   const propTypeLabel = propertyTypes.find(p => p.value === typeValue)?.label || (typeValue || 'Residential').replace(/_/g, ' ');
@@ -173,13 +181,13 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
       )}
 
       {/* Status and Price Banner */}
-      {(rawStatus === 'rejected' || rawStatus === 'changes_requested') && listing.rejectionReason && (
+      {adminMessage && (
         <div className="p-4 bg-status-error/10 border border-status-error/30 rounded-clay-sm flex flex-col gap-2">
           <div className="flex items-center gap-2 text-status-error font-bold">
             <Alert01Icon size={18} strokeWidth={2.5} />
-            <span>Admin Message ({statusText})</span>
+            <span>{adminMessage.type === 'changes_requested' ? 'Admin requested changes' : `Admin Message (${statusText})`}</span>
           </div>
-          <p className="text-sm text-text-secondary">{listing.rejectionReason}</p>
+          <p className="text-sm text-text-secondary whitespace-pre-wrap break-words">{adminMessage.message}</p>
           <div className="mt-1">
             <Button variant="primary" size="sm" onClick={onEdit}>Edit Listing</Button>
           </div>
