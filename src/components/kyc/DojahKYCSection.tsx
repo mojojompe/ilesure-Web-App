@@ -4,6 +4,7 @@ import { Button } from '../ui/Button';
 import { StatusBadge } from '../ui/StatusBadge';
 import { userApi, type KycStatus, type KycCheck } from '../../api/user';
 import { socketService } from '../../api/socket';
+import { useKycResultWatcher } from '../../hooks/useKycResultWatcher';
 
 interface DojahKYCSectionProps {
   userRole: string;
@@ -58,8 +59,9 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
     };
   }, []);
 
-  const fetchKycStatus = async () => {
-    setLoading(true);
+  /** @param quiet refresh in place, without swapping the section for the loading spinner. */
+  const fetchKycStatus = async (quiet = false) => {
+    if (!quiet) setLoading(true);
     try {
       const res = await userApi.getKycStatus();
       if (res.success && res.data) {
@@ -92,6 +94,9 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
       }
 
       const { widgetId, referenceId } = initRes.data;
+      // The server now holds this check's reference, so /kyc/status reports it as started and
+      // the result watcher below starts looking for it (needed when it is finished on a phone).
+      fetchKycStatus(true);
 
       const options = {
         app_id: import.meta.env.VITE_DOJAH_APP_ID,
@@ -140,6 +145,8 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         },
         onClose: () => {
           setVerifying(null);
+          // Closed after finishing on a phone, or partway: either way, look for a result now.
+          userApi.syncKyc().then(() => fetchKycStatus(true)).catch(() => {});
         },
       };
 
@@ -183,6 +190,22 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
       setSyncing(false);
     }
   };
+
+  // A check opened in Dojah with no result recorded yet (e.g. continued on a phone).
+  const p = kycStatus?.pendingSync;
+  const watching = Boolean(
+    kycStatus && kycStatus.verificationStatus !== 'verified' && p &&
+    ((p.nin && !kycStatus.ninVerified) || (p.bvn && requiresBvn && !kycStatus.bvnVerified) || (p.cac && kycStatus.cacRequired && !kycStatus.cacVerified))
+  );
+  useKycResultWatcher(watching, (result) => {
+    const before = kycStatus;
+    const newlyDone = (result.ninVerified && !before?.ninVerified) || (result.bvnVerified && !before?.bvnVerified) || (result.cacVerified && !before?.cacVerified);
+    if (newlyDone) {
+      showToast('Verification received from Dojah.');
+      onVerified?.();
+    }
+    fetchKycStatus(true);
+  });
 
   if (loading) {
     return (

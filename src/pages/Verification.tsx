@@ -9,6 +9,7 @@ import type { UserRole } from '../types';
 import userApi from '../api/user';
 import { getApiErrorMessage } from '../api/apiError';
 import { socketService } from '../api/socket';
+import { useKycResultWatcher } from '../hooks/useKycResultWatcher';
 
 interface VerificationProps {
   role: UserRole;
@@ -148,6 +149,9 @@ export function VerificationPage({ role }: VerificationProps) {
   const [kycRunning, setKycRunning] = useState<'nin' | 'bvn' | null>(null);
   const [ninDone, setNinDone] = useState(!!(user as any)?.ninVerified);
   const [bvnDone, setBvnDone] = useState(!!(user as any)?.bvnVerified);
+  // Checks opened in Dojah whose result has not reached us yet (e.g. finished on a phone).
+  const [started, setStarted] = useState<{ nin: boolean; bvn: boolean }>({ nin: false, bvn: false });
+  const [kycNotice, setKycNotice] = useState('');
 
   const isCompany = role === 'company';
   const currentUser = user;
@@ -162,6 +166,24 @@ export function VerificationPage({ role }: VerificationProps) {
     socketService.on('kyc_status_changed', handleKycChange);
     return () => { socketService.off('kyc_status_changed', handleKycChange); };
   }, []);
+
+  // Pick up where a previous visit left off: checks already passed, or opened and unfinished.
+  useEffect(() => {
+    if (isCompany) return;
+    userApi.getKycStatus().then((res) => {
+      if (!res.success || !res.data) return;
+      if (res.data.ninVerified) setNinDone(true);
+      if (res.data.bvnVerified) setBvnDone(true);
+      if (res.data.pendingSync) setStarted({ nin: res.data.pendingSync.nin, bvn: res.data.pendingSync.bvn });
+    }).catch(() => {});
+  }, [isCompany]);
+
+  const applySync = (result: { ninVerified?: boolean; bvnVerified?: boolean }) => {
+    if (result.ninVerified && !ninDone) setNinDone(true);
+    if (result.bvnVerified && !bvnDone) setBvnDone(true);
+    if ((result.ninVerified && !ninDone) || (result.bvnVerified && !bvnDone)) setKycNotice('');
+  };
+  useKycResultWatcher(!isCompany && ((started.nin && !ninDone) || (started.bvn && !bvnDone)), applySync);
 
   useEffect(() => {
     if (!isCompany && !document.getElementById('dojah-script')) {
@@ -256,6 +278,7 @@ export function VerificationPage({ role }: VerificationProps) {
       }
 
       const { widgetId, referenceId } = initRes.data;
+      setStarted((s) => ({ ...s, [type]: true }));
 
       const options = {
         app_id: import.meta.env.VITE_DOJAH_APP_ID,
@@ -265,9 +288,15 @@ export function VerificationPage({ role }: VerificationProps) {
         config: { widget_id: widgetId },
         onSuccess: async (response: any) => {
           try {
-            await userApi.verifyKyc(response.reference_id || referenceId, type);
-            if (type === 'nin') setNinDone(true);
-            else setBvnDone(true);
+            // verifyKyc reports a refusal (name mismatch, still processing) as success:false
+            // rather than throwing; it used to be ticked off as done regardless.
+            const res = await userApi.verifyKyc(response.reference_id || referenceId, type);
+            if (res.success) {
+              if (type === 'nin') setNinDone(true);
+              else setBvnDone(true);
+            } else {
+              setKycNotice(res.error?.message || 'We could not confirm that check yet. We will keep checking for a result.');
+            }
           } catch {
             alert('Failed to submit verification. Please try again.');
           } finally {
@@ -275,7 +304,11 @@ export function VerificationPage({ role }: VerificationProps) {
           }
         },
         onError: (err: any) => { console.error('[Dojah]', err); setKycRunning(null); },
-        onClose: () => setKycRunning(null),
+        onClose: () => {
+          setKycRunning(null);
+          // Closed after finishing on a phone, or partway: either way, look for a result now.
+          userApi.syncKyc().then((res) => { if (res.success && res.data) applySync(res.data); }).catch(() => {});
+        },
       };
 
       const connect = new (window as any).Connect(options);
@@ -405,7 +438,11 @@ export function VerificationPage({ role }: VerificationProps) {
                       <div>
                         <p className="text-sm font-bold text-text-primary">{label} verification</p>
                         <p className="text-xs text-text-tertiary">
-                          {done ? 'Verified' : 'Required before you can publish listings'}
+                          {done
+                            ? 'Verified'
+                            : started[type]
+                              ? 'Finished on your phone? The result shows here automatically.'
+                              : 'Required before you can publish listings'}
                         </p>
                       </div>
                       {done ? (
@@ -423,6 +460,10 @@ export function VerificationPage({ role }: VerificationProps) {
                     </div>
                   ))}
                 </div>
+
+                {kycNotice && !(ninDone && bvnDone) && (
+                  <p className="text-center text-xs text-status-error">{kycNotice}</p>
+                )}
 
                 {ninDone && bvnDone && (
                   <p className="text-center text-xs text-status-success font-semibold">
