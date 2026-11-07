@@ -176,6 +176,9 @@ interface KycStatus {
   /** The company name CAC returned on the last check. */
   cacRegisteredName?: string | null;
   companyStatus?: string | null;
+  /** Per check: opened in Dojah but its result not recorded yet (a real "pending"). */
+  pendingSync?: { nin: boolean; bvn: boolean; cac: boolean };
+  awaitingSync?: boolean;
 }
 
 /** The checks run through Dojah: the person's NIN and BVN, and their company's CAC record. */

@@ -249,7 +249,12 @@ export function AgentSettingsPage() {
                   >
                     {user?.verificationStatus === 'more_info'
                       ? 'more info needed'
-                      : user?.verificationStatus || 'unverified'}
+                      // 'pending' is the default for every new account; only call it pending once
+                      // something has actually been submitted (same rule as the dashboard banner).
+                      : user?.verificationStatus === 'pending' &&
+                          !((user as any)?.ninVerified || (user as any)?.bvnVerified || (user as any)?.verificationSubmittedAt)
+                        ? 'unverified'
+                        : user?.verificationStatus || 'unverified'}
                   </StatusBadge>
                   <div className="bg-[#E1AD01]/10 px-3 py-1 rounded-full border border-[#E1AD01]/20 flex items-center gap-1">
                     <span className="text-xs font-bold text-[#E1AD01]">{user?.rewardPoints || 0} Points</span>

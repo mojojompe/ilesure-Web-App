@@ -203,6 +203,14 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
   const cacRefused = !cacDone && Boolean(kycStatus?.cacCheckStatus) && kycStatus?.cacCheckStatus !== 'passed';
   const identityDone = bothRequired ? (ninDone && bvnDone) : ninDone;
   const allDone = identityDone && (!cacRequired || cacDone);
+  // `verificationStatus` is 'pending' from the moment an account exists, so it says nothing
+  // about whether a check was ever started. Keying the badges on it showed a brand-new agent
+  // "Pending" in place of the Verify buttons, with no way to begin. `pendingSync` is the real
+  // signal: a check was opened in Dojah and its result is not recorded yet.
+  const ninStarted = !ninDone && Boolean(kycStatus?.pendingSync?.nin);
+  const bvnStarted = !bvnDone && Boolean(kycStatus?.pendingSync?.bvn);
+  const cacStarted = cacRequired && !cacDone && Boolean(kycStatus?.pendingSync?.cac);
+  const anyStarted = ninStarted || (bothRequired && bvnStarted) || cacStarted;
 
   return (
     <>
@@ -234,8 +242,6 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           <div className="flex items-center gap-2">
             {ninDone ? (
               <StatusBadge variant="success">Verified</StatusBadge>
-            ) : kycStatus?.verificationStatus === 'pending' ? (
-              <StatusBadge variant="warning">Pending</StatusBadge>
             ) : (
               <Button
                 variant="primary"
@@ -244,7 +250,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
                 loading={verifying === 'nin'}
                 disabled={verifying !== null}
               >
-                Verify <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
+                {ninStarted ? 'Try again' : 'Verify'} <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
               </Button>
             )}
           </div>
@@ -270,8 +276,6 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
             <div className="flex items-center gap-2">
               {bvnDone ? (
                 <StatusBadge variant="success">Verified</StatusBadge>
-              ) : kycStatus?.verificationStatus === 'pending' ? (
-                <StatusBadge variant="warning">Pending</StatusBadge>
               ) : (
                 <Button
                   variant="primary"
@@ -280,7 +284,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
                   loading={verifying === 'bvn'}
                   disabled={verifying !== null}
                 >
-                  Verify <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
+                  {bvnStarted ? 'Try again' : 'Verify'} <ArrowRight01Icon className="w-3.5 h-3.5 ml-1" />
                 </Button>
               )}
             </div>
@@ -327,13 +331,13 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         )}
 
         {/* Pending Review Banner */}
-        {kycStatus?.verificationStatus === 'pending' && !isFullyVerified && !identityDone && (
+        {anyStarted && !allDone && (
           <div className="flex items-center gap-3 p-4 rounded-clay-sm bg-amber-50 border border-amber-200">
             <Clock02Icon className="w-5 h-5 text-amber-600 flex-shrink-0 animate-pulse" />
             <div>
-              <p className="text-sm font-semibold text-amber-900">Verification Pending Review</p>
+              <p className="text-sm font-semibold text-amber-900">Waiting for a result</p>
               <p className="text-xs text-amber-700">
-                Your identity verification is currently being processed. You can click sync below to check for updates.
+                You started a check but we haven't received the result yet. If you finished it in the Dojah window, tap Sync below. Otherwise, tap Try again.
               </p>
             </div>
           </div>
@@ -352,7 +356,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         )}
 
         {/* Sync button for pending states */}
-        {!allDone && !verifying && (kycStatus?.verificationStatus === 'pending' || ninDone !== bvnDone || (cacRequired && !cacDone)) && (
+        {!allDone && !verifying && anyStarted && (
           <Button
             variant="secondary"
             size="sm"
