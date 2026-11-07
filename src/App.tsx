@@ -39,6 +39,7 @@ import { OwnerArchivedPage } from './pages/owner/Archived';
 import { AgentSupportPage } from './pages/agent/Support';
 import { CompanySupportPage } from './pages/company/Support';
 import { NotFound } from './pages/NotFound';
+import { ListingAvailabilityPage } from './pages/ListingAvailability';
 import { CallProvider } from './contexts/CallContext';
 import { CallOverlay } from './components/call/CallOverlay';
 import chatApi from './api/chat';
@@ -101,6 +102,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<LoginPage />} />
+      {/* "Is this listing still available?" email lands here; public, the token is the credential. */}
+      <Route path="/listing-availability/:token" element={<ListingAvailabilityPage />} />
       {/* Google sign-in returns here with the session, or ?error=<code> (P-L1). */}
       <Route path="/auth/google/callback" element={<GoogleCallbackPage />} />
       <Route path="/signup" element={<SignupPage />} />
