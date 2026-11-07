@@ -18,6 +18,8 @@ interface PayoutAccountCardProps {
   businessLabel: string;
   businessPlaceholder: string;
   onToast: (message: string, type?: 'success' | 'error') => void;
+  /** Told whenever the active account is loaded, saved or removed (true = one is set up). */
+  onAccountChange?: (active: boolean) => void;
 }
 
 /**
@@ -26,7 +28,7 @@ interface PayoutAccountCardProps {
  * use the same form and the same call; the server resolves the holder with Paystack and
  * refuses an account whose name does not match (NAME_MISMATCH), shown here verbatim.
  */
-export function PayoutAccountCard({ role, title, intro, activeNote, businessLabel, businessPlaceholder, onToast }: PayoutAccountCardProps) {
+export function PayoutAccountCard({ role, title, intro, activeNote, businessLabel, businessPlaceholder, onToast, onAccountChange }: PayoutAccountCardProps) {
   const api = ownerApi(role);
   const [banks, setBanks] = useState<Bank[]>([]);
   const [account, setAccount] = useState<SubaccountInfo | null>(null);
@@ -49,6 +51,10 @@ export function PayoutAccountCard({ role, title, intro, activeNote, businessLabe
   }, [role]);
 
   const active = Boolean(account?.subaccountCode);
+  useEffect(() => {
+    onAccountChange?.(active);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active]);
   const bankLabel = (code?: string | null, name?: string | null) => name || banks.find((b) => b.code === code)?.name || code || '';
 
   const startChange = () => {

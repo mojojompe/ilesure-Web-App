@@ -1,15 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MARKETING_URL } from '../api/config';
 import { Link, useNavigate } from 'react-router-dom';
-import { UserIcon, Mail01Icon, LockIcon, ViewIcon, ViewOffIcon, ArrowRight01Icon, ArrowLeft01Icon, TelephoneIcon, Building04Icon, Search01Icon, Alert01Icon, GlobeIcon } from '@hugeicons/react';
+import { UserIcon, Mail01Icon, LockIcon, ViewIcon, ViewOffIcon, ArrowRight01Icon, ArrowLeft01Icon, TelephoneIcon, Building04Icon, GlobeIcon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
 import authApi from '../api/authApi';
-import paymentsApi from '../api/payments';
-import { ownerApi } from '../api/owner';
 import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
-import { getApiErrorMessage } from '../api/apiError';
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -80,39 +77,6 @@ export function SignupPage() {
   // cannot drift apart if the role is ever changed from somewhere else.
   const isCompany = formData.role === 'company';
 
-  const [banks, setBanks] = useState<{ name: string; code: string }[]>([]);
-  const [selectedBank, setSelectedBank] = useState<{ name: string; code: string } | null>(null);
-  const [accountNumber, setAccountNumber] = useState('');
-  const [accountName, setAccountName] = useState('');
-  const [bankLoading, setBankLoading] = useState(false);
-  const [bankError, setBankError] = useState('');
-  const [showBankList, setShowBankList] = useState(false);
-  const [bankSearch, setBankSearch] = useState('');
-
-  useEffect(() => {
-    paymentsApi.listBanks().then(setBanks);
-  }, []);
-
-  const filteredBanks = banks.filter(b =>
-    b.name.toLowerCase().includes(bankSearch.toLowerCase())
-  );
-
-  const handleResolveAccount = async () => {
-    if (!selectedBank || accountNumber.length < 10) return;
-    setBankLoading(true);
-    setBankError('');
-    try {
-      const res = await paymentsApi.resolveAccount(accountNumber, selectedBank.code);
-      if (!res?.accountName) throw new Error('We could not confirm this account. Check the bank and account number.');
-      setAccountName(res.accountName);
-    } catch (err: any) {
-      // QA-AGT-001: surface the failure inline instead of silently doing nothing.
-      setAccountName('');
-      setBankError(getApiErrorMessage(err, 'We could not verify this account. Check the bank and account number and try again.'));
-    }
-    setBankLoading(false);
-  };
-
   const passwordStrength = getPasswordStrength(formData.password);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,25 +128,8 @@ export function SignupPage() {
       return;
     }
     if (step === 2) {
-      setStep(3);
-      return;
-    }
-    if (step === 3) {
       await handleSubmit();
     }
-  };
-
-  /**
-   * Bank setup is optional: create the account WITHOUT a payout account, even if bank details
-   * were half-entered. The skip is passed explicitly because clearing the fields with setState
-   * does not take effect before handleSubmit runs, so it used to set the account up anyway.
-   */
-  const handleSkipBank = async () => {
-    setSelectedBank(null);
-    setAccountNumber('');
-    setAccountName('');
-    setBankError('');
-    await handleSubmit({ skipBank: true });
   };
 
   const handleBack = () => {
@@ -191,7 +138,7 @@ export function SignupPage() {
 
   const [error, setError] = useState('');
 
-  const handleSubmit = async ({ skipBank = false }: { skipBank?: boolean } = {}) => {
+  const handleSubmit = async () => {
     if (!acceptedTerms) {
       setError('Please accept the Terms of Service and Privacy Policy to continue.');
       return;
@@ -221,26 +168,9 @@ export function SignupPage() {
         const email = response.user.email || formData.email;
         sessionStorage.setItem(PENDING_EMAIL_KEY, email);
 
-        const warnings: string[] = [];
-
-        // QA-AGT-005: persist the verified bank account server-side right away.
-        if (!skipBank && selectedBank && accountNumber && accountName) {
-          try {
-            const subaccountData = {
-              businessName: isCompany ? companyName : formData.fullName,
-              bankCode: selectedBank.code,
-              bankName: selectedBank.name,
-              accountNumber,
-              accountName,
-            };
-            const subRes = await ownerApi(isCompany ? 'company' : 'agent').setupSubaccount(subaccountData);
-            if (!subRes.success) warnings.push(subRes.error.message || 'Bank account could not be saved. You can add it from Settings.');
-          } catch (subErr: any) {
-            warnings.push(subErr?.message || 'Bank account could not be saved. You can add it from Settings.');
-          }
-        }
-
-        navigate('/create-otp', { state: { email, warnings } });
+        // The payout (bank) account is added after the email is verified, on its own step
+        // (/onboarding/payout), once the account exists to link it to.
+        navigate('/create-otp', { state: { email } });
       } else {
         setError(response.error?.message || 'Registration failed. Please try again.');
       }
@@ -433,12 +363,7 @@ const renderStep2 = () => (
       </div>
       <p className="text-xs text-text-tertiary mt-1">Nigerian mobile number, e.g. 08012345678. Tenants and our team use this number to reach you.</p>
     </div>
-  </div>
-);
-
-const renderBankStep = () => (
-  <div className="space-y-4">
-    {/* Consent sits at the top of the final step, so it is read before the account is created. */}
+    {/* Consent sits on the final step, so it is read before the account is created. */}
     <label className="flex items-start gap-3 rounded-clay-sm border border-clay-border bg-clay-border-light p-4 cursor-pointer">
       <input
         type="checkbox"
@@ -457,104 +382,6 @@ const renderBankStep = () => (
         </a>.
       </span>
     </label>
-    <p className="text-sm text-text-secondary">
-      Set up your bank account to receive rent payments automatically with instant split settlements.
-    </p>
-    <div className="relative">
-      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-        Select Bank
-      </label>
-      <button
-        type="button"
-        onClick={() => setShowBankList(!showBankList)}
-        className="clay-input w-full text-left flex items-center justify-between"
-      >
-        <span className={selectedBank ? '' : 'text-text-tertiary'}>
-          {selectedBank?.name || 'Choose your bank'}
-        </span>
-        <Search01Icon className="w-4 h-4 text-text-tertiary" />
-      </button>
-      {showBankList && (
-        <div className="absolute z-10 mt-1 w-full bg-white border border-clay-border rounded-clay-sm shadow-clay max-h-48 overflow-y-auto">
-          <div className="sticky top-0 bg-white p-2 border-b border-clay-border">
-            <input
-              type="text"
-              value={bankSearch}
-              onChange={(e) => setBankSearch(e.target.value)}
-              placeholder="Search banks..."
-              className="clay-input w-full text-sm py-1.5"
-              autoFocus
-            />
-          </div>
-          {filteredBanks.slice(0, 30).map((bank) => (
-            <button
-              key={bank.code}
-              type="button"
-              onClick={(e) => {
-                // The list sits inside a form; without these the click submits it.
-                e.preventDefault();
-                e.stopPropagation();
-                setSelectedBank(bank);
-                setShowBankList(false);
-                setBankSearch('');
-                setAccountName('');
-                setBankError('');
-              }}
-              className={`w-full text-left px-3 py-2 text-sm hover:bg-mustard-pale transition-colors ${selectedBank?.code === bank.code ? 'bg-mustard-pale font-semibold' : ''
-                }`}
-            >
-              {bank.name}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-    <div>
-      <label className="block text-xs font-semibold text-text-secondary uppercase tracking-wider mb-2">
-        Account Number
-      </label>
-      <input
-        type="text"
-        inputMode="numeric"
-        name="nuban-account-number"
-        autoComplete="off"
-        data-lpignore="true"
-        data-form-type="other"
-        value={accountNumber}
-        onChange={(e) => { setAccountNumber(e.target.value.replace(/\D/g, '').slice(0, 10)); setAccountName(''); setBankError(''); }}
-        placeholder="Enter 10-digit account number"
-        className="clay-input w-full"
-        maxLength={10}
-      />
-    </div>
-    {bankError && (
-      <p className="flex items-center gap-1.5 text-xs text-red-600">
-        <Alert01Icon className="w-3.5 h-3.5 flex-shrink-0" /> {bankError}
-      </p>
-    )}
-    <button
-      type="button"
-      onClick={handleResolveAccount}
-      disabled={!selectedBank || accountNumber.length < 10 || bankLoading}
-      className="clay-input w-full text-center text-sm font-semibold py-2 bg-mustard-pale border-mustard disabled:opacity-50"
-    >
-      {bankLoading ? 'Verifying...' : 'Verify Account'}
-    </button>
-    {accountName && (
-      <div className="p-3 bg-green-50 border border-green-200 rounded-clay-sm">
-        <p className="text-xs text-text-tertiary font-semibold uppercase tracking-wider mb-1">Account Name</p>
-        <p className="text-sm font-bold text-green-700">{accountName}</p>
-      </div>
-    )}
-    <div className="flex gap-3">
-      <button
-        type="button"
-        onClick={handleSkipBank}
-        className="text-sm text-text-tertiary hover:text-text-secondary font-medium underline underline-offset-2"
-      >
-        Skip, I'll do this later
-      </button>
-    </div>
   </div>
 );
 
@@ -562,7 +389,6 @@ const getStepTitle = () => {
   switch (step) {
     case 1: return 'Create Account';
     case 2: return 'Telephone Number';
-    case 3: return 'Bank Account Setup';
     default: return '';
   }
 };
@@ -570,8 +396,7 @@ const getStepTitle = () => {
 const getStepSubtitle = () => {
   switch (step) {
     case 1: return 'Enter your basic information';
-    case 2: return 'Enter your phone number';
-    case 3: return 'Link your bank for automatic rent payouts';
+    case 2: return 'Enter your phone number and accept the terms';
     default: return '';
   }
 };
@@ -588,7 +413,7 @@ return (
         </div>
       </div>
 
-      <StepIndicator currentStep={step} totalSteps={3} />
+      <StepIndicator currentStep={step} totalSteps={2} />
 
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold text-text-primary">{getStepTitle()}</h1>
@@ -635,7 +460,6 @@ return (
 
         {step === 1 && renderStep1()}
         {step === 2 && renderStep2()}
-        {step === 3 && renderBankStep()}
 
         <div className="flex gap-3 mt-6">
           {step > 1 && (
@@ -646,7 +470,7 @@ return (
           {/* QA-CO-027: the Complete button was `disabled={!acceptedTerms}`, so an agent who
                 had not ticked the box clicked a dead control with nothing to explain why.
                 handleSubmit has always carried the right message, it could never run. */}
-          {step < 3 ? (
+          {step < 2 ? (
             <Button type="button" variant="primary" onClick={handleNext} className="flex-1">
               Continue <ArrowRight01Icon className="w-4 h-4 ml-2" />
             </Button>

@@ -40,6 +40,7 @@ import { AgentSupportPage } from './pages/agent/Support';
 import { CompanySupportPage } from './pages/company/Support';
 import { NotFound } from './pages/NotFound';
 import { ListingAvailabilityPage } from './pages/ListingAvailability';
+import { OnboardingPayoutPage } from './pages/OnboardingPayout';
 import { CallProvider } from './contexts/CallContext';
 import { CallOverlay } from './components/call/CallOverlay';
 import chatApi from './api/chat';
@@ -114,6 +115,8 @@ function AppRoutes() {
       <Route path="/update-password" element={<UpdatePasswordPage />} />
       <Route path="/role-selection" element={<RoleSelectionPage />} />
       <Route path="/tier-selection" element={<TierSelectionPage />} />
+      {/* After email OTP: add the payout account, then identity verification. */}
+      <Route path="/onboarding/payout" element={<OnboardingPayoutPage />} />
       <Route path="/verification/:role" element={<VerificationRoute />} />
       <Route path="/verification/pending" element={<VerificationPendingPage />} />
       <Route path="/tiers/:role" element={<TierRoute />} />

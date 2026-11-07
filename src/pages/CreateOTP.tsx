@@ -112,9 +112,9 @@ export function CreateOTPPage() {
         setSession(response.user, response.accessToken);
       }
       sessionStorage.removeItem(PENDING_EMAIL_KEY);
-      const role = response.user?.role || user?.role;
-      const isCompany = role === 'company' || role === 'company_admin';
-      navigate(isCompany ? '/verification/company' : '/verification/agent', { replace: true });
+      // Next: the payout (bank) account, now that the account exists to link it to; that page
+      // then continues to identity verification.
+      navigate('/onboarding/payout', { replace: true });
     } else {
       setError(response.error?.message || 'Invalid OTP. Please try again.');
       setOtp(['', '', '', '', '', '']);
