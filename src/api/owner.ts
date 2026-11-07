@@ -343,7 +343,7 @@ export function createOwnerApi(role: OwnerRole, http: OwnerHttp = apiClient): Ow
     uploadListingImages(listingId, files) {
       const formData = new FormData();
       files.forEach((file) => formData.append('images', file));
-      return call('Failed to upload photos', () => http.upload(`/listings/${listingId}/images`, formData), (body) => body?.data ?? []);
+      return call('Failed to upload photos and videos', () => http.upload(`/listings/${listingId}/images`, formData), (body) => body?.data ?? []);
     },
 
     uploadTenancyAgreement(file) {

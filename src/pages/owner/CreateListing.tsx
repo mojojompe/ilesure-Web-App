@@ -19,7 +19,11 @@ import {
   leaseLabel,
   WEEK_DAYS,
   PRESET_TIME_SLOTS,
-  MAX_PHOTOS,
+  MAX_MEDIA,
+  MIN_PHOTOS,
+  MAX_VIDEOS,
+  countPhotos,
+  isVideoFile,
   type ListingFormData,
   type StayUnit,
 } from '../../lib/listingWizard';
@@ -503,7 +507,14 @@ function PhotoThumb({ file, index, onRemove }: { file: File; index: number; onRe
   }, [file]);
   return (
     <div className="aspect-square rounded-clay-sm border-2 border-clay-border overflow-hidden relative group">
-      {url && <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />}
+      {url && (isVideoFile(file) ? (
+        <>
+          <video src={url} muted playsInline preload="metadata" className="w-full h-full object-cover" />
+          <span className="absolute bottom-1 left-1 px-1.5 py-0.5 rounded bg-black/60 text-[10px] font-semibold text-white">Video</span>
+        </>
+      ) : (
+        <img src={url} alt={`Photo ${index + 1}`} className="w-full h-full object-cover" />
+      ))}
       <button
         type="button"
         onClick={onRemove}
@@ -525,9 +536,12 @@ function PhotosStep({ w, role }: { w: ListingWizard; role: OwnerRole }) {
   return (
     <div className="space-y-4">
       <div>
-        <label className={labelClass}>Property Photos ({w.photoFiles.length}/{MAX_PHOTOS})</label>
+        <label className={labelClass}>Photos &amp; Videos ({w.photoFiles.length}/{MAX_MEDIA})</label>
+        <p className="text-xs text-text-tertiary mb-2">
+          Add at least {MIN_PHOTOS} photos ({countPhotos(w.photoFiles)} added). You can also add up to {MAX_VIDEOS} short videos, such as a walkthrough of the property.
+        </p>
         <div className="grid grid-cols-3 gap-2">
-          {Array.from({ length: MAX_PHOTOS }).map((_, i) => {
+          {Array.from({ length: MAX_MEDIA }).map((_, i) => {
             const file = w.photoFiles[i];
             if (file) return <PhotoThumb key={i} file={file} index={i} onRemove={() => w.removePhoto(i)} />;
             if (i === w.photoFiles.length) {
@@ -545,8 +559,8 @@ function PhotosStep({ w, role }: { w: ListingWizard; role: OwnerRole }) {
             return <div key={i} className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border bg-clay-border-light" />;
           })}
         </div>
-        <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleFileSelect} className="hidden" />
-        <p className="text-xs text-text-tertiary mt-2">Include bedroom, bathroom, kitchen, living area, exterior.</p>
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" multiple onChange={handleFileSelect} className="hidden" />
+        <p className="text-xs text-text-tertiary mt-2">Show the bedroom, bathroom, kitchen, living area and exterior. Photos: JPEG, PNG or WEBP up to 5MB. Videos: MP4 or MOV up to 10MB.</p>
       </div>
 
       <div className="pt-4 border-t border-clay-border-light">
@@ -601,7 +615,7 @@ function ReviewStep({ w }: { w: ListingWizard }) {
           {form.additionalNotes && (
             <ReviewRow label="Notes"><span className="font-medium text-right max-w-[60%] truncate">{form.additionalNotes}</span></ReviewRow>
           )}
-          <ReviewRow label="Photos" className=""><span className="font-medium">{w.photoFiles.length} Added</span></ReviewRow>
+          <ReviewRow label="Photos & videos" className=""><span className="font-medium">{countPhotos(w.photoFiles)} photos{w.photoFiles.length > countPhotos(w.photoFiles) ? `, ${w.photoFiles.length - countPhotos(w.photoFiles)} video${w.photoFiles.length - countPhotos(w.photoFiles) > 1 ? 's' : ''}` : ''}</span></ReviewRow>
           <ReviewRow label="Tenancy Agreement" className="border-t border-clay-border-light pt-2 mt-2">
             <span className="font-medium text-right max-w-[60%] truncate">{w.tenancyAgreement ? w.tenancyAgreement.fileName : 'Standard iléSure template'}</span>
           </ReviewRow>
@@ -722,7 +736,7 @@ export function OwnerCreateListingPage({ role }: { role: OwnerRole }) {
               </Button>
             ) : (
               <Button type="button" variant="primary" onClick={() => void w.submit()} className="flex-1" loading={w.submitting || w.uploading}>
-                {w.uploading ? 'Uploading Photos...' : 'Publish Listing'}
+                {w.uploading ? 'Uploading photos & videos...' : 'Publish Listing'}
               </Button>
             )}
           </div>

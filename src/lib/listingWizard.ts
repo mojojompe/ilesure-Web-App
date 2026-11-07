@@ -137,7 +137,7 @@ export const STEPS: { key: StepKey; title: string }[] = [
   { key: 'furnishing', title: 'Furnishing' },
   { key: 'utilities', title: 'Utilities' },
   { key: 'rules', title: 'Rules' },
-  { key: 'photos', title: 'Photos' },
+  { key: 'photos', title: 'Photos & Videos' },
   { key: 'review', title: 'Review & Submit' },
 ];
 
@@ -292,13 +292,38 @@ export function formatTimeSlot(input: string): string | null {
 }
 
 // Same cap/whitelist shape as TenancyAgreementUpload's MAX_FILE_SIZE_BYTES check.
-export const MAX_PHOTOS = 6;
+/** Photos and videos share these slots. */
+export const MAX_MEDIA = 8;
+/** A listing needs this many photos; videos are extra and do not count towards it. */
+export const MIN_PHOTOS = 2;
+export const MAX_VIDEOS = 2;
 export const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
+/** The server's per-file upload limit. */
+export const MAX_VIDEO_SIZE_BYTES = 10 * 1024 * 1024;
 export const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+/** The formats the server recognises as video (MP4 family, including iPhone .mov). */
+export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime'];
+
+export function isVideoFile(file: Pick<File, 'type'>): boolean {
+  return file.type.startsWith('video/');
+}
+
+export function countPhotos(files: Pick<File, 'type'>[]): number {
+  return files.filter((f) => !isVideoFile(f)).length;
+}
+
+/** The photos-step check, run on Next and again at publish. */
+export function validateMedia(files: Pick<File, 'type'>[]): string | null {
+  const photos = countPhotos(files);
+  if (photos < MIN_PHOTOS) {
+    return `Add at least ${MIN_PHOTOS} photos of the property${photos ? ` (you have ${photos})` : ''}. Videos are welcome too, but they don't count towards the ${MIN_PHOTOS} photos.`;
+  }
+  return null;
+}
 
 /**
- * Splits picked files into the ones to keep (respecting the photo cap) and the reason for
- * the first rejected file, if any.
+ * Splits picked files into the ones to keep (respecting the slot and video caps) and the reason
+ * for the first rejected file, if any.
  */
 export function selectPhotos(
   current: File[],
@@ -306,9 +331,27 @@ export function selectPhotos(
 ): { accepted: File[]; problem: string | null } {
   const valid: File[] = [];
   const rejected: string[] = [];
+  let videos = current.filter(isVideoFile).length;
   for (const file of picked) {
+    if (ALLOWED_VIDEO_TYPES.includes(file.type)) {
+      if (file.size > MAX_VIDEO_SIZE_BYTES) {
+        rejected.push(`${file.name} is larger than 10MB. Please use a shorter or compressed video.`);
+        continue;
+      }
+      if (videos >= MAX_VIDEOS) {
+        rejected.push(`You can add up to ${MAX_VIDEOS} videos.`);
+        continue;
+      }
+      videos += 1;
+      valid.push(file as File);
+      continue;
+    }
     if (!ALLOWED_PHOTO_TYPES.includes(file.type)) {
-      rejected.push(`${file.name} is not a JPEG, PNG, or WEBP image.`);
+      rejected.push(
+        file.type.startsWith('video/')
+          ? `${file.name} is not an MP4 or MOV video.`
+          : `${file.name} is not a JPEG, PNG, or WEBP image, or an MP4 or MOV video.`
+      );
       continue;
     }
     if (file.size > MAX_PHOTO_SIZE_BYTES) {
@@ -317,7 +360,7 @@ export function selectPhotos(
     }
     valid.push(file as File);
   }
-  const room = Math.max(0, MAX_PHOTOS - current.length);
+  const room = Math.max(0, MAX_MEDIA - current.length);
   return { accepted: [...current, ...valid.slice(0, room)], problem: rejected[0] ?? null };
 }
 

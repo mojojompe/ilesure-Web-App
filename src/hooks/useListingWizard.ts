@@ -8,6 +8,7 @@ import {
   validateForSubmit,
   buildListingPayload,
   selectPhotos,
+  validateMedia,
   formatTimeSlot,
   describeSubmitError,
   type ListingFormData,
@@ -120,7 +121,9 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
 
   const next = () => {
     const current = stepAt(step);
-    const problem = current ? validateStep(current.key, form) : null;
+    const problem = current
+      ? current.key === 'photos' ? validateMedia(photoFiles) : validateStep(current.key, form)
+      : null;
     if (problem) {
       setError(problem);
       return;
@@ -132,7 +135,7 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
   const back = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const submit = async () => {
-    const problem = validateForSubmit(form);
+    const problem = validateForSubmit(form) ?? validateMedia(photoFiles);
     if (problem) {
       setError(problem);
       return;
@@ -153,7 +156,7 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
         const uploaded = await api.uploadListingImages(created.data._id, photoFiles);
         if (!uploaded.success) {
           // The listing exists; say so rather than leaving the lister to publish it twice.
-          setError(`Listing created, but the photos failed to upload: ${uploaded.error.message}`);
+          setError(`Listing created, but the photos and videos failed to upload: ${uploaded.error.message}`);
           return;
         }
       }

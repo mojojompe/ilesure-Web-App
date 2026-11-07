@@ -5,6 +5,7 @@ import {
   validateForSubmit,
   buildListingPayload,
   selectPhotos,
+  validateMedia,
   formatTimeSlot,
   isVerifiedToList,
   describeSubmitError,
@@ -137,13 +138,34 @@ describe('selectPhotos', () => {
   it('keeps valid images and reports the first rejection', () => {
     const { accepted, problem } = selectPhotos([], [photo('a.jpg'), photo('b.gif', 'image/gif'), photo('c.png', 'image/png', 6 * 1024 * 1024)]);
     expect(accepted.map((f) => f.name)).toEqual(['a.jpg']);
-    expect(problem).toBe('b.gif is not a JPEG, PNG, or WEBP image.');
+    expect(problem).toBe('b.gif is not a JPEG, PNG, or WEBP image, or an MP4 or MOV video.');
   });
 
-  it('caps the set at six photos', () => {
-    const current = Array.from({ length: 5 }, (_, i) => photo(`${i}.jpg`));
+  it('caps the set at eight items', () => {
+    const current = Array.from({ length: 7 }, (_, i) => photo(`${i}.jpg`));
     const { accepted } = selectPhotos(current, [photo('x.jpg'), photo('y.jpg')]);
-    expect(accepted).toHaveLength(6);
+    expect(accepted).toHaveLength(8);
+  });
+
+  it('accepts MP4 and MOV videos up to 10MB, two at most', () => {
+    const { accepted, problem } = selectPhotos([], [
+      photo('a.mp4', 'video/mp4', 9 * 1024 * 1024),
+      photo('b.mov', 'video/quicktime'),
+      photo('c.mp4', 'video/mp4'),
+      photo('d.webm', 'video/webm'),
+    ]);
+    expect(accepted.map((f) => f.name)).toEqual(['a.mp4', 'b.mov']);
+    expect(problem).toBe('You can add up to 2 videos.');
+    expect(selectPhotos([], [photo('big.mp4', 'video/mp4', 11 * 1024 * 1024)]).problem).toMatch(/larger than 10MB/);
+  });
+});
+
+describe('validateMedia', () => {
+  const f = (type: string) => ({ type }) as File;
+  it('needs at least two photos, and videos do not count', () => {
+    expect(validateMedia([])).toMatch(/at least 2 photos/);
+    expect(validateMedia([f('image/jpeg'), f('video/mp4'), f('video/mp4')])).toMatch(/you have 1/);
+    expect(validateMedia([f('image/jpeg'), f('image/png')])).toBeNull();
   });
 });
 
