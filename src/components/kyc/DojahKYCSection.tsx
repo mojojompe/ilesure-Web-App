@@ -5,6 +5,7 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { userApi, type KycStatus, type KycCheck } from '../../api/user';
 import { socketService } from '../../api/socket';
 import { useKycResultWatcher } from '../../hooks/useKycResultWatcher';
+import { openDojahModal, closeDojahModal } from '../../lib/dojahModal';
 
 interface DojahKYCSectionProps {
   userRole: string;
@@ -139,9 +140,16 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           }
         },
         onError: (err: any) => {
+          // The widget also routes messages it does not recognise here (e.g. from the success
+          // screen after finishing on a phone), so check for a result before calling it a failure.
           console.error('[Dojah]', err);
-          showToast('Verification encountered an error. Please try again.', 'error');
           setVerifying(null);
+          userApi.syncKyc().then(async (res) => {
+            await fetchKycStatus(true);
+            if (!(res.success && (res.data?.ninVerified || res.data?.bvnVerified || res.data?.cacVerified))) {
+              showToast('Verification window closed. If you finished it, the result will show here shortly.', 'error');
+            }
+          }).catch(() => {});
         },
         onClose: () => {
           setVerifying(null);
@@ -150,9 +158,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         },
       };
 
-      const connect = new (window as any).Connect(options);
-      connect.setup();
-      connect.open();
+      openDojahModal(options);
     } catch {
       showToast('Failed to start verification. Please try again.', 'error');
       setVerifying(null);
@@ -201,6 +207,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
     const before = kycStatus;
     const newlyDone = (result.ninVerified && !before?.ninVerified) || (result.bvnVerified && !before?.bvnVerified) || (result.cacVerified && !before?.cacVerified);
     if (newlyDone) {
+      closeDojahModal();
       showToast('Verification received from Dojah.');
       onVerified?.();
     }

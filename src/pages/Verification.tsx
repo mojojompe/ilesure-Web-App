@@ -10,6 +10,7 @@ import userApi from '../api/user';
 import { getApiErrorMessage } from '../api/apiError';
 import { socketService } from '../api/socket';
 import { useKycResultWatcher } from '../hooks/useKycResultWatcher';
+import { openDojahModal, closeDojahModal } from '../lib/dojahModal';
 
 interface VerificationProps {
   role: UserRole;
@@ -181,7 +182,10 @@ export function VerificationPage({ role }: VerificationProps) {
   const applySync = (result: { ninVerified?: boolean; bvnVerified?: boolean }) => {
     if (result.ninVerified && !ninDone) setNinDone(true);
     if (result.bvnVerified && !bvnDone) setBvnDone(true);
-    if ((result.ninVerified && !ninDone) || (result.bvnVerified && !bvnDone)) setKycNotice('');
+    if ((result.ninVerified && !ninDone) || (result.bvnVerified && !bvnDone)) {
+      setKycNotice('');
+      closeDojahModal();
+    }
   };
   useKycResultWatcher(!isCompany && ((started.nin && !ninDone) || (started.bvn && !bvnDone)), applySync);
 
@@ -303,7 +307,13 @@ export function VerificationPage({ role }: VerificationProps) {
             setKycRunning(null);
           }
         },
-        onError: (err: any) => { console.error('[Dojah]', err); setKycRunning(null); },
+        onError: (err: any) => {
+          // Also where the widget sends messages it does not recognise (e.g. its success screen
+          // after finishing on a phone): look for a result instead of leaving it to the poll.
+          console.error('[Dojah]', err);
+          setKycRunning(null);
+          userApi.syncKyc().then((res) => { if (res.success && res.data) applySync(res.data); }).catch(() => {});
+        },
         onClose: () => {
           setKycRunning(null);
           // Closed after finishing on a phone, or partway: either way, look for a result now.
@@ -311,9 +321,7 @@ export function VerificationPage({ role }: VerificationProps) {
         },
       };
 
-      const connect = new (window as any).Connect(options);
-      connect.setup();
-      connect.open();
+      openDojahModal(options);
     } catch {
       alert('Failed to start verification. Please try again.');
       setKycRunning(null);
