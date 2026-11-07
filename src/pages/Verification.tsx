@@ -232,6 +232,62 @@ export function VerificationPage({ role }: VerificationProps) {
 
   const handleSkip = () => navigate('/agent');
 
+  // Declared before the step-1 early return below. It used to sit after it, so on the step-1
+  // render the Verify buttons closed over a `const` that was never initialised and every click
+  // threw "Cannot access ... before initialization": Dojah never opened for any agent.
+  /**
+   * Run one Dojah check. Parameterised by type because the portal needs both: the backend gate
+   * for agents and landlords is ninVerified AND bvnVerified, so verifying only one leaves the
+   * account permanently unable to list.
+   */
+  const runKycCheck = async (type: 'nin' | 'bvn') => {
+    if (!(window as any).Connect) {
+      alert('Verification service is still loading. Please try again in a few seconds.');
+      return;
+    }
+
+    setKycRunning(type);
+    try {
+      const initRes = await userApi.initializeKyc(type);
+      if (!initRes.success || !initRes.data) {
+        alert(initRes.error?.message || 'Failed to initialize verification. Please try again.');
+        setKycRunning(null);
+        return;
+      }
+
+      const { widgetId, referenceId } = initRes.data;
+
+      const options = {
+        app_id: import.meta.env.VITE_DOJAH_APP_ID,
+        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
+        type: 'custom',
+        reference_id: referenceId,
+        config: { widget_id: widgetId },
+        onSuccess: async (response: any) => {
+          try {
+            await userApi.verifyKyc(response.reference_id || referenceId, type);
+            if (type === 'nin') setNinDone(true);
+            else setBvnDone(true);
+          } catch {
+            alert('Failed to submit verification. Please try again.');
+          } finally {
+            setKycRunning(null);
+          }
+        },
+        onError: (err: any) => { console.error('[Dojah]', err); setKycRunning(null); },
+        onClose: () => setKycRunning(null),
+      };
+
+      const connect = new (window as any).Connect(options);
+      connect.setup();
+      connect.open();
+    } catch {
+      alert('Failed to start verification. Please try again.');
+      setKycRunning(null);
+    }
+  };
+
+
   // ====================================================
   // STEP 1: Document upload / Identity verification
   // ====================================================
@@ -384,58 +440,6 @@ export function VerificationPage({ role }: VerificationProps) {
       </div>
     );
   }
-
-  /**
-   * Run one Dojah check. Parameterised by type because the portal needs both: the backend gate
-   * for agents and landlords is ninVerified AND bvnVerified, so verifying only one leaves the
-   * account permanently unable to list.
-   */
-  const runKycCheck = async (type: 'nin' | 'bvn') => {
-    if (!(window as any).Connect) {
-      alert('Verification service is still loading. Please try again in a few seconds.');
-      return;
-    }
-
-    setKycRunning(type);
-    try {
-      const initRes = await userApi.initializeKyc(type);
-      if (!initRes.success || !initRes.data) {
-        alert(initRes.error?.message || 'Failed to initialize verification. Please try again.');
-        setKycRunning(null);
-        return;
-      }
-
-      const { widgetId, referenceId } = initRes.data;
-
-      const options = {
-        app_id: import.meta.env.VITE_DOJAH_APP_ID,
-        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
-        type: 'custom',
-        reference_id: referenceId,
-        config: { widget_id: widgetId },
-        onSuccess: async (response: any) => {
-          try {
-            await userApi.verifyKyc(response.reference_id || referenceId, type);
-            if (type === 'nin') setNinDone(true);
-            else setBvnDone(true);
-          } catch {
-            alert('Failed to submit verification. Please try again.');
-          } finally {
-            setKycRunning(null);
-          }
-        },
-        onError: (err: any) => { console.error('[Dojah]', err); setKycRunning(null); },
-        onClose: () => setKycRunning(null),
-      };
-
-      const connect = new (window as any).Connect(options);
-      connect.setup();
-      connect.open();
-    } catch {
-      alert('Failed to start verification. Please try again.');
-      setKycRunning(null);
-    }
-  };
 
   // ====================================================
   // STEP 2: Review & Submit
