@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Search01Icon, ReloadIcon, ViewIcon, Delete02Icon, Loading02Icon } from '@hugeicons/react';
+import { Search01Icon, ReloadIcon, ViewIcon, Loading02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { Button } from '../../components/ui/Button';
 import { ownerApi, type OwnerRole, type OwnerListing } from '../../api/owner';
 import { formatCurrency, formatDate } from '../../utils/format';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function OwnerArchivedPage({ role }: { role: OwnerRole }) {
   const api = ownerApi(role);
@@ -77,12 +78,12 @@ export function OwnerArchivedPage({ role }: { role: OwnerRole }) {
       </div>
 
       {filteredListings.length === 0 ? (
-        <div className="clay-card p-12 text-center">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-clay-border-light flex items-center justify-center">
-            <Delete02Icon className="w-8 h-8 text-text-tertiary" />
-          </div>
-          <h3 className="text-lg font-semibold text-text-primary mb-2">No archived listings</h3>
-          <p className="text-text-tertiary">Listings you archive will appear here</p>
+        <div className="clay-card">
+          {searchQuery.trim() ? (
+            <EmptyState illustration="search" title="No matching archived listings" description={`Nothing in your archive matches "${searchQuery.trim()}".`} />
+          ) : (
+            <EmptyState illustration="archive" title="Your archive is empty" description="Listings you archive, or that are archived because they are no longer available, appear here. You can restore them at any time." />
+          )}
         </div>
       ) : (
         <div className="space-y-4">

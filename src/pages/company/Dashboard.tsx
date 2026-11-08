@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Building04Icon, UserMultiple02Icon, Calendar02Icon, Money01Icon, Loading02Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
@@ -6,6 +7,7 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { companyApi } from '../../api/company';
 import { ownerApi } from '../../api/owner';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function CompanyDashboardPage() {
   const [loading, setLoading] = useState(true);
@@ -110,7 +112,7 @@ export function CompanyDashboardPage() {
                 </div>
               ))
             ) : (
-              <p className="text-text-tertiary text-sm">No listings yet</p>
+              <EmptyState compact illustration="listings" title="No listings yet" description="Publish your first property so renters can find it." action={<Link to="/company/create-listing" className="text-sm font-semibold text-mustard hover:underline">Create a listing</Link>} />
             )}
           </div>
         </ClayCard>
@@ -139,7 +141,7 @@ export function CompanyDashboardPage() {
                 </div>
               ))
             ) : (
-              <p className="text-text-tertiary text-sm">No agents yet</p>
+              <EmptyState compact illustration="team" title="No agents yet" description="Invite agents to work under your company." action={<Link to="/company/agents" className="text-sm font-semibold text-mustard hover:underline">Invite agents</Link>} />
             )}
           </div>
         </ClayCard>

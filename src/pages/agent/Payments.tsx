@@ -5,6 +5,7 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import paymentsApi, { Transaction } from '../../api/payments';
 import { useAuth } from '../../api/authContext';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function AgentPaymentsPage() {
   const [tab, setTab] = useState<'transactions' | 'subscriptions'>('transactions');
@@ -112,7 +113,7 @@ export function AgentPaymentsPage() {
             </thead>
             <tbody>
               {transactions.length === 0 ? (
-                <tr><td colSpan={6} className="text-center text-text-tertiary py-8">No transactions yet</td></tr>
+                <tr><td colSpan={6}><EmptyState compact illustration="payments" title="No transactions yet" description="Rent payments from renters will be listed here once bookings are paid." /></td></tr>
               ) : (
                 transactions.map(t => (
                   <tr key={t.id}>
@@ -145,7 +146,7 @@ export function AgentPaymentsPage() {
             </thead>
             <tbody>
               {subscriptions.length === 0 ? (
-                <tr><td colSpan={4} className="text-center text-text-tertiary py-8">No subscriptions yet</td></tr>
+                <tr><td colSpan={4}><EmptyState compact illustration="store" title="No subscriptions yet" description="Plans and boosts you subscribe to will show up here." /></td></tr>
               ) : (
                 subscriptions.map(s => (
                   <tr key={s.id}>

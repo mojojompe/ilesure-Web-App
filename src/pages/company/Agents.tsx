@@ -6,6 +6,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { companyApi } from '../../api/company';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function CompanyAgentsPage() {
   const [showInviteModal, setShowInviteModal] = useState(false);
@@ -194,9 +195,12 @@ export function CompanyAgentsPage() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <p className="text-text-tertiary">No agents found</p>
-        </div>
+        <EmptyState
+          illustration="team"
+          title="No agents on your team yet"
+          description="Invite agents to manage listings and bookings under your company."
+          action={<Button variant="primary" onClick={() => setShowInviteModal(true)}>Invite an agent</Button>}
+        />
       )}
 
       <Modal isOpen={showInviteModal} onClose={() => setShowInviteModal(false)} title="Invite Agent">

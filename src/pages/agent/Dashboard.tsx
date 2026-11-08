@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { Building04Icon, Calendar02Icon, Money01Icon, ViewIcon, FavouriteIcon, BubbleChatIcon, Loading02Icon, Alert01Icon, Cancel02Icon, ArrowRight01Icon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
@@ -6,6 +7,7 @@ import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import { agentApi } from '../../api/agent';
 import { useAuth } from '../../api/authContext';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 const formatCurrency = (amount: number) => `₦${amount.toLocaleString()}`;
 
@@ -186,7 +188,7 @@ export function AgentDashboardPage() {
                 </div>
               ))
             ) : (
-              <p className="text-text-tertiary text-sm">No listings yet</p>
+              <EmptyState compact illustration="listings" title="No listings yet" description="Publish your first property so renters can find it." action={<Link to="/agent/create-listing" className="text-sm font-semibold text-mustard hover:underline">Create a listing</Link>} />
             )}
           </div>
         </ClayCard>
@@ -240,7 +242,7 @@ export function AgentDashboardPage() {
                 );
               })
             ) : (
-              <p className="text-text-tertiary text-sm">No bookings yet</p>
+              <EmptyState compact illustration="bookings" title="No bookings yet" description="When a renter books one of your listings, it will appear here." />
             )}
           </div>
         </ClayCard>

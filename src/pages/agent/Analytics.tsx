@@ -5,6 +5,7 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { KpiCard } from '../../components/ui/KpiCard';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { analyticsApi } from '../../api/analytics';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function AgentAnalyticsPage() {
   const [loading, setLoading] = useState(true);
@@ -102,7 +103,7 @@ export function AgentAnalyticsPage() {
               </div>
             ))
           ) : (
-            <p className="text-text-tertiary text-sm">No listings yet</p>
+            <EmptyState compact illustration="listings" title="No listings yet" description="Views and interest for your listings will show here once you publish one." />
           )}
         </div>
       </ClayCard>

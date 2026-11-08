@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ShoppingCart01Icon, Money01Icon, Store02Icon as Store01Icon, PlusSignCircleIcon, StarIcon, PackageIcon } from '@hugeicons/react';
+import { ShoppingCart01Icon, Money01Icon, Store02Icon as Store01Icon, PlusSignCircleIcon, StarIcon } from '@hugeicons/react';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { agentStoreService } from '../../api/agentStore';
 import { useAuth } from '../../api/authContext';
 import { getApiErrorMessage } from '../../api/apiError';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function AgentStorePage() {
   const { user } = useAuth();
@@ -104,9 +105,8 @@ export function AgentStorePage() {
 
         <div className="mt-8">
           {products.length === 0 ? (
-            <div className="bg-white rounded-clay p-12 text-center shadow-clay-sm border border-clay-border">
-              <PackageIcon className="w-12 h-12 text-clay-icon mx-auto mb-4 opacity-50" />
-              <p className="text-text-secondary">No products available at the moment.</p>
+            <div className="bg-white rounded-clay shadow-clay-sm border border-clay-border">
+              <EmptyState illustration="store" title="The store is empty for now" description="New tools and boosts for your listings will show up here. Check back soon." />
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../api/authContext';
 import { useNavigate } from 'react-router-dom';
+import { EmptyState } from '../ui/EmptyState';
 
 interface TopHeaderProps {
   onMenuClick: () => void;
@@ -132,7 +133,7 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload, isCollapsed 
                       </div>
                     ))
                   ) : (
-                    <div className="px-4 py-6 text-center text-text-tertiary text-sm">No new notifications</div>
+                    <EmptyState compact illustration="notifications" title="No new notifications" description="You're all caught up." />
                   )}
                 </div>
               </div>

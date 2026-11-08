@@ -4,6 +4,7 @@ import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
 import paymentsApi, { Transaction } from '../../api/payments';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 export function CompanyPaymentsPage() {
   const [tab, setTab] = useState<'transactions' | 'subscriptions'>('transactions');
@@ -81,7 +82,7 @@ export function CompanyPaymentsPage() {
             <thead><tr><th>Description</th><th>Tier</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
               {transactions.length === 0 ? (
-                <tr><td colSpan={5} className="text-center text-text-tertiary py-8">No transactions yet</td></tr>
+                <tr><td colSpan={5}><EmptyState compact illustration="payments" title="No transactions yet" description="Rent payments from renters will be listed here once bookings are paid." /></td></tr>
               ) : (
                 transactions.map(t => (
                   <tr key={t.id}>
@@ -100,7 +101,7 @@ export function CompanyPaymentsPage() {
             <thead><tr><th>Plan</th><th>Amount</th><th>Date</th><th>Status</th></tr></thead>
             <tbody>
               {subscriptions.length === 0 ? (
-                <tr><td colSpan={4} className="text-center text-text-tertiary py-8">No subscriptions yet</td></tr>
+                <tr><td colSpan={4}><EmptyState compact illustration="store" title="No subscriptions yet" description="Plans and boosts you subscribe to will show up here." /></td></tr>
               ) : (
                 subscriptions.map(s => (
                   <tr key={s.id}>

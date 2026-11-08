@@ -3,6 +3,7 @@ import { Notification02Icon, Mail01Icon, TelephoneIcon, Message01Icon, Tick02Ico
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import notificationsApi, { NotificationSettings, Notification } from '../../api/notifications';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 interface NotificationToggleProps {
   label: string;
@@ -148,7 +149,7 @@ export function AgentNotificationsPage() {
             <Loading02Icon className="w-4 h-4 animate-spin" /> <span className="text-sm">Loading notifications…</span>
           </div>
         ) : inbox.length === 0 ? (
-          <p className="py-6 text-center text-sm text-text-tertiary">You have no notifications yet.</p>
+          <EmptyState compact illustration="notifications" title="You're all caught up" description="Bookings, messages and listing updates will show up here." />
         ) : (
           <ul className="space-y-2">
             {inbox.map((n) => (

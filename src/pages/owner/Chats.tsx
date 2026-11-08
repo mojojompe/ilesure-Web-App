@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search01Icon, SentIcon, MoreVerticalIcon, TelephoneIcon, Video01Icon, Loading02Icon, BubbleChatIcon } from '@hugeicons/react';
+import { Search01Icon, SentIcon, MoreVerticalIcon, TelephoneIcon, Video01Icon, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { useAuth } from '../../api/authContext';
@@ -8,6 +8,7 @@ import { useCall } from '../../contexts/CallContext';
 import type { OwnerRole } from '../../api/owner';
 import { useChatSession } from '../../hooks/useChatSession';
 import { filterChats, formatChatTime as formatTime, isOwnMessage } from '../../lib/chatSession';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 /** Thin view over `useChatSession`; role only chooses the layout. */
 export function OwnerChatsPage({ role }: { role: OwnerRole }) {
@@ -118,10 +119,11 @@ export function OwnerChatsPage({ role }: { role: OwnerRole }) {
                   </button>
                 ))
               ) : (
-                <div className="p-12 text-center">
-                  <BubbleChatIcon className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-                  <p className="text-text-secondary">No conversations yet</p>
-                </div>
+                searchQuery.trim() ? (
+                  <EmptyState compact illustration="search" title="No matching conversations" description="Try a different name or listing." />
+                ) : (
+                  <EmptyState compact illustration="chats" title="No conversations yet" description="Messages from renters about your listings will appear here." />
+                )
               )}
             </div>
           </div>
@@ -236,11 +238,7 @@ export function OwnerChatsPage({ role }: { role: OwnerRole }) {
             </div>
           ) : (
             <div className="hidden md:flex flex-1 flex-col items-center justify-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-clay-border-light flex items-center justify-center">
-                <BubbleChatIcon className="w-8 h-8 text-text-tertiary" />
-              </div>
-              <h3 className="text-lg font-semibold text-text-primary mb-2">No conversation selected</h3>
-              <p className="text-text-tertiary">Select a conversation to start chatting</p>
+              <EmptyState illustration="chats" title="No conversation selected" description="Pick a conversation on the left to read and reply." />
             </div>
           )}
         </div>

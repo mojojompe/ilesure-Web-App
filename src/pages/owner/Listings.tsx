@@ -9,6 +9,7 @@ import { Modal } from '../../components/ui/Modal';
 import { ownerApi, type OwnerRole, type OwnerListing, type MarkRentedReason } from '../../api/owner';
 import { propertyTypes } from '../../constants/listingVocabulary';
 import { formatCurrency } from '../../utils/format';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 /** 'pending_approval' -> 'Pending approval'. */
 const statusLabel = (status?: string): string =>
@@ -676,8 +677,17 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
               );
             })
           ) : (
-            <div className="col-span-full text-center py-12">
-              <p className="text-text-tertiary">No listings found</p>
+            <div className="col-span-full">
+              {listings.length > 0 || searchQuery.trim() || filter !== 'all' ? (
+                <EmptyState illustration="search" title="No matching listings" description="Try another search or filter." />
+              ) : (
+                <EmptyState
+                  illustration="listings"
+                  title="You haven't listed a property yet"
+                  description="Add photos, pricing and details, and your listing goes live once it's approved."
+                  action={<Button variant="primary" onClick={() => navigate(`/${role}/create-listing`)}>Create a listing</Button>}
+                />
+              )}
             </div>
           )}
         </div>

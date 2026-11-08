@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search01Icon, BubbleChatIcon, TelephoneIcon, ArrowRight01Icon, ArrowLeft01Icon, SentIcon, Loading02Icon } from '@hugeicons/react';
+import { Search01Icon, TelephoneIcon, ArrowRight01Icon, ArrowLeft01Icon, SentIcon, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -7,6 +7,7 @@ import { Button } from '../../components/ui/Button';
 import inquiriesApi, { Inquiry } from '../../api/inquiries';
 import type { OwnerRole } from '../../api/owner';
 import { formatDate } from '../../utils/format';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 /**
  * Inquiries go through the role-agnostic /inquiries API (the backend scopes them to the
@@ -129,10 +130,11 @@ export function OwnerInquiriesPage({ role }: { role: OwnerRole }) {
         </div>
 
         {filteredInquiries.length === 0 ? (
-          <div className="p-12 text-center">
-            <BubbleChatIcon className="w-12 h-12 text-text-tertiary mx-auto mb-4" />
-            <p className="text-text-secondary">No inquiries found</p>
-          </div>
+          searchQuery.trim() || filter !== 'all' ? (
+            <EmptyState illustration="search" title="No matching inquiries" description="Try another search or status filter." />
+          ) : (
+            <EmptyState illustration="inquiries" title="No inquiries yet" description="Questions renters ask about your listings will land here for you to answer." />
+          )
         ) : (
           <div className="flex flex-col lg:flex-row">
             <div className={clsx('divide-y divide-clay-border-light', selectedInquiry ? 'hidden lg:block lg:w-1/2' : 'w-full')}>

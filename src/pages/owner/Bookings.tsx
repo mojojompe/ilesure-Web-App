@@ -9,6 +9,7 @@ import { ownerApi, type OwnerRole, type BookingDecision } from '../../api/owner'
 import { formatCurrency } from '../../utils/format';
 import { InspectionPanel } from '../../components/bookings/InspectionPanel';
 import { InfoTip } from '../../components/ui/InfoTip';
+import { EmptyState } from '../../components/ui/EmptyState';
 
 const PAGE_COPY: Record<OwnerRole, { subtitle: string }> = {
   agent: { subtitle: 'Manage your bookings' },
@@ -297,9 +298,11 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
             )}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <p className="text-text-tertiary">No bookings found</p>
-          </div>
+          term ? (
+            <EmptyState illustration="search" title="No matching bookings" description={`No bookings match "${searchQuery.trim()}".`} />
+          ) : (
+            <EmptyState illustration="bookings" title="No bookings yet" description="When a renter books one of your listings, you'll manage it here: inspections, payments and move-in." />
+          )
         )}
       </ClayCard>
 
