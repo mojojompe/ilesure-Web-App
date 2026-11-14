@@ -366,6 +366,24 @@ function PricingStep({ w }: { w: ListingWizard }) {
               </label>
               <MoneyInput value={form.agencyFee} onChange={v => setField('agencyFee', v)} placeholder="25000" />
             </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">
+                Service Charge (Optional)
+                <InfoTip title="Service Charge">
+                  The yearly charge for shared estate services such as security, waste collection and cleaning of common areas. Shown to renters so they know the full yearly cost; it is not collected through iléSure.
+                </InfoTip>
+              </label>
+              <MoneyInput value={form.serviceCharge} onChange={v => setField('serviceCharge', v)} placeholder="20000" />
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">
+                Inspection Fee (Optional)
+                <InfoTip title="Inspection Fee">
+                  What you charge a renter to view the property. Shown on the listing so renters know before booking an inspection; it is not collected through iléSure.
+                </InfoTip>
+              </label>
+              <MoneyInput value={form.inspectionFee} onChange={v => setField('inspectionFee', v)} placeholder="5000" />
+            </div>
           </div>
         </div>
       )}
@@ -531,7 +549,7 @@ function PhotosStep({ w, role }: { w: ListingWizard; role: OwnerRole }) {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     e.target.value = '';
-    w.addPhotos(files);
+    void w.addPhotos(files);
   };
   return (
     <div className="space-y-4">
@@ -559,8 +577,13 @@ function PhotosStep({ w, role }: { w: ListingWizard; role: OwnerRole }) {
             return <div key={i} className="aspect-square rounded-clay-sm border-2 border-dashed border-clay-border bg-clay-border-light" />;
           })}
         </div>
-        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/mp4,video/quicktime" multiple onChange={handleFileSelect} className="hidden" />
-        <p className="text-xs text-text-tertiary mt-2">Show the bedroom, bathroom, kitchen, living area and exterior. Photos: JPEG, PNG or WEBP up to 5MB. Videos: MP4 or MOV up to 10MB.</p>
+        <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp,video/*" multiple onChange={handleFileSelect} className="hidden" />
+        <p className="text-xs text-text-tertiary mt-2">Show the bedroom, bathroom, kitchen, living area and exterior. Photos: JPEG, PNG or WEBP up to 5MB. Videos up to 100MB; longer videos are shrunk to fit automatically.</p>
+        {w.shrinking && (
+          <p className="mt-2 flex items-center gap-2 text-xs text-text-secondary">
+            <Loading02Icon className="w-4 h-4 animate-spin text-mustard" /> Shrinking {w.shrinking.name} to fit the 100MB limit… {w.shrinking.progress}%
+          </p>
+        )}
       </div>
 
       <div className="pt-4 border-t border-clay-border-light">

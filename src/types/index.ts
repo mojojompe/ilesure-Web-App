@@ -298,6 +298,10 @@ export interface Listing {
   interestCount?: number;
   cautionFee?: number;
   agencyFee?: number;
+  /** Yearly service charge (informational). */
+  serviceCharge?: number;
+  /** One-off viewing fee (informational). */
+  inspectionFee?: number;
   additionalNotes?: string;
   paymentFrequency?: PaymentFrequency;
   customPaymentPlan?: {

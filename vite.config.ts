@@ -26,6 +26,9 @@ export default defineConfig(({ command }) => ({
         // live at @hugeicons/react and react-icons.
         manualChunks(id: string) {
           if (!id.includes('node_modules')) return;
+          // Video shrinking (lib/videoCompress) imports this on demand; returning undefined
+          // lets Rollup keep it in its own lazily loaded chunk instead of the shared vendor one.
+          if (id.includes('mediabunny')) return;
           if (id.includes('lucide-react') || id.includes('@hugeicons') || id.includes('react-icons')) return 'vendor-icons';
           if (id.includes('framer-motion') || id.includes('gsap')) return 'vendor-animation';
           if (id.includes('recharts') || id.includes('d3-')) return 'vendor-charts';

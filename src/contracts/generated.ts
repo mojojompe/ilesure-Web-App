@@ -114,6 +114,7 @@ export const ERROR_CODES = [
   'VERIFICATION_REQUIRED',
   // listings
   'FEE_NOT_APPLICABLE_TO_SHORTLET',
+  'NOT_ENOUGH_PHOTOS',
   'INVALID_IMAGE_PAYLOAD',
   'IN_USE',
   'AGREEMENT_VERSION_MISMATCH',
@@ -668,6 +669,10 @@ export interface ListingResponse {
   amenities?: Array<Amenity | (string & {})>;
   cautionFee?: number;
   agencyFee?: number;
+  /** Yearly service charge, informational (not charged at checkout). */
+  serviceCharge?: number;
+  /** One-off viewing fee, informational (not charged at checkout). */
+  inspectionFee?: number;
   shortletRates?: ShortletRate[];
   minStay?: number;
   minStayUnit?: StayUnit;

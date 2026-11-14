@@ -147,16 +147,16 @@ describe('selectPhotos', () => {
     expect(accepted).toHaveLength(8);
   });
 
-  it('accepts MP4 and MOV videos up to 10MB, two at most', () => {
+  it('accepts MP4 and MOV videos up to 100MB, two at most', () => {
     const { accepted, problem } = selectPhotos([], [
-      photo('a.mp4', 'video/mp4', 9 * 1024 * 1024),
+      photo('a.mp4', 'video/mp4', 95 * 1024 * 1024),
       photo('b.mov', 'video/quicktime'),
       photo('c.mp4', 'video/mp4'),
       photo('d.webm', 'video/webm'),
     ]);
     expect(accepted.map((f) => f.name)).toEqual(['a.mp4', 'b.mov']);
     expect(problem).toBe('You can add up to 2 videos.');
-    expect(selectPhotos([], [photo('big.mp4', 'video/mp4', 11 * 1024 * 1024)]).problem).toMatch(/larger than 10MB/);
+    expect(selectPhotos([], [photo('big.mp4', 'video/mp4', 101 * 1024 * 1024)]).problem).toMatch(/larger than 100MB/);
   });
 });
 

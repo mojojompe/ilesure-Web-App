@@ -47,6 +47,8 @@ export interface ListingFormData {
   annualRent: string;
   cautionFee: string;
   agencyFee: string;
+  serviceCharge: string;
+  inspectionFee: string;
   paymentFrequency: PaymentFrequency;
   customInstallments: string;
   customInterval: InstallmentInterval;
@@ -91,6 +93,8 @@ export const initialFormData: ListingFormData = {
   annualRent: '',
   cautionFee: '',
   agencyFee: '',
+  serviceCharge: '',
+  inspectionFee: '',
   paymentFrequency: 'annually',
   customInstallments: '',
   customInterval: 'monthly',
@@ -178,7 +182,12 @@ export function validateStep(key: StepKey, form: ListingFormData): string | null
       const rent = num(form.annualRent);
       if (!Number.isFinite(rent)) return 'Please enter the annual rent.';
       if (rent < 10000) return 'Annual rent must be at least ₦10,000.';
-      for (const [label, value] of [['Caution fee', form.cautionFee], ['Agency fee', form.agencyFee]] as const) {
+      for (const [label, value] of [
+        ['Caution fee', form.cautionFee],
+        ['Agency fee', form.agencyFee],
+        ['Service charge', form.serviceCharge],
+        ['Inspection fee', form.inspectionFee],
+      ] as const) {
         if (value !== '' && (!Number.isFinite(num(value)) || num(value) < 0)) {
           return `${label} cannot be negative.`;
         }
@@ -228,6 +237,8 @@ export function buildListingPayload(form: ListingFormData, extras: PayloadExtras
     rentAnnual: isShortlet ? 0 : Number(form.annualRent),
     cautionFee: form.cautionFee ? Number(form.cautionFee) : undefined,
     agencyFee: form.agencyFee ? Number(form.agencyFee) : undefined,
+    serviceCharge: !isShortlet && form.serviceCharge ? Number(form.serviceCharge) : undefined,
+    inspectionFee: !isShortlet && form.inspectionFee ? Number(form.inspectionFee) : undefined,
     paymentFrequency: form.paymentFrequency,
     customPaymentPlan: form.paymentFrequency === 'custom'
       ? {
@@ -298,8 +309,8 @@ export const MAX_MEDIA = 8;
 export const MIN_PHOTOS = 2;
 export const MAX_VIDEOS = 2;
 export const MAX_PHOTO_SIZE_BYTES = 5 * 1024 * 1024;
-/** The server's per-file upload limit. */
-export const MAX_VIDEO_SIZE_BYTES = 10 * 1024 * 1024;
+/** The server's per-video upload limit (our Cloudinary plan's cap). Bigger videos are shrunk first (lib/videoCompress). */
+export const MAX_VIDEO_SIZE_BYTES = 100 * 1024 * 1024;
 export const ALLOWED_PHOTO_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 /** The formats the server recognises as video (MP4 family, including iPhone .mov). */
 export const ALLOWED_VIDEO_TYPES = ['video/mp4', 'video/quicktime'];
@@ -335,7 +346,7 @@ export function selectPhotos(
   for (const file of picked) {
     if (ALLOWED_VIDEO_TYPES.includes(file.type)) {
       if (file.size > MAX_VIDEO_SIZE_BYTES) {
-        rejected.push(`${file.name} is larger than 10MB. Please use a shorter or compressed video.`);
+        rejected.push(`${file.name} is larger than 100MB. Please use a shorter video.`);
         continue;
       }
       if (videos >= MAX_VIDEOS) {

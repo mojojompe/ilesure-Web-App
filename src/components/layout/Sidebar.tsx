@@ -6,7 +6,7 @@ import { clsx } from 'clsx';
 import {
   DashboardSquare02Icon, Building04Icon, UserMultiple02Icon, ChartIcon, Settings02Icon, Logout02Icon,
   CreditCardIcon, TaskDone01Icon, Notification02Icon, BubbleChatIcon, FavouriteIcon, Archive01Icon, PlusSignIcon,
-  ShoppingCart01Icon, HelpCircleIcon
+  ShoppingCart01Icon, HelpCircleIcon, FlashIcon
 } from '@hugeicons/react';
 import { useAuth } from '../../api/authContext';
 import type { UserRole } from '../../types';
@@ -22,6 +22,7 @@ interface SidebarProps {
 const agentNavItems = [
   { path: '/agent', label: 'Dashboard', icon: DashboardSquare02Icon, end: true },
   { path: '/agent/listings', label: 'My Listings', icon: Building04Icon },
+  { path: '/agent/quick-add', label: 'Quick Add', icon: FlashIcon },
   { path: '/agent/archived', label: 'Archived', icon: Archive01Icon },
   { path: '/agent/bookings', label: 'Bookings', icon: TaskDone01Icon },
   { path: '/agent/inquiries', label: 'Inquiries', icon: BubbleChatIcon },
@@ -36,6 +37,7 @@ const agentNavItems = [
 const companyNavItems = [
   { path: '/company', label: 'Dashboard', icon: DashboardSquare02Icon, end: true },
   { path: '/company/listings', label: 'All Listings', icon: Building04Icon },
+  { path: '/company/quick-add', label: 'Quick Add', icon: FlashIcon },
   { path: '/company/archived', label: 'Archived', icon: Archive01Icon },
   { path: '/company/agents', label: 'Agents', icon: UserMultiple02Icon },
   { path: '/company/bookings', label: 'Bookings', icon: TaskDone01Icon },

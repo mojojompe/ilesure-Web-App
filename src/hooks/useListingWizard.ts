@@ -14,6 +14,7 @@ import {
   type ListingFormData,
   type ShortletRateForm,
 } from '../lib/listingWizard';
+import { browserCanCompress, canSendAsIs, compressVideo } from '../lib/videoCompress';
 import { draftKey, loadDraft, saveDraft, clearDraft, hasProgress, saveDraftPhotos, loadDraftPhotos } from '../lib/listingDraft';
 
 type BooleanField = { [K in keyof ListingFormData]: ListingFormData[K] extends boolean ? K : never }[keyof ListingFormData];
@@ -41,6 +42,8 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  /** A video being shrunk to fit the upload limit before it joins the photos. */
+  const [shrinking, setShrinking] = useState<{ name: string; progress: number } | null>(null);
 
   // Photos are stored separately (IndexedDB) and come back asynchronously.
   useEffect(() => {
@@ -111,15 +114,37 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
   const removeShortletRate = (index: number) =>
     setForm((prev) => ({ ...prev, shortletRates: prev.shortletRates.filter((_, i) => i !== index) }));
 
-  const addPhotos = (files: File[]) => {
-    const { accepted, problem } = selectPhotos(photoFiles, files);
-    if (problem) setError(problem);
-    setPhotoFiles(accepted);
+  const addPhotos = async (files: File[]) => {
+    // Videos too big for the 100MB limit, or not MP4/MOV, are re-encoded to a smaller MP4 first.
+    const ready: File[] = [];
+    for (const file of files) {
+      if (!file.type.startsWith('video/') || canSendAsIs(file) || !browserCanCompress()) {
+        ready.push(file);
+        continue;
+      }
+      setShrinking({ name: file.name, progress: 0 });
+      try {
+        ready.push(await compressVideo(file, { onProgress: (f) => setShrinking({ name: file.name, progress: Math.round(f * 100) }) }));
+      } catch (e) {
+        setError((e as Error).message);
+      } finally {
+        setShrinking(null);
+      }
+    }
+    setPhotoFiles((current) => {
+      const { accepted, problem } = selectPhotos(current, ready);
+      if (problem) setError(problem);
+      return accepted;
+    });
   };
 
   const removePhoto = (index: number) => setPhotoFiles((prev) => prev.filter((_, i) => i !== index));
 
   const next = () => {
+    if (shrinking) {
+      setError('Please wait: a video is still being shrunk to fit the upload limit.');
+      return;
+    }
     const current = stepAt(step);
     const problem = current
       ? current.key === 'photos' ? validateMedia(photoFiles) : validateStep(current.key, form)
@@ -135,6 +160,10 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
   const back = () => setStep((prev) => Math.max(prev - 1, 1));
 
   const submit = async () => {
+    if (shrinking) {
+      setError('Please wait: a video is still being shrunk to fit the upload limit.');
+      return;
+    }
     const problem = validateForSubmit(form) ?? validateMedia(photoFiles);
     if (problem) {
       setError(problem);
@@ -188,6 +217,7 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
     error,
     submitting,
     uploading,
+    shrinking,
     next,
     back,
     submit,

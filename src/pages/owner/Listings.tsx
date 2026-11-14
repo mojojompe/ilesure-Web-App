@@ -40,6 +40,7 @@ interface EditForm {
   cautionFee: string;
   agencyFee: string;
   serviceCharge: string;
+  inspectionFee: string;
   address: string;
   city: string;
   state: string;
@@ -64,6 +65,7 @@ function toEditForm(listing: OwnerListing): EditForm {
     cautionFee: listing.cautionFee != null ? String(listing.cautionFee) : '',
     agencyFee: listing.agencyFee != null ? String(listing.agencyFee) : '',
     serviceCharge: listing.serviceCharge != null ? String(listing.serviceCharge) : '',
+    inspectionFee: listing.inspectionFee != null ? String(listing.inspectionFee) : '',
     address: listing.address || loc.address || '',
     city: listing.city || loc.city || listing.areaCluster || '',
     state: listing.state || loc.state || '',
@@ -91,6 +93,7 @@ function toUpdatePayload(form: EditForm) {
     cautionFee: form.cautionFee ? Number(form.cautionFee) : 0,
     agencyFee: form.agencyFee ? Number(form.agencyFee) : 0,
     serviceCharge: form.serviceCharge ? Number(form.serviceCharge) : 0,
+    inspectionFee: form.inspectionFee ? Number(form.inspectionFee) : 0,
     address: form.address.trim(),
     city: form.city.trim(),
     state: form.state.trim(),
@@ -256,6 +259,8 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
           <Spec label="Max Occupants">{listing.maxOccupants || 1} person{(listing.maxOccupants || 1) > 1 ? 's' : ''}</Spec>
           {listing.cautionFee !== undefined && Number(listing.cautionFee) > 0 && <Spec label="Caution Fee">{formatCurrency(Number(listing.cautionFee))}</Spec>}
           {listing.agencyFee !== undefined && Number(listing.agencyFee) > 0 && <Spec label="Agency Fee">{formatCurrency(Number(listing.agencyFee))}</Spec>}
+          {Number(listing.serviceCharge) > 0 && <Spec label="Service Charge">{formatCurrency(Number(listing.serviceCharge))}/yr</Spec>}
+          {Number(listing.inspectionFee) > 0 && <Spec label="Inspection Fee">{formatCurrency(Number(listing.inspectionFee))}</Spec>}
           {listing.leaseDuration && <Spec label="Lease Duration" capitalize>{listing.leaseDuration}</Spec>}
           {listing.genderRestriction && listing.genderRestriction !== 'any' && (
             <Spec label="Gender Preference" capitalize>{listing.genderRestriction.replace(/_/g, ' ')}</Spec>
@@ -330,7 +335,7 @@ function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: 
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={label}>Caution Fee (₦)</label>
           <input type="number" {...field('cautionFee')} placeholder="50000" className="clay-input w-full" />
@@ -342,6 +347,10 @@ function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: 
         <div>
           <label className={label}>Service Charge (₦)</label>
           <input type="number" {...field('serviceCharge')} placeholder="0" className="clay-input w-full" />
+        </div>
+        <div>
+          <label className={label}>Inspection Fee (₦)</label>
+          <input type="number" {...field('inspectionFee')} placeholder="0" className="clay-input w-full" />
         </div>
       </div>
 

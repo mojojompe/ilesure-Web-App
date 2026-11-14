@@ -32,6 +32,7 @@ import { RoommateProfilePage } from './pages/roommate/Profile';
 import { RoommateMatchesPage } from './pages/roommate/Matches';
 import { OwnerListingsPage } from './pages/owner/Listings';
 import { OwnerCreateListingPage } from './pages/owner/CreateListing';
+import { OwnerQuickAddPage } from './pages/owner/QuickAdd';
 import { OwnerBookingsPage } from './pages/owner/Bookings';
 import { OwnerChatsPage } from './pages/owner/Chats';
 import { OwnerInquiriesPage } from './pages/owner/Inquiries';
@@ -144,6 +145,11 @@ function AppRoutes() {
           <OwnerCreateListingPage role="agent" />
         </ProtectedRoute>
       } />
+      <Route path="/agent/quick-add" element={
+        <ProtectedRoute role="agent">
+          <OwnerQuickAddPage role="agent" />
+        </ProtectedRoute>
+      } />
       <Route path="/agent/bookings" element={
         <ProtectedRoute role="agent">
           <OwnerBookingsPage role="agent" />
@@ -203,6 +209,11 @@ function AppRoutes() {
       <Route path="/company/create-listing" element={
         <ProtectedRoute role="company">
           <OwnerCreateListingPage role="company" />
+        </ProtectedRoute>
+      } />
+      <Route path="/company/quick-add" element={
+        <ProtectedRoute role="company">
+          <OwnerQuickAddPage role="company" />
         </ProtectedRoute>
       } />
       <Route path="/company/archived" element={
