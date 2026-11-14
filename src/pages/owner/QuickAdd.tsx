@@ -45,7 +45,7 @@ function Chips<V extends string>({ options, value, onChange, guessed }: {
           onClick={() => onChange(o.value)}
           aria-pressed={value === o.value}
           className={clsx(
-            'px-3 py-1.5 rounded-full border text-xs font-medium transition-all',
+            'px-3 py-2 sm:py-1.5 rounded-full border text-xs font-medium transition-all',
             value === o.value ? 'border-mustard bg-mustard-pale text-mustard' : 'border-clay-border text-text-secondary hover:border-mustard'
           )}
         >
@@ -89,12 +89,12 @@ function Thumb({ file, onRemove, onCover, isCover }: { file: File; onRemove: () 
       {url && (isVideo ? <video src={url} className="w-full h-full object-cover" muted /> : <img src={url} alt="" className="w-full h-full object-cover" />)}
       {isVideo && <Video01Icon className="absolute bottom-1 left-1 w-4 h-4 text-white drop-shadow" />}
       {isCover && <span className="absolute bottom-0 inset-x-0 bg-mustard text-white text-[10px] text-center font-semibold">Cover</span>}
-      <button type="button" onClick={onRemove} aria-label="Remove" className="absolute top-1 right-1 w-5 h-5 rounded-full bg-black/60 text-white flex items-center justify-center">
-        <Cancel02Icon className="w-3 h-3" />
+      <button type="button" onClick={onRemove} aria-label="Remove" className="absolute top-1 right-1 w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-black/60 text-white flex items-center justify-center">
+        <Cancel02Icon className="w-3.5 h-3.5" />
       </button>
       {onCover && !isCover && !isVideo && (
-        <button type="button" onClick={onCover} aria-label="Make cover photo" title="Make cover photo" className="absolute top-1 left-1 w-5 h-5 rounded-full bg-black/60 text-white items-center justify-center hidden group-hover:flex">
-          <StarIcon className="w-3 h-3" />
+        <button type="button" onClick={onCover} aria-label="Make cover photo" title="Make cover photo" className="absolute top-1 left-1 w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-black/60 text-white flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100 transition-opacity">
+          <StarIcon className="w-3.5 h-3.5" />
         </button>
       )}
     </div>
@@ -272,10 +272,10 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
           role="button"
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.current?.click(); }}
-          className={clsx('border-2 border-dashed rounded-clay-sm p-5 text-center cursor-pointer transition-all', dragging ? 'border-mustard bg-mustard-pale/40' : 'border-clay-border hover:border-mustard')}
+          className={clsx('border-2 border-dashed rounded-clay-sm p-4 sm:p-5 text-center cursor-pointer transition-all', dragging ? 'border-mustard bg-mustard-pale/40' : 'border-clay-border hover:border-mustard')}
         >
           <Upload01Icon className="w-7 h-7 text-text-tertiary mx-auto mb-1" />
-          <p className="text-sm text-text-primary font-medium">Drop files here or tap to choose</p>
+          <p className="text-sm text-text-primary font-medium"><span className="hidden sm:inline">Drop files here or click to choose</span><span className="sm:hidden">Tap to choose a video or photos</span></p>
           <p className="text-xs text-text-tertiary">We'll pull the best photos out of the video for you</p>
           <input
             ref={fileInput}
@@ -295,13 +295,18 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
 
         {video && (
           <div className="mt-3 space-y-2">
-            <div className="flex items-center justify-between text-xs text-text-secondary">
-              <span className="flex items-center gap-1.5">
-                <Video01Icon className="w-4 h-4" /> {video.file.name}
-                {video.loading && <><Loading02Icon className="w-3.5 h-3.5 animate-spin text-mustard" /> reading frames… {video.progress}%</>}
+            <div className="flex items-center justify-between gap-3 text-xs text-text-secondary">
+              <span className="flex items-center gap-1.5 min-w-0">
+                <Video01Icon className="w-4 h-4 shrink-0" />
+                <span className="truncate" title={video.file.name}>{video.file.name}</span>
               </span>
-              <button type="button" onClick={clearVideo} className="text-status-error font-semibold hover:underline">Remove video</button>
+              <button type="button" onClick={clearVideo} className="shrink-0 py-1 text-status-error font-semibold hover:underline">Remove</button>
             </div>
+            {video.loading && (
+              <p className="flex items-center gap-1.5 text-xs text-text-secondary">
+                <Loading02Icon className="w-3.5 h-3.5 animate-spin text-mustard" /> Reading frames… {video.progress}%
+              </p>
+            )}
             {video.error ? <ErrorLine message={video.error} /> : (
               <>
                 <p className="text-xs text-text-secondary">
@@ -408,7 +413,9 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
   }
 
   return (
-    <fieldset disabled={locked} className="clay-card p-5 space-y-4">
+    // min-w-0: a fieldset otherwise refuses to shrink below its content, so the scrolling photo
+    // strip stretched the whole card wider than a phone screen.
+    <fieldset disabled={locked} className="clay-card p-4 sm:p-5 space-y-4 min-w-0 w-full">
       <div className="flex items-start gap-3">
         <input value={form.title} onChange={(e) => setField('title', e.target.value)} aria-label="Title" className="clay-input flex-1 font-semibold" />
         <button type="button" onClick={onRemove} aria-label="Remove this draft" className="p-2 text-text-tertiary hover:text-status-error">
@@ -517,7 +524,7 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
                     type="button"
                     onClick={() => setField('amenities', on ? form.amenities.filter((a) => a !== o.value) : [...form.amenities, o.value])}
                     aria-pressed={on}
-                    className={clsx('px-3 py-1.5 rounded-full border text-xs font-medium', on ? 'border-mustard bg-mustard-pale text-mustard' : 'border-clay-border text-text-secondary hover:border-mustard')}
+                    className={clsx('px-3 py-2 sm:py-1.5 rounded-full border text-xs font-medium', on ? 'border-mustard bg-mustard-pale text-mustard' : 'border-clay-border text-text-secondary hover:border-mustard')}
                   >
                     {o.label}
                   </button>
@@ -668,7 +675,8 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
 
   return (
     <AppLayout role={role} title="Quick Add" subtitle="Paste the agent's message, drop the video, publish">
-      <div className="max-w-3xl mx-auto pb-6 space-y-5">
+      {/* Bottom space so the pinned publish bar and AI Support button never hide the last card. */}
+      <div className="max-w-3xl mx-auto pb-48 space-y-5">
         <Composer defaults={defaults} onCreate={addCards} />
 
         {drafts.length > 0 && (
@@ -686,13 +694,17 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
           />
         ))}
         {(drafts.length > 0 || published.length > 0) && (
-          <div className="sticky bottom-3 z-30 clay-card bg-clay-surface/95 backdrop-blur px-4 py-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
+          // Pinned to the screen, above the floating AI Support button (fixed bottom-right, ~72px
+          // tall). `sticky` cannot work here: AppLayout's <main> has overflow-x-hidden, which makes
+          // it the scroll container. Full width on phones; a panel at the right on larger screens,
+          // so it never covers the sidebar.
+          <div className="fixed z-30 bottom-24 inset-x-4 md:inset-x-auto md:right-6 md:w-[26rem] clay-card bg-clay-surface/95 backdrop-blur px-4 py-3 shadow-clay-lg">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
               <p className="text-sm text-text-secondary">
                 {published.length > 0 && <span className="text-status-success font-semibold">{published.length} published. </span>}
                 {drafts.length > 0 ? `${ready.length} of ${drafts.length} ready` : 'All done.'}
               </p>
-              <div className="flex gap-2">
+              <div className="flex gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">
                 {published.length > 0 && (
                   <Button type="button" variant="secondary" size="sm" onClick={() => navigate(`/${role}/listings`)}>My Listings</Button>
                 )}
