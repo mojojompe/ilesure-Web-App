@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search01Icon, SentIcon, MoreVerticalIcon, TelephoneIcon, Video01Icon, Loading02Icon } from '@hugeicons/react';
 import { clsx } from 'clsx';
 import { AppLayout } from '../../components/layout/AppLayout';
@@ -18,6 +19,17 @@ export function OwnerChatsPage({ role }: { role: OwnerRole }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // `?chat=<id>` opens that conversation, e.g. "Message renter" on a booking.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedChatId = searchParams.get('chat');
+  useEffect(() => {
+    if (!requestedChatId || loading) return;
+    if (chats.some((chat) => chat.id === requestedChatId)) session.selectChat(requestedChatId);
+    const next = new URLSearchParams(searchParams);
+    next.delete('chat');
+    setSearchParams(next, { replace: true });
+  }, [requestedChatId, loading, chats]);
 
   const call = useCall();
   // Fetched per conversation so the buttons can show the peer as busy before the user

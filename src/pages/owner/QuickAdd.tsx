@@ -508,8 +508,8 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
                 <input type="number" value={form.serviceCharge} onChange={(e) => setField('serviceCharge', e.target.value)} className="clay-input w-full" />
               </label>
               <label>
-                <span className={labelClass}>Inspection fee</span>
-                <input type="number" value={form.inspectionFee} onChange={(e) => setField('inspectionFee', e.target.value)} className="clay-input w-full" />
+                <span className={labelClass}>Inspection fee (max ₦10,000)</span>
+                <input type="number" min={0} max={10000} value={form.inspectionFee} onChange={(e) => setField('inspectionFee', e.target.value)} className="clay-input w-full" />
               </label>
             </div>
           )}

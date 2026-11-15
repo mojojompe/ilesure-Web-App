@@ -349,8 +349,8 @@ function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: 
           <input type="number" {...field('serviceCharge')} placeholder="0" className="clay-input w-full" />
         </div>
         <div>
-          <label className={label}>Inspection Fee (₦)</label>
-          <input type="number" {...field('inspectionFee')} placeholder="0" className="clay-input w-full" />
+          <label className={label}>Inspection Fee (₦, max 10,000)</label>
+          <input type="number" min={0} max={10000} {...field('inspectionFee')} placeholder="0" className="clay-input w-full" />
         </div>
       </div>
 

@@ -49,6 +49,20 @@ export interface ReadReceipt {
 }
 
 export const chatApi = {
+  /**
+   * Open (or reopen) a conversation with a user, e.g. an agent messaging the renter on a
+   * booking. Returns the chat id. No opening message is posted; the agent writes their own.
+   */
+  async startChat(participantId: string, listingId?: string): Promise<{ success: boolean; chatId?: string; error?: string }> {
+    try {
+      const response = await apiClient.post<any>('/chats', { participantId, listingId });
+      const chatId = response.data?.data?.id;
+      return chatId ? { success: true, chatId: String(chatId) } : { success: false, error: 'Could not open the chat' };
+    } catch (err) {
+      return { success: false, error: getApiErrorMessage(err, 'Could not open the chat') };
+    }
+  },
+
   async getChats(): Promise<ChatsResponse> {
     try {
       const response = await apiClient.get<ChatsResponse>('/chats');

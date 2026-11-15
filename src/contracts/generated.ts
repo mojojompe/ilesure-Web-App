@@ -137,6 +137,9 @@ export const ERROR_CODES = [
   'DATES_UNAVAILABLE',
   'DUPLICATE_BOOKING',
   'INSPECTION_NOT_SCHEDULED',
+  'INSPECTION_FEE_UNPAID',
+  'INSPECTION_FEE_ALREADY_PAID',
+  'NO_INSPECTION_FEE',
   'INSPECTION_NOT_VERIFIED',
   'INVALID_ACTION',
   'INVALID_QUANTITY',
@@ -725,6 +728,10 @@ export interface BookingResponse {
   inspectionStatus?: InspectionStatus;
   isVerified?: boolean;
   inspectionVerifiedBy?: 'tenant' | 'agent';
+  /** The inspection fee (+1.5%) the renter pays iléSure before the viewing; absent when none. */
+  inspectionFee?: BookingInspectionFee;
+  /** True when the renter must pay the inspection fee now (owed and payments are live). */
+  inspectionFeeDue?: boolean;
   /** Server-computed Pay-button verdict; the same gate POST /bookings/:id/pay enforces. */
   paymentEligibility?: PaymentEligibility;
   /** List endpoint: latest payment status, or 'unpaid'. */
@@ -737,6 +744,20 @@ export interface BookingResponse {
   createdAt?: IsoDate;
   updatedAt?: IsoDate;
 }
+
+/** Snapshotted from the listing when the inspection is scheduled. Naira, to the kobo. */
+export interface BookingInspectionFee {
+  amount: number;
+  /** The 1.5% added on top of the fee. */
+  processingFee: number;
+  total: number;
+  status: 'unpaid' | 'paid';
+  reference?: string;
+  paidAt?: IsoDate;
+}
+
+/** Most an agent may set as a listing's inspection fee. */
+export const MAX_INSPECTION_FEE = 10000;
 
 /** POST /api/v1/bookings/summary: the fee quote, the same breakdown the checkout charges. */
 export interface BookingSummaryResponse {

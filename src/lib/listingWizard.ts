@@ -4,6 +4,7 @@
  * check and the create-payload builder all live here as pure functions; the
  * `useListingWizard` hook holds state and talks to the owner API.
  */
+import { MAX_INSPECTION_FEE } from '../contracts/generated';
 import type {
   PropertyType,
   Furnishing,
@@ -191,6 +192,9 @@ export function validateStep(key: StepKey, form: ListingFormData): string | null
         if (value !== '' && (!Number.isFinite(num(value)) || num(value) < 0)) {
           return `${label} cannot be negative.`;
         }
+      }
+      if (form.inspectionFee !== '' && num(form.inspectionFee) > MAX_INSPECTION_FEE) {
+        return `Inspection fee cannot be more than ₦${MAX_INSPECTION_FEE.toLocaleString()}.`;
       }
       return null;
     }

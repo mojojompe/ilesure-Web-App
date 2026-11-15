@@ -377,9 +377,9 @@ function PricingStep({ w }: { w: ListingWizard }) {
             </div>
             <div>
               <label className="block text-xs text-text-secondary mb-1">
-                Inspection Fee (Optional)
+                Inspection Fee (Optional, max ₦10,000)
                 <InfoTip title="Inspection Fee">
-                  What you charge a renter to view the property. Shown on the listing so renters know before booking an inspection; it is not collected through iléSure.
+                  What a renter pays to view the property, at most ₦10,000. The renter pays it through iléSure (plus 1.5% processing) before the inspection, and pays it to iléSure's account.
                 </InfoTip>
               </label>
               <MoneyInput value={form.inspectionFee} onChange={v => setField('inspectionFee', v)} placeholder="5000" />

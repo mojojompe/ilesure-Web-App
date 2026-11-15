@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Search01Icon, Tick02Icon, Cancel02Icon, Loading02Icon, UserMultiple02Icon } from '@hugeicons/react';
+import { Search01Icon, Tick02Icon, Cancel02Icon, Loading02Icon, UserMultiple02Icon, BubbleChatIcon } from '@hugeicons/react';
+import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '../../components/layout/AppLayout';
 import { ClayCard } from '../../components/ui/ClayCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
@@ -10,6 +11,8 @@ import { formatCurrency } from '../../utils/format';
 import { InspectionPanel } from '../../components/bookings/InspectionPanel';
 import { InfoTip } from '../../components/ui/InfoTip';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { ListingMediaStrip } from '../../components/bookings/ListingMediaStrip';
+import { chatApi } from '../../api/chat';
 
 const PAGE_COPY: Record<OwnerRole, { subtitle: string }> = {
   agent: { subtitle: 'Manage your bookings' },
@@ -35,6 +38,8 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
   const [markingMissed, setMarkingMissed] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [actionError, setActionError] = useState<string | null>(null);
+  const [openingChat, setOpeningChat] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchBookings();
@@ -81,6 +86,24 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
     setUpdating(true);
     await runAction(() => api.decideBooking(booking._id || booking.id, decision));
     setUpdating(false);
+  };
+
+  /** Agents could only reply to renters; this lets them start the conversation from a booking. */
+  const handleMessageRenter = async (booking: any) => {
+    const tenantId = booking.userId?._id || booking.userId?.id || (typeof booking.userId === 'string' ? booking.userId : null);
+    const listingId = booking.listingId?._id || (typeof booking.listingId === 'string' ? booking.listingId : undefined);
+    if (!tenantId) {
+      setActionError('This renter cannot be messaged.');
+      return;
+    }
+    setOpeningChat(true);
+    const result = await chatApi.startChat(String(tenantId), listingId ? String(listingId) : undefined);
+    setOpeningChat(false);
+    if (!result.success || !result.chatId) {
+      setActionError(result.error || 'Could not open the chat');
+      return;
+    }
+    navigate(`/${role}/chats?chat=${encodeURIComponent(result.chatId)}`);
   };
 
   const handleView = (booking: any) => {
@@ -402,8 +425,10 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
               const moveIn = selectedBooking.moveInDate
                 ? new Date(selectedBooking.moveInDate).toLocaleDateString()
                 : '—';
+              const inspectionFee = selectedBooking.inspectionFee;
               return (
                 <div className="space-y-4">
+                  <ListingMediaStrip images={selectedBooking.listingId?.images} title={listingTitle} />
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-text-primary">{listingTitle}</p>
@@ -446,6 +471,20 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                       <p className="text-xs text-text-tertiary">Duration</p>
                       <p className="text-sm text-text-primary">{selectedBooking.duration || '—'}</p>
                     </div>
+                    {inspectionFee && inspectionFee.total > 0 && (
+                      <div className="col-span-2">
+                        <p className="text-xs text-text-tertiary">
+                          Inspection Fee
+                          <InfoTip title="Inspection Fee">The renter pays your listing's inspection fee, plus 1.5% processing, to iléSure before the inspection. They cannot confirm the inspection until it is paid.</InfoTip>
+                        </p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm text-text-primary">{formatCurrency(inspectionFee.amount)}</p>
+                          <StatusBadge variant={inspectionFee.status === 'paid' ? 'success' : 'warning'}>
+                            {inspectionFee.status === 'paid' ? 'Paid' : 'Not paid yet'}
+                          </StatusBadge>
+                        </div>
+                      </div>
+                    )}
                     {selectedBooking.message && (
                       <div className="col-span-2">
                         <p className="text-xs text-text-tertiary">Message</p>
@@ -475,6 +514,15 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                   {actionError && (
                     <p className="text-sm text-status-error">{actionError}</p>
                   )}
+
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => handleMessageRenter(selectedBooking)}
+                    loading={openingChat}
+                  >
+                    <BubbleChatIcon className="w-4 h-4 mr-2" /> Message renter
+                  </Button>
 
                   {selectedBooking.status === 'pending' && (
                     <div className="flex gap-2 pt-4">
