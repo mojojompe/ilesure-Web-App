@@ -672,9 +672,9 @@ export interface ListingResponse {
   amenities?: Array<Amenity | (string & {})>;
   cautionFee?: number;
   agencyFee?: number;
-  /** Yearly service charge, informational (not charged at checkout). */
+  /** Yearly service charge, collected with the move-in payment on long lets (not shortlets). */
   serviceCharge?: number;
-  /** One-off viewing fee, informational (not charged at checkout). */
+  /** One-off viewing fee, paid on its own before the inspection (never part of the move-in total). */
   inspectionFee?: number;
   shortletRates?: ShortletRate[];
   minStay?: number;
@@ -767,6 +767,13 @@ export interface BookingSummaryResponse {
   rentAmount: number;
   cautionFee: number;
   agencyFee: number;
+  /** Yearly service charge, included in `subtotal` and `total`. 0 on shortlets. */
+  serviceCharge: number;
+  /**
+   * The listing's inspection fee (+1.5%). Paid separately before the viewing, so it is NOT
+   * part of `total`. `status` is present when the quote was for the renter's own booking.
+   */
+  inspectionFee?: { amount: number; processingFee: number; total: number; status?: 'unpaid' | 'paid' };
   platformFee: number;
   roommateMatchingFee: number;
   total: number;

@@ -81,8 +81,11 @@ function toEditForm(listing: OwnerListing): EditForm {
   };
 }
 
-function toUpdatePayload(form: EditForm) {
+function toUpdatePayload(form: EditForm, original: OwnerListing) {
   const rent = Number(form.rentAnnual);
+  // The form has no area field, so keep the listing's own area: it used to be overwritten with
+  // the city on every save, which moved the listing out of its area in search.
+  const areaCluster = (original.areaCluster || '').trim() || form.city.trim() || form.state.trim();
   return {
     title: form.title.trim(),
     description: form.description.trim(),
@@ -97,7 +100,9 @@ function toUpdatePayload(form: EditForm) {
     address: form.address.trim(),
     city: form.city.trim(),
     state: form.state.trim(),
-    areaCluster: form.city.trim() || form.state.trim(),
+    areaCluster,
+    // Required by the listing validator, and not on the edit form: send what the listing has.
+    ...(original.distanceBucket ? { distanceBucket: original.distanceBucket } : {}),
     landmark: form.landmark.trim(),
     furnishing: form.furnishing,
     power: form.power,
@@ -485,14 +490,16 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
   };
 
   /** Runs an action, toasts its outcome, and refreshes the grid on success. */
-  const act = async (run: () => Promise<{ success: boolean; error?: { message: string } }>, success: string): Promise<boolean> => {
+  const act = async (run: () => Promise<{ success: boolean; error?: { message: string; details?: string[] } }>, success: string): Promise<boolean> => {
     const result = await run();
     if (result.success) {
       showToast(success, 'success');
       fetchListings();
       return true;
     }
-    showToast(result.error?.message || 'Something went wrong', 'error');
+    // "Validation failed" alone told the agent nothing; show which field was refused.
+    const details = result.error?.details?.length ? `: ${result.error.details.join('. ')}` : '';
+    showToast(`${result.error?.message || 'Something went wrong'}${details}`, 'error');
     return false;
   };
 
@@ -513,7 +520,7 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
     if (!editForm.title.trim()) return showToast('Listing title is required', 'error');
     if (!editForm.rentAnnual || Number(editForm.rentAnnual) <= 0) return showToast('A valid annual rent is required', 'error');
     setSavingEdit(true);
-    const ok = await act(() => api.updateListing(editing._id, toUpdatePayload(editForm)), 'Listing updated successfully!');
+    const ok = await act(() => api.updateListing(editing._id, toUpdatePayload(editForm, editing)), 'Listing updated successfully!');
     if (ok) setEditing(null);
     setSavingEdit(false);
   };
