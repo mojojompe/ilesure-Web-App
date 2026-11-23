@@ -130,9 +130,9 @@ export const userApi = {
     }
   },
 
-  async initializeKyc(type: KycCheck): Promise<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string }; error?: { message: string } }> {
+  async initializeKyc(type: KycCheck): Promise<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string; userData?: Record<string, string>; metadata?: Record<string, string> }; error?: { message: string } }> {
     try {
-      const response = await apiClient.post<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string }; error?: { message: string } }>('/kyc/initialize', { type });
+      const response = await apiClient.post<{ success: boolean; data?: { referenceId: string; widgetId: string; widgetUrl: string; html: string; userData?: Record<string, string>; metadata?: Record<string, string> }; error?: { message: string } }>('/kyc/initialize', { type });
       return response.data;
     } catch (err) {
       return toApiFailure(err, 'Failed to initialize verification');

@@ -105,6 +105,10 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         type: 'custom',
         reference_id: referenceId,
         config: { widget_id: widgetId },
+        // Name, email and account id, so Dojah's dashboard shows who every check belongs to,
+        // including ones that are abandoned before the government lookup.
+        ...(initRes.data.userData ? { user_data: initRes.data.userData } : {}),
+        ...(initRes.data.metadata ? { metadata: initRes.data.metadata } : {}),
         onSuccess: async (response: any) => {
           try {
             setVerifying(type);
