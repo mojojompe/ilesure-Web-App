@@ -104,6 +104,12 @@ export function SignupPage() {
       // be told what it had been called.
       if (isCompany && !companyName.trim()) return 'Enter your company name.';
       if (!formData.password) return 'Create a password.';
+      // Same rule the server enforces on /auth/register. Checked here so the problem shows on
+      // the password step, not as a bare "Validation failed" after the phone step.
+      if (formData.password.length < 8) return 'Your password must be at least 8 characters.';
+      if (!/[a-z]/.test(formData.password) || !/[A-Z]/.test(formData.password) || !/\d/.test(formData.password)) {
+        return 'Your password needs at least one uppercase letter, one lowercase letter and one number.';
+      }
       if (!formData.confirmPassword) return 'Confirm your password.';
       if (formData.password !== formData.confirmPassword) return 'The two passwords do not match.';
       return null;
@@ -172,7 +178,11 @@ export function SignupPage() {
         // (/onboarding/payout), once the account exists to link it to.
         navigate('/create-otp', { state: { email } });
       } else {
-        setError(response.error?.message || 'Registration failed. Please try again.');
+        // The server's generic "Validation failed" carries the actual reasons in `details`.
+        const details = (response.error as { details?: unknown } | undefined)?.details;
+        const reasons = Array.isArray(details) ? details.filter((d): d is string => typeof d === 'string') : [];
+        const generic = response.error?.code === 'VALIDATION_ERROR' && reasons.length > 0 && response.error?.message === 'Validation failed';
+        setError(generic ? reasons.join(' ') : response.error?.message || 'Registration failed. Please try again.');
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
