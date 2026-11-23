@@ -56,3 +56,26 @@ describe('splitMedia', () => {
     expect(splitMedia([a, video])).toEqual({ photos: [a], video });
   });
 });
+
+describe('shortlet posts', () => {
+  const cardFor = (post: string) => cardsFromMessage(parseListingMessage(post), FALLBACK_DEFAULTS, { photos: [photo('a.jpg')], video })[0];
+
+  it('keeps a weekly shortlet price weekly instead of charging it per night', () => {
+    const card = cardFor('Shortlet apartment at Toll gate close to Lead City University ibadan. 250k per week');
+    expect(card.form.propertyType).toBe('shortlet');
+    expect(card.form.shortletRates).toEqual([{ label: 'Per week', durationValue: '1', durationUnit: 'week', price: '250000' }]);
+  });
+
+  it('reads a plain shortlet price as nightly', () => {
+    const card = cardFor('Shortlet apartment at Toll gate close to Lead City University ibadan. 35k per night');
+    expect(card.form.shortletRates[0]).toMatchObject({ durationUnit: 'day', price: '35000' });
+  });
+
+  it('never sends a caution or agency fee on a shortlet, even one typed before switching type', () => {
+    const card = cardFor('Shortlet apartment at Toll gate close to Lead City University ibadan. 35k per night');
+    const payload = buildListingPayload({ ...card.form, cautionFee: '50000', agencyFee: '20000', paymentFrequency: 'annually' } as any);
+    expect(payload.cautionFee).toBeUndefined();
+    expect(payload.agencyFee).toBeUndefined();
+    expect(payload.paymentFrequency).toBeUndefined();
+  });
+});

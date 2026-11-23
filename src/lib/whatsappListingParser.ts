@@ -45,6 +45,11 @@ export interface ParsedListing {
   serviceCharge?: number;
   /** One-off fee to view the property. */
   inspectionFee?: number;
+  /**
+   * What a shortlet price is per ("₦250k per week" -> week). A shortlet price is never
+   * annualised; it becomes a tier of this length. Defaults to a night.
+   */
+  shortletPriceUnit?: 'hour' | 'day' | 'week' | 'month';
   /** A fixed agency fee, or a percentage of each unit's rent. */
   agencyFee?: { amount: number } | { percent: number };
   /** The post itself, tidied: WhatsApp timestamps, "plus video" and phone numbers removed. */
@@ -354,6 +359,12 @@ export function parseListingMessage(raw: string): ParsedListing {
   // Monthly or per-night prices are not annual rent.
   const monthly = /\b(?:per\s+month|monthly|\/\s?(?:month|mth|mo)\b|a\s+month)\b/i.test(text);
   const shortlet = units.some((u) => u.propertyType === 'shortlet');
+  // A shortlet's price unit: "per week" read as a nightly rate charged the weekly price per night.
+  const shortletPriceUnit: ParsedListing['shortletPriceUnit'] = !shortlet ? undefined
+    : /\b(?:per\s+week|weekly|\/\s?(?:week|wk)\b|a\s+week)\b/i.test(text) ? 'week'
+    : monthly ? 'month'
+    : /\b(?:per\s+hour|hourly|\/\s?(?:hour|hr)\b|an\s+hour)\b/i.test(text) ? 'hour'
+    : 'day';
 
   // Pass 1: a price on the same line as, and after, a type mention belongs to that type.
   const unassigned: MoneyToken[] = [];
@@ -396,6 +407,7 @@ export function parseListingMessage(raw: string): ParsedListing {
 
   return {
     units: units.map((u) => ({ propertyType: u.propertyType, label: u.label, count: u.count, rent: u.rent })),
+    shortletPriceUnit,
     area,
     landmark: findLandmark(text),
     city: /\bibadan\b/i.test(text) ? 'Ibadan' : /\blagos\b/i.test(text) ? 'Lagos' : undefined,

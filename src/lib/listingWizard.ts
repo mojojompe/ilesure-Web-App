@@ -239,12 +239,14 @@ export function buildListingPayload(form: ListingFormData, extras: PayloadExtras
     description: form.description,
     propertyType: form.propertyType,
     rentAnnual: isShortlet ? 0 : Number(form.annualRent),
-    cautionFee: form.cautionFee ? Number(form.cautionFee) : undefined,
-    agencyFee: form.agencyFee ? Number(form.agencyFee) : undefined,
+    // Shortlets carry no caution/agency fee (the server refuses one). A value typed before the
+    // type was switched to shortlet sits in a field the form now hides, so it is never sent.
+    cautionFee: !isShortlet && form.cautionFee ? Number(form.cautionFee) : undefined,
+    agencyFee: !isShortlet && form.agencyFee ? Number(form.agencyFee) : undefined,
     serviceCharge: !isShortlet && form.serviceCharge ? Number(form.serviceCharge) : undefined,
     inspectionFee: !isShortlet && form.inspectionFee ? Number(form.inspectionFee) : undefined,
-    paymentFrequency: form.paymentFrequency,
-    customPaymentPlan: form.paymentFrequency === 'custom'
+    paymentFrequency: isShortlet ? undefined : form.paymentFrequency,
+    customPaymentPlan: !isShortlet && form.paymentFrequency === 'custom'
       ? {
           installments: Number(form.customInstallments),
           interval: form.customInterval,

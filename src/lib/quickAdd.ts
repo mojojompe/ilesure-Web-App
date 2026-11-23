@@ -11,6 +11,8 @@ import type { DistanceBucket, Furnishing, GenderRestriction, PowerSource, WaterS
 import { initialFormData, validateForSubmit, validateMedia, type ListingFormData } from './listingWizard';
 import { suggestTitle, type ParsedListing } from './whatsappListingParser';
 
+const SHORTLET_TIER_LABEL = { hour: 'Per hour', day: 'Per night', week: 'Per week', month: 'Per month' } as const;
+
 export interface QuickDefaults {
   city: string;
   distanceFromSchool: DistanceBucket;
@@ -81,7 +83,10 @@ export function cardsFromMessage(
       description: countLine + parsed.description,
       propertyType: unit.propertyType,
       annualRent: !isShortlet && rent ? String(rent) : '',
-      shortletRates: isShortlet && rent ? [{ label: 'Per night', durationValue: '1', durationUnit: 'day', price: String(rent) }] : [],
+      // The price is per whatever the post said ("per week" is a weekly tier, not nightly).
+      shortletRates: isShortlet && rent
+        ? [{ label: SHORTLET_TIER_LABEL[parsed.shortletPriceUnit ?? 'day'], durationValue: '1', durationUnit: parsed.shortletPriceUnit ?? 'day', price: String(rent) }]
+        : [],
       cautionFee: !isShortlet && parsed.cautionFee ? String(parsed.cautionFee) : '',
       serviceCharge: !isShortlet && parsed.serviceCharge ? String(parsed.serviceCharge) : '',
       inspectionFee: !isShortlet && parsed.inspectionFee ? String(parsed.inspectionFee) : '',

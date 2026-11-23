@@ -514,22 +514,36 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     )}
                     
                     {/* Timeline Info */}
-                    <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
-                      <p className="text-xs text-text-tertiary">Timeline Status<InfoTip title="Timeline Status">Where this booking is in the process. Step 1: the tenant requested the booking. Step 2: the tenant books a viewing and visits the apartment. Step 3: the tenant has reported whether the apartment matches the listing; payment opens if it does. Step 4: the tenant has paid.</InfoTip></p>
-                      <p className="text-sm font-semibold text-text-primary">
-                        {selectedBooking.timelineStep === 3 && 'Step 3: Inspection Verified (Ready for Payment)'}
-                        {selectedBooking.timelineStep === 4 && 'Step 4: Paid / Completed'}
-                        {(!selectedBooking.timelineStep || selectedBooking.timelineStep === 1) && 'Step 1: Booking Requested'}
-                        {selectedBooking.timelineStep === 2 && 'Step 2: Inspection'}
-                      </p>
-                    </div>
+                    {isShortlet ? (
+                      // A shortlet is booked remotely: no viewing, the guest pays straight away.
+                      <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
+                        <p className="text-xs text-text-tertiary">Status</p>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {selectedBooking.status === 'completed' ? 'Paid: the stay is confirmed'
+                            : selectedBooking.status === 'cancelled' || selectedBooking.status === 'rejected' ? 'Not going ahead'
+                            : 'Waiting for the guest to pay'}
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                      <div className="col-span-2 mt-2 pt-2 border-t border-clay-border-light">
+                        <p className="text-xs text-text-tertiary">Timeline Status<InfoTip title="Timeline Status">Where this booking is in the process. Step 1: the tenant requested the booking. Step 2: the tenant books a viewing and visits the apartment. Step 3: the tenant has reported whether the apartment matches the listing; payment opens if it does. Step 4: the tenant has paid.</InfoTip></p>
+                        <p className="text-sm font-semibold text-text-primary">
+                          {selectedBooking.timelineStep === 3 && 'Step 3: Inspection Verified (Ready for Payment)'}
+                          {selectedBooking.timelineStep === 4 && 'Step 4: Paid / Completed'}
+                          {(!selectedBooking.timelineStep || selectedBooking.timelineStep === 1) && 'Step 1: Booking Requested'}
+                          {selectedBooking.timelineStep === 2 && 'Step 2: Inspection'}
+                        </p>
+                      </div>
 
-                    <InspectionPanel
-                      booking={selectedBooking}
-                      busy={markingMissed || updating}
-                      onMarkMissed={() => handleMarkMissed(selectedBooking)}
-                      onReschedule={(data) => handleReschedule(selectedBooking, data)}
-                    />
+                      <InspectionPanel
+                        booking={selectedBooking}
+                        busy={markingMissed || updating}
+                        onMarkMissed={() => handleMarkMissed(selectedBooking)}
+                        onReschedule={(data) => handleReschedule(selectedBooking, data)}
+                      />
+                      </>
+                    )}
                   </div>
 
                   {actionError && (
