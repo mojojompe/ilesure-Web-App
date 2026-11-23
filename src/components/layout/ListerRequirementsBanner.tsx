@@ -140,7 +140,7 @@ function ListingAgreementModal({ isOpen, accountName, onClose, onAccepted }: Lis
             {document.body}
           </div>
           <label className="block text-sm font-medium text-text-primary mt-4 mb-1" htmlFor="agreement-full-name">
-            Type your full name to accept{accountName ? ` (${accountName})` : ''}
+            Type your full name to accept
           </label>
           <input
             id="agreement-full-name"
@@ -151,6 +151,11 @@ function ListingAgreementModal({ isOpen, accountName, onClose, onAccepted }: Lis
             autoComplete="off"
             className="w-full rounded-clay border border-clay-border px-3 py-2 text-sm"
           />
+          {accountName && (
+            <p className="text-xs text-text-secondary mt-1">
+              It must include the name on your account: <span className="font-semibold">{accountName}</span>
+            </p>
+          )}
         </>
       ) : (
         !error && <p className="text-sm text-text-secondary">Loading the agreement...</p>
