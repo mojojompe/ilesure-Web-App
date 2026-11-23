@@ -212,7 +212,8 @@ export function AgentDashboardPage() {
                 const amount =
                   booking.totalAmount ??
                   booking.price ??
-                  booking.selectedRate?.price ??
+                  // A shortlet costs the tier booked × how many of it, not one unit of the tier.
+                  (booking.selectedRate?.price != null ? booking.selectedRate.price * (booking.rateQuantity || 1) : undefined) ??
                   booking.listingId?.rentAnnual ??
                   null;
                 const isShortlet = booking.listingId?.propertyType === 'shortlet' || !!booking.selectedRate;

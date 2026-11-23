@@ -7,6 +7,7 @@ import { StatusBadge } from '../../components/ui/StatusBadge';
 import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { ownerApi, type OwnerRole, type OwnerListing, type MarkRentedReason } from '../../api/owner';
+import { shortletPriceLines, type ShortletRateLike } from '../../lib/shortletPrices';
 import { propertyTypes } from '../../constants/listingVocabulary';
 import { formatCurrency } from '../../utils/format';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -53,7 +54,13 @@ interface EditForm {
   petsAllowed: boolean;
   smokingAllowed: boolean;
   studentsOnly: boolean;
+  /** Shortlet price tiers (only used when propertyType is shortlet). */
+  shortletRates: EditRate[];
 }
+
+interface EditRate { id?: string; label: string; durationValue: string; durationUnit: string; price: string }
+
+const RATE_UNITS = ['hour', 'day', 'week', 'month'];
 
 function toEditForm(listing: OwnerListing): EditForm {
   const loc = listing.location || {};
@@ -78,11 +85,50 @@ function toEditForm(listing: OwnerListing): EditForm {
     petsAllowed: Boolean(listing.petsAllowed),
     smokingAllowed: Boolean(listing.smokingAllowed),
     studentsOnly: Boolean(listing.studentsOnly),
+    shortletRates: toEditRates(listing),
   };
 }
 
+function toEditRates(listing: OwnerListing): EditRate[] {
+  const rates: ShortletRateLike[] = Array.isArray(listing.shortletRates) ? listing.shortletRates : [];
+  if (rates.length > 0) {
+    return rates.map((r) => ({
+      id: r.id,
+      label: r.label || '',
+      durationValue: String(r.durationValue || 1),
+      durationUnit: r.durationUnit || 'day',
+      price: r.price ? String(r.price) : '',
+    }));
+  }
+  // Legacy listings: start the editor from their hourly/daily/weekly/monthly prices.
+  const p = listing.shortletPricing || {};
+  const legacy: EditRate[] = [];
+  if (p.hourly) legacy.push({ label: 'Per hour', durationValue: '1', durationUnit: 'hour', price: String(p.hourly) });
+  if (p.daily) legacy.push({ label: 'Per night', durationValue: '1', durationUnit: 'day', price: String(p.daily) });
+  if (p.weekly) legacy.push({ label: 'Per week', durationValue: '1', durationUnit: 'week', price: String(p.weekly) });
+  if (p.monthly) legacy.push({ label: 'Per month', durationValue: '1', durationUnit: 'month', price: String(p.monthly) });
+  return legacy;
+}
+
+/** The shortlet tiers as the API takes them; an empty label is filled from the length. */
+function toApiRates(rates: EditRate[]) {
+  return rates.map((r) => {
+    const value = Number(r.durationValue) || 1;
+    return {
+      ...(r.id ? { id: r.id } : {}),
+      label: r.label.trim() || (value > 1 ? `Per ${value} ${r.durationUnit}s` : `Per ${r.durationUnit}`),
+      durationValue: value,
+      durationUnit: r.durationUnit,
+      price: Number(r.price),
+    };
+  });
+}
+
 function toUpdatePayload(form: EditForm, original: OwnerListing) {
-  const rent = Number(form.rentAnnual);
+  const isShortlet = form.propertyType === 'shortlet';
+  // Shortlets are priced by their tiers: no annual rent, and the fees a shortlet cannot carry
+  // are sent as 0 (the server refuses a caution/agency/service/inspection fee on a shortlet).
+  const rent = isShortlet ? 0 : Number(form.rentAnnual);
   // The form has no area field, so keep the listing's own area: it used to be overwritten with
   // the city on every save, which moved the listing out of its area in search.
   const areaCluster = (original.areaCluster || '').trim() || form.city.trim() || form.state.trim();
@@ -93,10 +139,11 @@ function toUpdatePayload(form: EditForm, original: OwnerListing) {
     rentAnnual: rent,
     annualRent: rent,
     price: rent,
-    cautionFee: form.cautionFee ? Number(form.cautionFee) : 0,
-    agencyFee: form.agencyFee ? Number(form.agencyFee) : 0,
-    serviceCharge: form.serviceCharge ? Number(form.serviceCharge) : 0,
-    inspectionFee: form.inspectionFee ? Number(form.inspectionFee) : 0,
+    cautionFee: !isShortlet && form.cautionFee ? Number(form.cautionFee) : 0,
+    agencyFee: !isShortlet && form.agencyFee ? Number(form.agencyFee) : 0,
+    serviceCharge: !isShortlet && form.serviceCharge ? Number(form.serviceCharge) : 0,
+    inspectionFee: !isShortlet && form.inspectionFee ? Number(form.inspectionFee) : 0,
+    ...(isShortlet ? { shortletRates: toApiRates(form.shortletRates) } : {}),
     address: form.address.trim(),
     city: form.city.trim(),
     state: form.state.trim(),
@@ -120,23 +167,15 @@ function toUpdatePayload(form: EditForm, original: OwnerListing) {
   };
 }
 
-function ShortletPrices({ pricing, compact }: { pricing: NonNullable<OwnerListing['shortletPricing']>; compact: boolean }) {
-  if (compact) {
-    return (
-      <div className="text-right">
-        {pricing.hourly && <p className="text-lg font-bold text-mustard">₦{pricing.hourly.toLocaleString()}/hr</p>}
-        {pricing.daily && <p className="text-lg font-bold text-mustard">₦{pricing.daily.toLocaleString()}/day</p>}
-        {!pricing.hourly && !pricing.daily && pricing.weekly && <p className="text-lg font-bold text-mustard">₦{pricing.weekly.toLocaleString()}/wk</p>}
-        {!pricing.hourly && !pricing.daily && pricing.monthly && <p className="text-lg font-bold text-mustard">₦{pricing.monthly.toLocaleString()}/mo</p>}
-      </div>
-    );
-  }
+function ShortletPrices({ listing, compact }: { listing: OwnerListing; compact: boolean }) {
+  const lines = shortletPriceLines(listing);
+  if (lines.length === 0) return <p className="text-sm font-semibold text-text-tertiary">No price set</p>;
+  const shown = compact ? lines.slice(0, 2) : lines;
   return (
     <div className="text-right space-y-0.5">
-      {pricing.hourly && <p className="text-lg font-bold text-mustard">₦{pricing.hourly.toLocaleString()}/hr</p>}
-      {pricing.daily && <p className="text-xl font-bold text-mustard">₦{pricing.daily.toLocaleString()}/day</p>}
-      {pricing.weekly && <p className="text-sm font-bold text-mustard">₦{pricing.weekly.toLocaleString()}/wk</p>}
-      {pricing.monthly && <p className="text-sm font-bold text-mustard">₦{pricing.monthly.toLocaleString()}/mo</p>}
+      {shown.map((line, i) => (
+        <p key={line} className={`font-bold text-mustard ${i === 0 ? (compact ? 'text-lg' : 'text-xl') : 'text-sm'}`}>{line}</p>
+      ))}
     </div>
   );
 }
@@ -209,8 +248,8 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
           <span className="text-xs font-semibold px-2.5 py-1 rounded-pill bg-white border border-clay-border text-text-secondary capitalize">{propTypeLabel}</span>
         </div>
         <div>
-          {listing.propertyType === 'shortlet' && listing.shortletPricing ? (
-            <ShortletPrices pricing={listing.shortletPricing} compact={false} />
+          {listing.propertyType === 'shortlet' ? (
+            <ShortletPrices listing={listing} compact={false} />
           ) : (
             <div className="text-right">
               <p className="text-2xl font-black text-mustard leading-none">{formatCurrency(listing.rentAnnual)}</p>
@@ -305,6 +344,33 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
   );
 }
 
+function ShortletRateEditor({ form, setForm, labelClass }: { form: EditForm; setForm: (form: EditForm) => void; labelClass: string }) {
+  const update = (i: number, patch: Partial<EditRate>) =>
+    setForm({ ...form, shortletRates: form.shortletRates.map((r, j) => (j === i ? { ...r, ...patch } : r)) });
+  const remove = (i: number) => setForm({ ...form, shortletRates: form.shortletRates.filter((_, j) => j !== i) });
+  const add = () =>
+    setForm({ ...form, shortletRates: [...form.shortletRates, { label: '', durationValue: '1', durationUnit: 'day', price: '' }] });
+  return (
+    <div>
+      <label className={labelClass}>Shortlet prices *</label>
+      <div className="space-y-3">
+        {form.shortletRates.map((rate, i) => (
+          <div key={rate.id || `new-${i}`} className="grid grid-cols-2 sm:grid-cols-[1fr_70px_110px_1fr_auto] gap-2 items-center">
+            <input type="text" value={rate.label} onChange={(e) => update(i, { label: e.target.value })} placeholder="e.g. Per night" className="clay-input w-full col-span-2 sm:col-span-1" />
+            <input type="number" min={1} value={rate.durationValue} onChange={(e) => update(i, { durationValue: e.target.value })} aria-label="Length" className="clay-input w-full" />
+            <select value={rate.durationUnit} onChange={(e) => update(i, { durationUnit: e.target.value })} aria-label="Unit" className="clay-input w-full">
+              {RATE_UNITS.map((u) => <option key={u} value={u}>{u}{Number(rate.durationValue) > 1 ? 's' : ''}</option>)}
+            </select>
+            <input type="number" min={1} value={rate.price} onChange={(e) => update(i, { price: e.target.value })} placeholder="Price (₦)" className="clay-input w-full font-bold text-mustard" />
+            <button type="button" onClick={() => remove(i)} className="text-xs font-semibold text-red-600 px-2 py-1 justify-self-start">Remove</button>
+          </div>
+        ))}
+      </div>
+      <button type="button" onClick={add} className="mt-2 text-xs font-semibold text-mustard">+ Add price option</button>
+    </div>
+  );
+}
+
 function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: EditForm) => void }) {
   const field = (key: keyof EditForm) => ({
     value: form[key] as string,
@@ -334,13 +400,17 @@ function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: 
             {propertyTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
         </div>
-        <div>
-          <label className={label}>Annual Rent (₦) *</label>
-          <input type="number" {...field('rentAnnual')} placeholder="400000" className="clay-input w-full font-bold text-mustard" />
-        </div>
+        {form.propertyType !== 'shortlet' && (
+          <div>
+            <label className={label}>Annual Rent (₦) *</label>
+            <input type="number" {...field('rentAnnual')} placeholder="400000" className="clay-input w-full font-bold text-mustard" />
+          </div>
+        )}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      {form.propertyType === 'shortlet' && <ShortletRateEditor form={form} setForm={setForm} labelClass={label} />}
+
+      {form.propertyType !== 'shortlet' && (<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div>
           <label className={label}>Caution Fee (₦)</label>
           <input type="number" {...field('cautionFee')} placeholder="50000" className="clay-input w-full" />
@@ -357,7 +427,7 @@ function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: 
           <label className={label}>Inspection Fee (₦, max 10,000)</label>
           <input type="number" min={0} max={10000} {...field('inspectionFee')} placeholder="0" className="clay-input w-full" />
         </div>
-      </div>
+      </div>)}
 
       <div>
         <label className={label}>Description</label>
@@ -518,7 +588,13 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
   const handleSaveEdit = async () => {
     if (!editing) return;
     if (!editForm.title.trim()) return showToast('Listing title is required', 'error');
-    if (!editForm.rentAnnual || Number(editForm.rentAnnual) <= 0) return showToast('A valid annual rent is required', 'error');
+    if (editForm.propertyType === 'shortlet') {
+      if (editForm.shortletRates.length === 0) return showToast('Add at least one price for the shortlet', 'error');
+      const bad = editForm.shortletRates.findIndex((r) => !(Number(r.price) > 0) || !(Number(r.durationValue) >= 1));
+      if (bad >= 0) return showToast(`Price option ${bad + 1} needs a price and a length of at least 1`, 'error');
+    } else if (!editForm.rentAnnual || Number(editForm.rentAnnual) <= 0) {
+      return showToast('A valid annual rent is required', 'error');
+    }
     setSavingEdit(true);
     const ok = await act(() => api.updateListing(editing._id, toUpdatePayload(editForm, editing)), 'Listing updated successfully!');
     if (ok) setEditing(null);
@@ -625,8 +701,8 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
                         <h3 className="font-semibold text-text-primary truncate">{listing.title}</h3>
                         <p className="text-xs text-text-tertiary">{[city, state].filter(Boolean).join(', ') || '—'}</p>
                       </div>
-                      {isShortlet && listing.shortletPricing ? (
-                        <ShortletPrices pricing={listing.shortletPricing} compact />
+                      {isShortlet ? (
+                        <ShortletPrices listing={listing} compact />
                       ) : (
                         <p className="text-lg font-bold text-mustard">{formatCurrency(listing.rentAnnual)}</p>
                       )}

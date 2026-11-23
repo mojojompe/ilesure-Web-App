@@ -8,6 +8,21 @@ import { Button } from '../../components/ui/Button';
 import { Modal } from '../../components/ui/Modal';
 import { ownerApi, type OwnerRole, type BookingDecision } from '../../api/owner';
 import { formatCurrency } from '../../utils/format';
+import { shortletPriceLines, shortletBookingTotal } from '../../lib/shortletPrices';
+
+/** A shortlet booking's stay as "23 Nov – 26 Nov", from the dates the server worked out. */
+function stayRange(booking: any): string | null {
+  const start = booking.startDate || booking.moveInDate;
+  if (!start || !booking.endDate) return null;
+  const fmt = (d: string) => new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+  return `${fmt(start)} – ${fmt(booking.endDate)}`;
+}
+
+/** "3 × Per night": what was booked. */
+function bookedTier(booking: any): string | null {
+  if (!booking.selectedRate) return null;
+  return `${booking.rateQuantity || 1} × ${booking.selectedRate.label || 'booking period'}`;
+}
 import { InspectionPanel } from '../../components/bookings/InspectionPanel';
 import { InfoTip } from '../../components/ui/InfoTip';
 import { EmptyState } from '../../components/ui/EmptyState';
@@ -241,7 +256,7 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     <th>Listing</th>
                     <th>Tenant</th>
                     <th>Price</th>
-                    <th>Move-in Date</th>
+                    <th>Move-in / Stay</th>
                     <th>Status<InfoTip title="Status">Pending: a new request waiting for you to confirm or reject. Confirmed: you accepted the request. Completed: the tenant has paid. Cancelled or rejected: the booking is closed.</InfoTip></th>
                     <th>Payment<InfoTip title="Payment">Whether the tenant has paid for this booking on iléSure. For long-term rentals the tenant can only pay after viewing the apartment and confirming it matches the listing.</InfoTip></th>
                     <th>Actions</th>
@@ -254,13 +269,11 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                     const tenantName = booking.userId?.fullName || booking.userName || '—';
                     const tenantPhone = booking.userId?.phone || booking.userPhone || '—';
                     const isShortlet = booking.listingId?.propertyType?.toLowerCase() === 'shortlet';
-                    const shortletPricing = (booking.listingId as any)?.shortletPricing;
-                    const rent = isShortlet
-                      ? shortletPricing?.weekly || shortletPricing?.daily || shortletPricing?.hourly || shortletPricing?.monthly || 0
-                      : booking.listingId?.rentAnnual || booking.price || 0;
-                    const moveIn = booking.moveInDate
+                    const rent = booking.listingId?.rentAnnual || booking.price || 0;
+                    const stayTotal = isShortlet ? shortletBookingTotal(booking) : null;
+                    const moveIn = (isShortlet && stayRange(booking)) || (booking.moveInDate
                       ? new Date(booking.moveInDate).toLocaleDateString()
-                      : '—';
+                      : '—');
                     return (
                       <tr key={bookingId}>
                         <td>
@@ -273,13 +286,17 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                           </div>
                         </td>
                         <td>
-                          {isShortlet && shortletPricing ? (
-                            <div className="text-xs">
-                              {shortletPricing.hourly && <p className="font-bold text-mustard">₦{shortletPricing.hourly.toLocaleString()}/hr</p>}
-                              {shortletPricing.daily && <p className="font-bold text-mustard">₦{shortletPricing.daily.toLocaleString()}/day</p>}
-                              {shortletPricing.weekly && <p className="font-bold text-mustard">₦{shortletPricing.weekly.toLocaleString()}/wk</p>}
-                              {shortletPricing.monthly && <p className="font-bold text-mustard">₦{shortletPricing.monthly.toLocaleString()}/mo</p>}
-                            </div>
+                          {isShortlet ? (
+                            stayTotal !== null ? (
+                              <div>
+                                <p className="font-bold text-mustard">{formatCurrency(stayTotal)}</p>
+                                <p className="text-xs text-text-tertiary">{bookedTier(booking)}</p>
+                              </div>
+                            ) : (
+                              <div className="text-xs">
+                                {shortletPriceLines(booking.listingId || {}).map((line) => <p key={line} className="font-bold text-mustard">{line}</p>)}
+                              </div>
+                            )
                           ) : (
                             <p className="font-bold text-mustard">{formatCurrency(rent)}</p>
                           )}
@@ -421,10 +438,10 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
               const tenantName = selectedBooking.userId?.fullName || selectedBooking.userName || '—';
               const tenantPhone = selectedBooking.userId?.phone || selectedBooking.userPhone || '—';
               const isShortlet = selectedBooking.listingId?.propertyType?.toLowerCase() === 'shortlet';
-              const shortletPricing = (selectedBooking.listingId as any)?.shortletPricing;
-              const moveIn = selectedBooking.moveInDate
+              const stayTotal = isShortlet ? shortletBookingTotal(selectedBooking) : null;
+              const moveIn = (isShortlet && stayRange(selectedBooking)) || (selectedBooking.moveInDate
                 ? new Date(selectedBooking.moveInDate).toLocaleDateString()
-                : '—';
+                : '—');
               const inspectionFee = selectedBooking.inspectionFee;
               return (
                 <div className="space-y-4">
@@ -451,20 +468,24 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
                       <p className="text-xs text-text-tertiary">{tenantPhone}</p>
                     </div>
                     <div>
-                      <p className="text-xs text-text-tertiary">{isShortlet ? 'Pricing' : 'Annual Rent'}</p>
-                      {isShortlet && shortletPricing ? (
-                        <div>
-                          {shortletPricing.hourly && <p className="text-sm font-bold text-mustard">₦{shortletPricing.hourly.toLocaleString()}/hr</p>}
-                          {shortletPricing.daily && <p className="text-sm font-bold text-mustard">₦{shortletPricing.daily.toLocaleString()}/day</p>}
-                          {shortletPricing.weekly && <p className="text-sm font-bold text-mustard">₦{shortletPricing.weekly.toLocaleString()}/wk</p>}
-                          {shortletPricing.monthly && <p className="text-sm font-bold text-mustard">₦{shortletPricing.monthly.toLocaleString()}/mo</p>}
-                        </div>
+                      <p className="text-xs text-text-tertiary">{isShortlet ? (stayTotal !== null ? 'Stay total' : 'Pricing') : 'Annual Rent'}</p>
+                      {isShortlet ? (
+                        stayTotal !== null ? (
+                          <div>
+                            <p className="text-lg font-bold text-mustard">{formatCurrency(stayTotal)}</p>
+                            <p className="text-xs text-text-tertiary">{bookedTier(selectedBooking)}</p>
+                          </div>
+                        ) : (
+                          <div>
+                            {shortletPriceLines(selectedBooking.listingId || {}).map((line) => <p key={line} className="text-sm font-bold text-mustard">{line}</p>)}
+                          </div>
+                        )
                       ) : (
                         <p className="text-lg font-bold text-mustard">{formatCurrency(selectedBooking.listingId?.rentAnnual || selectedBooking.price || 0)}</p>
                       )}
                     </div>
                     <div>
-                      <p className="text-xs text-text-tertiary">Move-in Date</p>
+                      <p className="text-xs text-text-tertiary">{isShortlet ? 'Stay' : 'Move-in Date'}</p>
                       <p className="text-sm text-text-primary">{moveIn}</p>
                     </div>
                     <div>
