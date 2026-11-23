@@ -181,6 +181,9 @@ export function SignupPage() {
         // The server's generic "Validation failed" carries the actual reasons in `details`.
         const details = (response.error as { details?: unknown } | undefined)?.details;
         const reasons = Array.isArray(details) ? details.filter((d): d is string => typeof d === 'string') : [];
+        // A taken email belongs to step 1: send the person back to the email field instead of
+        // leaving the error under the phone number, where it read as "this number is taken".
+        if (response.error?.code === 'CONFLICT' && reasons.includes('email')) setStep(1);
         const generic = response.error?.code === 'VALIDATION_ERROR' && reasons.length > 0 && response.error?.message === 'Validation failed';
         setError(generic ? reasons.join(' ') : response.error?.message || 'Registration failed. Please try again.');
       }
