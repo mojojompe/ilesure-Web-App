@@ -85,7 +85,11 @@ export function ListerRequirementsBanner({ role }: { role: UserRole }) {
 
       <ListingAgreementModal
         isOpen={agreementOpen}
-        accountName={user?.fullName || ''}
+        // A company owner/admin may also sign with the company's name (the server accepts both).
+        accountName={[
+          user?.fullName,
+          (user?.role === 'company' || user?.role === 'company_admin') ? ((user as any)?.companyName || (user as any)?.company?.name) : undefined,
+        ].filter(Boolean).join(', or ')}
         onClose={() => setAgreementOpen(false)}
         onAccepted={(next) => {
           setRequirements(next);
@@ -147,7 +151,7 @@ function ListingAgreementModal({ isOpen, accountName, onClose, onAccepted }: Lis
             type="text"
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
-            placeholder={accountName || 'Your full name'}
+            placeholder="Your full name"
             autoComplete="off"
             className="w-full rounded-clay border border-clay-border px-3 py-2 text-sm"
           />
