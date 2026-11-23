@@ -154,9 +154,9 @@ export function SignupPage() {
 
     try {
       const registerData = {
-        fullName: formData.fullName,
-        email: formData.email,
-        phone: formData.phone,
+        fullName: formData.fullName.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
         password: formData.password,
         role: formData.role as UserRole,
         ...(isCompany && companyName ? { companyName } : {}),
