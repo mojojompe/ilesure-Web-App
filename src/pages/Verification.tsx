@@ -10,7 +10,8 @@ import userApi from '../api/user';
 import { getApiErrorMessage } from '../api/apiError';
 import { socketService } from '../api/socket';
 import { useKycResultWatcher } from '../hooks/useKycResultWatcher';
-import { openDojahModal, closeDojahModal } from '../lib/dojahModal';
+import { closeDojahModal } from '../lib/dojahModal';
+import { reserveDojahTab, sendDojahTab, discardDojahTab } from '../lib/dojahTab';
 
 interface VerificationProps {
   role: UserRole;
@@ -153,6 +154,8 @@ export function VerificationPage({ role }: VerificationProps) {
   // Checks opened in Dojah whose result has not reached us yet (e.g. finished on a phone).
   const [started, setStarted] = useState<{ nin: boolean; bvn: boolean }>({ nin: false, bvn: false });
   const [kycNotice, setKycNotice] = useState('');
+  // The verification link, when the browser blocked the new tab.
+  const [blockedLink, setBlockedLink] = useState<string | null>(null);
 
   const isCompany = role === 'company';
   const currentUser = user;
@@ -189,15 +192,6 @@ export function VerificationPage({ role }: VerificationProps) {
   };
   useKycResultWatcher(!isCompany && ((started.nin && !ninDone) || (started.bvn && !bvnDone)), applySync);
 
-  useEffect(() => {
-    if (!isCompany && !document.getElementById('dojah-script')) {
-      const script = document.createElement('script');
-      script.id = 'dojah-script';
-      script.src = 'https://widget.dojah.io/widget.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, [isCompany]);
 
   // --- File validation ---
   function validateAndSetFile(
@@ -267,67 +261,29 @@ export function VerificationPage({ role }: VerificationProps) {
    * account permanently unable to list.
    */
   const runKycCheck = async (type: 'nin' | 'bvn') => {
-    if (!(window as any).Connect) {
-      alert('Verification service is still loading. Please try again in a few seconds.');
-      return;
-    }
-
     setKycRunning(type);
+    setBlockedLink(null);
+    // Dojah's hosted page in a new tab (see lib/dojahTab), reserved during the tap so the
+    // browser allows it. The result comes back through the server and the watcher above.
+    const tab = reserveDojahTab();
     try {
       const initRes = await userApi.initializeKyc(type);
-      if (!initRes.success || !initRes.data) {
+      if (!initRes.success || !initRes.data?.widgetUrl) {
+        discardDojahTab(tab);
         alert(initRes.error?.message || 'Failed to initialize verification. Please try again.');
-        setKycRunning(null);
         return;
       }
 
-      const { widgetId, referenceId } = initRes.data;
       setStarted((s) => ({ ...s, [type]: true }));
-
-      const options = {
-        app_id: import.meta.env.VITE_DOJAH_APP_ID,
-        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
-        type: 'custom',
-        reference_id: referenceId,
-        config: { widget_id: widgetId },
-        // Name, email and account id, so Dojah's dashboard shows who every check belongs to,
-        // including ones that are abandoned before the government lookup.
-        ...(initRes.data.userData ? { user_data: initRes.data.userData } : {}),
-        ...(initRes.data.metadata ? { metadata: initRes.data.metadata } : {}),
-        onSuccess: async (response: any) => {
-          try {
-            // verifyKyc reports a refusal (name mismatch, still processing) as success:false
-            // rather than throwing; it used to be ticked off as done regardless.
-            const res = await userApi.verifyKyc(response.reference_id || referenceId, type);
-            if (res.success) {
-              if (type === 'nin') setNinDone(true);
-              else setBvnDone(true);
-            } else {
-              setKycNotice(res.error?.message || 'We could not confirm that check yet. We will keep checking for a result.');
-            }
-          } catch {
-            alert('Failed to submit verification. Please try again.');
-          } finally {
-            setKycRunning(null);
-          }
-        },
-        onError: (err: any) => {
-          // Also where the widget sends messages it does not recognise (e.g. its success screen
-          // after finishing on a phone): look for a result instead of leaving it to the poll.
-          console.error('[Dojah]', err);
-          setKycRunning(null);
-          userApi.syncKyc().then((res) => { if (res.success && res.data) applySync(res.data); }).catch(() => {});
-        },
-        onClose: () => {
-          setKycRunning(null);
-          // Closed after finishing on a phone, or partway: either way, look for a result now.
-          userApi.syncKyc().then((res) => { if (res.success && res.data) applySync(res.data); }).catch(() => {});
-        },
-      };
-
-      openDojahModal(options);
+      if (sendDojahTab(tab, initRes.data.widgetUrl)) {
+        setKycNotice('');
+      } else {
+        setBlockedLink(initRes.data.widgetUrl);
+      }
     } catch {
+      discardDojahTab(tab);
       alert('Failed to start verification. Please try again.');
+    } finally {
       setKycRunning(null);
     }
   };
@@ -473,6 +429,14 @@ export function VerificationPage({ role }: VerificationProps) {
                   ))}
                 </div>
 
+                {blockedLink && (
+                  <p className="text-center text-sm">
+                    Your browser blocked the verification tab.{' '}
+                    <a href={blockedLink} target="_blank" rel="noopener noreferrer" onClick={() => setBlockedLink(null)} className="font-semibold text-mustard underline">
+                      Open verification
+                    </a>
+                  </p>
+                )}
                 {kycNotice && !(ninDone && bvnDone) && (
                   <p className="text-center text-xs text-status-error">{kycNotice}</p>
                 )}

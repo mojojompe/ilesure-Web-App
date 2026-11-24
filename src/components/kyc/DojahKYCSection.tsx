@@ -5,29 +5,14 @@ import { StatusBadge } from '../ui/StatusBadge';
 import { userApi, type KycStatus, type KycCheck } from '../../api/user';
 import { socketService } from '../../api/socket';
 import { useKycResultWatcher } from '../../hooks/useKycResultWatcher';
-import { openDojahModal, closeDojahModal } from '../../lib/dojahModal';
+import { closeDojahModal } from '../../lib/dojahModal';
+import { reserveDojahTab, sendDojahTab, discardDojahTab } from '../../lib/dojahTab';
 
 interface DojahKYCSectionProps {
   userRole: string;
   userName?: string;
   userEmail?: string;
   onVerified?: () => void;
-}
-
-function loadDojahScript(): Promise<void> {
-  return new Promise((resolve) => {
-    if (document.getElementById('dojah-widget-script')) {
-      resolve();
-      return;
-    }
-    const script = document.createElement('script');
-    script.id = 'dojah-widget-script';
-    script.src = 'https://widget.dojah.io/widget.js';
-    script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => resolve();
-    document.body.appendChild(script);
-  });
 }
 
 export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: DojahKYCSectionProps) {
@@ -47,7 +32,6 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
 
   useEffect(() => {
     fetchKycStatus();
-    loadDojahScript();
 
     const handleKycChange = () => {
       fetchKycStatus();
@@ -75,101 +59,39 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
     }
   };
 
+  // Dojah runs on its own hosted page in a new tab (see lib/dojahTab for why). The result comes
+  // back through the server; the watcher below polls for it and re-checks when they return here.
+  const [blockedLink, setBlockedLink] = useState<string | null>(null);
+
   const openDojahWidget = async (type: KycCheck) => {
     setError('');
+    setBlockedLink(null);
     setVerifying(type);
+    // Reserved during the tap: a tab opened after the network call would be blocked.
+    const tab = reserveDojahTab();
 
     try {
-      if (!(window as any).Connect) {
-        setError('Verification service is still loading. Please try again in a few seconds.');
-        setVerifying(null);
-        return;
-      }
-
-      // Call backend to get the proper widgetId and referenceId (mirrors mobile app flow)
       const initRes = await userApi.initializeKyc(type);
-      if (!initRes.success || !initRes.data) {
+      if (!initRes.success || !initRes.data?.widgetUrl) {
+        discardDojahTab(tab);
         setError(initRes.error?.message || 'Failed to initialize verification. Please try again.');
-        setVerifying(null);
         return;
       }
 
-      const { widgetId, referenceId } = initRes.data;
       // The server now holds this check's reference, so /kyc/status reports it as started and
-      // the result watcher below starts looking for it (needed when it is finished on a phone).
+      // the result watcher starts looking for it.
       fetchKycStatus(true);
 
-      const options = {
-        app_id: import.meta.env.VITE_DOJAH_APP_ID,
-        p_key: import.meta.env.VITE_DOJAH_PUBLIC_KEY,
-        type: 'custom',
-        reference_id: referenceId,
-        config: { widget_id: widgetId },
-        // Name, email and account id, so Dojah's dashboard shows who every check belongs to,
-        // including ones that are abandoned before the government lookup.
-        ...(initRes.data.userData ? { user_data: initRes.data.userData } : {}),
-        ...(initRes.data.metadata ? { metadata: initRes.data.metadata } : {}),
-        onSuccess: async (response: any) => {
-          try {
-            setVerifying(type);
-            const refId = response.reference_id || referenceId;
-
-            // The company check has an answer worth showing: when CAC's record does not match
-            // the company on the account, the server says exactly what differs.
-            if (type === 'cac') {
-              const res = await userApi.verifyKyc(refId, 'cac');
-              if (res.success) {
-                showToast(res.data?.companyVerified ? 'Your company is verified!' : 'Company (CAC) check passed.');
-              } else {
-                setError(res.error?.message || 'Company verification could not be completed. Please try again.');
-              }
-              await fetchKycStatus();
-              onVerified?.();
-              return;
-            }
-
-            try {
-              await userApi.verifyKyc(refId, type);
-            } catch {
-              // verify endpoint may still be processing; webhook will handle it
-            }
-
-            showToast(`${type.toUpperCase()} verification submitted successfully!`);
-            await fetchKycStatus();
-            onVerified?.();
-          } catch {
-            showToast('Failed to submit verification. Please try again.', 'error');
-          } finally {
-            setVerifying(null);
-          }
-        },
-        onError: (err: any) => {
-          // The widget also routes messages it does not recognise here (e.g. from the success
-          // screen after finishing on a phone), so check for a result before calling it a failure.
-          // The window stays open (see dojahModal), so no "window closed" message here: just
-          // look quietly for a result, and close the window if one has arrived.
-          console.error('[Dojah]', err);
-          userApi.syncKyc().then(async (res) => {
-            const d = res.success ? res.data : undefined;
-            const done = type === 'nin' ? d?.ninVerified : type === 'bvn' ? d?.bvnVerified : d?.cacVerified;
-            if (done) {
-              closeDojahModal();
-              setVerifying(null);
-              onVerified?.();
-            }
-            await fetchKycStatus(true);
-          }).catch(() => {});
-        },
-        onClose: () => {
-          setVerifying(null);
-          // Closed after finishing on a phone, or partway: either way, look for a result now.
-          userApi.syncKyc().then(() => fetchKycStatus(true)).catch(() => {});
-        },
-      };
-
-      openDojahModal(options);
+      if (sendDojahTab(tab, initRes.data.widgetUrl)) {
+        showToast('Verification opened in a new tab. Finish it there, then come back here.');
+      } else {
+        // Popup blocked: give them the link to tap themselves.
+        setBlockedLink(initRes.data.widgetUrl);
+      }
     } catch {
+      discardDojahTab(tab);
       showToast('Failed to start verification. Please try again.', 'error');
+    } finally {
       setVerifying(null);
     }
   };
@@ -369,6 +291,22 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
           </div>
         )}
 
+        {/* The browser blocked the new tab: let them open it with their own tap. */}
+        {blockedLink && (
+          <div className="p-4 rounded-clay-sm bg-mustard-pale border border-mustard/30">
+            <p className="text-sm font-semibold text-text-primary mb-2">Your browser blocked the verification tab</p>
+            <a
+              href={blockedLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => setBlockedLink(null)}
+              className="inline-flex items-center gap-1 text-sm font-semibold text-mustard underline"
+            >
+              Open verification <ArrowRight01Icon className="w-4 h-4" />
+            </a>
+          </div>
+        )}
+
         {/* Pending Review Banner */}
         {anyStarted && !allDone && (
           <div className="flex items-center gap-3 p-4 rounded-clay-sm bg-amber-50 border border-amber-200">
@@ -376,7 +314,7 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
             <div>
               <p className="text-sm font-semibold text-amber-900">Waiting for a result</p>
               <p className="text-xs text-amber-700">
-                You started a check but we haven't received the result yet. If you finished it in the Dojah window, tap Sync below. Otherwise, tap Try again.
+                You started a check but we haven't received the result yet. If you finished it in the Dojah tab, it will show here shortly, or tap Sync below. Otherwise, tap Try again.
               </p>
             </div>
           </div>
