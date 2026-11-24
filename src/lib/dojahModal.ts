@@ -41,9 +41,13 @@ export function openDojahModal(options: Record<string, any>): void {
       // The widget closes itself a second later on success; make sure it does.
       window.setTimeout(() => { if (current === instance) closeDojahModal(); }, 1500);
     },
+    // Do NOT close here. Dojah's script sends every iframe message it does not recognise to
+    // onError (`default: return options.onError(data)`), including the widget's own step
+    // events. Closing on them shut the widget the moment the BVN face step asked for the
+    // camera, every time. Real failures show Dojah's own error screen with a close button; a
+    // finished check closes the modal through the result watcher; Escape still closes it.
     onError: (err: any) => {
       onError?.(err);
-      if (current === instance) closeDojahModal();
     },
     onClose: () => {
       if (current === instance) {

@@ -146,13 +146,18 @@ export function DojahKYCSection({ userRole, userName, userEmail, onVerified }: D
         onError: (err: any) => {
           // The widget also routes messages it does not recognise here (e.g. from the success
           // screen after finishing on a phone), so check for a result before calling it a failure.
+          // The window stays open (see dojahModal), so no "window closed" message here: just
+          // look quietly for a result, and close the window if one has arrived.
           console.error('[Dojah]', err);
-          setVerifying(null);
           userApi.syncKyc().then(async (res) => {
-            await fetchKycStatus(true);
-            if (!(res.success && (res.data?.ninVerified || res.data?.bvnVerified || res.data?.cacVerified))) {
-              showToast('Verification window closed. If you finished it, the result will show here shortly.', 'error');
+            const d = res.success ? res.data : undefined;
+            const done = type === 'nin' ? d?.ninVerified : type === 'bvn' ? d?.bvnVerified : d?.cacVerified;
+            if (done) {
+              closeDojahModal();
+              setVerifying(null);
+              onVerified?.();
             }
+            await fetchKycStatus(true);
           }).catch(() => {});
         },
         onClose: () => {
