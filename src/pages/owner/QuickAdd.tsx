@@ -504,6 +504,10 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
                 <input type="number" value={form.agencyFee} onChange={(e) => setField('agencyFee', e.target.value)} className="clay-input w-full" />
               </label>
               <label>
+                <span className={labelClass}>Tenancy agreement</span>
+                <input type="number" value={form.tenancyAgreementFee} onChange={(e) => setField('tenancyAgreementFee', e.target.value)} className="clay-input w-full" />
+              </label>
+              <label>
                 <span className={labelClass}>Service charge (yearly)</span>
                 <input type="number" value={form.serviceCharge} onChange={(e) => setField('serviceCharge', e.target.value)} className="clay-input w-full" />
               </label>

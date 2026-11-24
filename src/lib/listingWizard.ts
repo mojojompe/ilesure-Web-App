@@ -48,6 +48,7 @@ export interface ListingFormData {
   annualRent: string;
   cautionFee: string;
   agencyFee: string;
+  tenancyAgreementFee: string;
   serviceCharge: string;
   inspectionFee: string;
   paymentFrequency: PaymentFrequency;
@@ -94,6 +95,7 @@ export const initialFormData: ListingFormData = {
   annualRent: '',
   cautionFee: '',
   agencyFee: '',
+  tenancyAgreementFee: '',
   serviceCharge: '',
   inspectionFee: '',
   paymentFrequency: 'annually',
@@ -243,6 +245,7 @@ export function buildListingPayload(form: ListingFormData, extras: PayloadExtras
     // type was switched to shortlet sits in a field the form now hides, so it is never sent.
     cautionFee: !isShortlet && form.cautionFee ? Number(form.cautionFee) : undefined,
     agencyFee: !isShortlet && form.agencyFee ? Number(form.agencyFee) : undefined,
+    tenancyAgreementFee: !isShortlet && form.tenancyAgreementFee ? Number(form.tenancyAgreementFee) : undefined,
     serviceCharge: !isShortlet && form.serviceCharge ? Number(form.serviceCharge) : undefined,
     inspectionFee: !isShortlet && form.inspectionFee ? Number(form.inspectionFee) : undefined,
     paymentFrequency: isShortlet ? undefined : form.paymentFrequency,

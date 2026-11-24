@@ -368,6 +368,15 @@ function PricingStep({ w }: { w: ListingWizard }) {
             </div>
             <div>
               <label className="block text-xs text-text-secondary mb-1">
+                Tenancy Agreement (Optional)
+                <InfoTip title="Tenancy Agreement">
+                  The legal documentation fee for drafting, preparing and executing the tenancy agreement. Paid by the tenant with move-in costs.
+                </InfoTip>
+              </label>
+              <MoneyInput value={form.tenancyAgreementFee} onChange={v => setField('tenancyAgreementFee', v)} placeholder="20000" />
+            </div>
+            <div>
+              <label className="block text-xs text-text-secondary mb-1">
                 Service Charge (Optional)
                 <InfoTip title="Service Charge">
                   The yearly charge for shared estate services such as security, waste collection and cleaning of common areas. Shown to renters so they know the full yearly cost; it is not collected through iléSure.

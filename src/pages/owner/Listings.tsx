@@ -40,6 +40,7 @@ interface EditForm {
   rentAnnual: string;
   cautionFee: string;
   agencyFee: string;
+  tenancyAgreementFee: string;
   serviceCharge: string;
   inspectionFee: string;
   address: string;
@@ -71,6 +72,7 @@ function toEditForm(listing: OwnerListing): EditForm {
     rentAnnual: listing.rentAnnual ? String(listing.rentAnnual) : '',
     cautionFee: listing.cautionFee != null ? String(listing.cautionFee) : '',
     agencyFee: listing.agencyFee != null ? String(listing.agencyFee) : '',
+    tenancyAgreementFee: (listing as any).tenancyAgreementFee != null ? String((listing as any).tenancyAgreementFee) : '',
     serviceCharge: listing.serviceCharge != null ? String(listing.serviceCharge) : '',
     inspectionFee: listing.inspectionFee != null ? String(listing.inspectionFee) : '',
     address: listing.address || loc.address || '',
@@ -303,6 +305,9 @@ function ListingDetails({ listing, onClose, onEdit }: { listing: OwnerListing; o
           <Spec label="Max Occupants">{listing.maxOccupants || 1} person{(listing.maxOccupants || 1) > 1 ? 's' : ''}</Spec>
           {listing.cautionFee !== undefined && Number(listing.cautionFee) > 0 && <Spec label="Caution Fee">{formatCurrency(Number(listing.cautionFee))}</Spec>}
           {listing.agencyFee !== undefined && Number(listing.agencyFee) > 0 && <Spec label="Agency Fee">{formatCurrency(Number(listing.agencyFee))}</Spec>}
+          {(listing as any).tenancyAgreementFee !== undefined && Number((listing as any).tenancyAgreementFee) > 0 && (
+            <Spec label="Tenancy Agreement">{formatCurrency(Number((listing as any).tenancyAgreementFee))}</Spec>
+          )}
           {Number(listing.serviceCharge) > 0 && <Spec label="Service Charge">{formatCurrency(Number(listing.serviceCharge))}/yr</Spec>}
           {Number(listing.inspectionFee) > 0 && <Spec label="Inspection Fee">{formatCurrency(Number(listing.inspectionFee))}</Spec>}
           {listing.leaseDuration && <Spec label="Lease Duration" capitalize>{listing.leaseDuration}</Spec>}
@@ -418,6 +423,10 @@ function EditListingFields({ form, setForm }: { form: EditForm; setForm: (form: 
         <div>
           <label className={label}>Agency Fee (₦)</label>
           <input type="number" {...field('agencyFee')} placeholder="40000" className="clay-input w-full" />
+        </div>
+        <div>
+          <label className={label}>Tenancy Agreement (₦)</label>
+          <input type="number" {...field('tenancyAgreementFee')} placeholder="20000" className="clay-input w-full" />
         </div>
         <div>
           <label className={label}>Service Charge (₦)</label>
