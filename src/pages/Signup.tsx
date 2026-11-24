@@ -7,6 +7,7 @@ import { Button } from '../components/ui/Button';
 import type { UserRole, SignupData } from '../types';
 import authApi from '../api/authApi';
 import { useAuth, PENDING_EMAIL_KEY } from '../api/authContext';
+import { AuthErrorModal, type AuthErrorDetails } from '../components/auth/AuthErrorModal';
 
 function getPasswordStrength(password: string): { label: string; color: string; progress: number } {
   let score = 0;
@@ -121,10 +122,17 @@ export function SignupPage() {
     return null;
   };
 
+  const [modalError, setModalError] = useState<AuthErrorDetails | null>(null);
+
   const handleNext = async () => {
     const problem = validateStep();
     if (problem) {
       setError(problem);
+      setModalError({
+        title: 'Incomplete Credentials',
+        message: problem,
+        ctaText: 'Complete Field',
+      });
       return;
     }
     setError('');
@@ -147,6 +155,11 @@ export function SignupPage() {
   const handleSubmit = async () => {
     if (!acceptedTerms) {
       setError('Please accept the Terms of Service and Privacy Policy to continue.');
+      setModalError({
+        title: 'Terms Agreement Required',
+        message: 'Please review and accept the Terms of Service and Privacy Policy to continue.',
+        ctaText: 'Review Terms',
+      });
       return;
     }
     setLoading(true);
@@ -166,29 +179,46 @@ export function SignupPage() {
       const response = await authApi.register(registerData);
 
       if (response.success && response.user && response.accessToken) {
-        // QA-AGT-003 / QA-CO-002: establish the session through the auth context so the
-        // OTP page sees the user immediately (a bare localStorage write was invisible to
-        // React state until a hard reload). The pending-email marker survives refreshes.
-        // SECURITY-FIX (W-H1): setSession never persists the refresh token.
         setSession(response.user, response.accessToken);
         const email = response.user.email || formData.email;
         sessionStorage.setItem(PENDING_EMAIL_KEY, email);
-
-        // The payout (bank) account is added after the email is verified, on its own step
-        // (/onboarding/payout), once the account exists to link it to.
         navigate('/create-otp', { state: { email } });
       } else {
-        // The server's generic "Validation failed" carries the actual reasons in `details`.
         const details = (response.error as { details?: unknown } | undefined)?.details;
         const reasons = Array.isArray(details) ? details.filter((d): d is string => typeof d === 'string') : [];
-        // A taken email belongs to step 1: send the person back to the email field instead of
-        // leaving the error under the phone number, where it read as "this number is taken".
-        if (response.error?.code === 'CONFLICT' && reasons.includes('email')) setStep(1);
-        const generic = response.error?.code === 'VALIDATION_ERROR' && reasons.length > 0 && response.error?.message === 'Validation failed';
-        setError(generic ? reasons.join(' ') : response.error?.message || 'Registration failed. Please try again.');
+        const isConflict = response.error?.code === 'CONFLICT' || reasons.includes('email') || response.error?.message?.toLowerCase().includes('already exists');
+
+        if (isConflict) {
+          setStep(1);
+          setModalError({
+            title: 'Account Already Exists',
+            message: 'A user account with this email address already exists. Please change your email address or sign in to your existing account.',
+            ctaText: 'Change Email',
+            onCtaClick: () => {
+              setStep(1);
+              setModalError(null);
+            },
+            secondaryText: 'Sign In Instead',
+            onSecondaryClick: () => navigate('/login'),
+          });
+        } else {
+          const generic = response.error?.code === 'VALIDATION_ERROR' && reasons.length > 0 && response.error?.message === 'Validation failed';
+          const errMsg = generic ? reasons.join(' ') : response.error?.message || 'Registration failed. Please try again.';
+          setError(errMsg);
+          setModalError({
+            title: 'Registration Issue',
+            message: errMsg,
+            ctaText: 'Review & Try Again',
+          });
+        }
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred. Please try again.');
+      setModalError({
+        title: 'Network Error',
+        message: 'An unexpected connection error occurred during sign up. Please try again.',
+        ctaText: 'Try Again',
+      });
     } finally {
       setLoading(false);
     }
@@ -504,6 +534,12 @@ return (
           </p>
         </div>
       </div>
+
+      <AuthErrorModal
+        isOpen={Boolean(modalError)}
+        onClose={() => setModalError(null)}
+        details={modalError}
+      />
     </div>
     );
 }

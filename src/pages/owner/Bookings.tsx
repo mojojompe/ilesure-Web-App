@@ -145,19 +145,19 @@ export function OwnerBookingsPage({ role }: { role: OwnerRole }) {
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
         {(['all', 'pending', 'confirmed', 'completed', 'shared'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-pill text-sm font-medium transition-all ${
+            className={`px-4 py-2 rounded-pill text-xs md:text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${
               filter === f
-                ? 'bg-burnt-brown text-white'
-                : 'bg-white text-text-secondary hover:bg-clay-border-light'
+                ? 'bg-burnt-brown text-white shadow-clay-sm'
+                : 'bg-white text-text-secondary hover:bg-clay-border-light border border-clay-border'
             }`}
           >
             {f === 'shared' ? (
-              <span className="flex items-center gap-1"><UserMultiple02Icon className="w-3 h-3" /> Shared</span>
+              <span className="flex items-center gap-1"><UserMultiple02Icon className="w-3.5 h-3.5" /> Shared</span>
             ) : (
               f.charAt(0).toUpperCase() + f.slice(1)
             )}

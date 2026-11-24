@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { useAuth } from '../api/authContext';
 import { API_BASE_URL } from '../api/config';
 import { ERROR_CODE } from '../api/apiError';
+import { AuthErrorModal, type AuthErrorDetails } from '../components/auth/AuthErrorModal';
 
 export function LoginPage() {
   const navigate = useNavigate();
@@ -13,6 +14,7 @@ export function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [modalError, setModalError] = useState<AuthErrorDetails | null>(null);
   // The API client lands a suspended account here with ?reason=suspended.
   const [errors, setErrors] = useState<{ email?: string; password?: string; general?: string }>(() =>
     new URLSearchParams(window.location.search).get('reason') === 'suspended'
@@ -27,10 +29,32 @@ export function LoginPage() {
 
   const validate = () => {
     const e: { email?: string; password?: string } = {};
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = 'Enter a valid email';
-    if (!password) e.password = 'Password is required';
+    if (!email) {
+      setModalError({
+        title: 'Incomplete Credentials',
+        message: 'Please provide both your registered email address and password to sign in.',
+        ctaText: 'Enter Credentials',
+      });
+      return false;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setModalError({
+        title: 'Invalid Email Format',
+        message: 'The email address provided does not appear valid. Please check for typos and try again.',
+        ctaText: 'Fix Email',
+      });
+      return false;
+    }
+    if (!password) {
+      setModalError({
+        title: 'Incomplete Credentials',
+        message: 'Please enter your account password to sign in.',
+        ctaText: 'Enter Password',
+      });
+      return false;
+    }
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -52,24 +76,46 @@ export function LoginPage() {
         } else if (userRole === 'agent' || userRole === 'landlord' || userRole === 'sub_agent') {
           navigate('/agent');
         } else {
-          navigate('/');
+          // Student or individual on web app
+          setModalError({
+            title: 'Wrong Platform for Sign-In',
+            message: 'Your account is registered as a student or individual renter. This portal is reserved for agents and property companies. Please open the iléSure mobile PWA to access your account.',
+            ctaText: 'Switch to Renter PWA',
+            onCtaClick: () => {
+              window.location.href = 'https://app.ilesure.com';
+            },
+          });
+          return;
         }
       } else if (result.errorCode === ERROR_CODE.EMAIL_NOT_VERIFIED) {
-        // QA-AGT-031: the credentials were right; the address was never verified. Hand them to
-        // the OTP screen with the address prefilled, it can resend a code, so an expired
-        // original is not a dead end.
-        navigate('/create-otp', { state: { email: result.email || email } });
+        setModalError({
+          title: 'Email Verification Required',
+          message: 'Your account has been registered, but your email has not been verified yet. Click below to verify your email code.',
+          ctaText: 'Verify Email',
+          onCtaClick: () => navigate('/create-otp', { state: { email: result.email || email } }),
+        });
       } else if (result.errorCode === ERROR_CODE.ACCOUNT_DELETED) {
-        // Not in the API contract's ERROR_CODES: the current backend has no account-deletion
-        // flow and never sends this code. Kept for an older deployment that did.
-        // The backend now refuses login outright for a deleted account. Send them to the
-        // reactivation screen with the address prefilled instead of a dead-end error.
         navigate('/reactivate', { state: { email } });
       } else {
-        setErrors({ general: result.error || 'Invalid email or password. Try again.' });
+        const errMsg = result.error || 'Invalid email or password.';
+        const isWrongPlatform = errMsg.toLowerCase().includes('platform') || errMsg.toLowerCase().includes('renter');
+        setModalError({
+          title: isWrongPlatform ? 'Wrong Platform for Sign-In' : 'Invalid Login Credentials',
+          message: isWrongPlatform
+            ? 'This account cannot be accessed on the agent/company portal. Please use the mobile PWA.'
+            : (result.error || 'The email or password you entered is incorrect. Please verify your credentials or reset your password.'),
+          ctaText: isWrongPlatform ? 'Switch to Renter PWA' : 'Try Again',
+          onCtaClick: isWrongPlatform ? () => { window.location.href = 'https://app.ilesure.com'; } : undefined,
+          secondaryText: !isWrongPlatform ? 'Forgot Password?' : undefined,
+          onSecondaryClick: !isWrongPlatform ? () => navigate('/forgot-password') : undefined,
+        });
       }
     } catch {
-      setErrors({ general: 'Invalid email or password. Try again.' });
+      setModalError({
+        title: 'Sign In Failed',
+        message: 'Could not complete login request. Please check your network and try again.',
+        ctaText: 'Try Again',
+      });
     } finally {
       setLoading(false);
     }
@@ -173,6 +219,12 @@ export function LoginPage() {
           </div>
         </div>
       </div>
+
+      <AuthErrorModal
+        isOpen={Boolean(modalError)}
+        onClose={() => setModalError(null)}
+        details={modalError}
+      />
     </div>
   );
 }

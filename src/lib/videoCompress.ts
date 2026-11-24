@@ -145,7 +145,7 @@ async function convertOnce(
       audio: { codec: 'aac', quality: new Quality({ bitrate: AUDIO_BPS }), numberOfChannels: 2 },
     });
     if (!conversion.isValid) throw new Error("This video's format can't be converted in the browser. Only the photos will be used.");
-    conversion.onProgress = (p) => onProgress?.(Math.min(1, Math.max(0, p)));
+    conversion.onProgress = (p: number) => onProgress?.(Math.min(1, Math.max(0, p)));
     const abort = () => void conversion.cancel();
     signal?.addEventListener('abort', abort);
     try {

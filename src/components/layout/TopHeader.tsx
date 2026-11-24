@@ -1,9 +1,10 @@
-import { Menu01Icon, Search01Icon, Notification02Icon, ArrowDown01Icon, ReloadIcon } from '@hugeicons/react';
+import { Menu01Icon, Search01Icon, Notification02Icon, ArrowDown01Icon, ReloadIcon, BotIcon } from '@hugeicons/react';
 import { useState, useEffect } from 'react';
 import { clsx } from 'clsx';
 import { useAuth } from '../../api/authContext';
 import { useNavigate } from 'react-router-dom';
 import { EmptyState } from '../ui/EmptyState';
+import { useAIChatStore, aichatStore } from '../support/AIChatState';
 
 interface TopHeaderProps {
   onMenuClick: () => void;
@@ -107,7 +108,24 @@ export function TopHeader({ onMenuClick, title, subtitle, onReload, isCollapsed 
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2.5">
+          {/* AI Support Pill with Pulsing Green Dot */}
+          <button
+            onClick={() => aichatStore.toggle()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surfaceLight hover:bg-mustard-pale/50 border border-clay-border text-text-primary text-xs font-bold transition-all shadow-xs active:scale-95 group"
+            title="AI Support"
+            aria-label="Open AI Support"
+          >
+            <BotIcon className="w-4 h-4 text-mustard group-hover:scale-105 transition-transform" />
+            <span className="hidden sm:inline text-xs font-bold text-text-secondary group-hover:text-text-primary">
+              AI Support
+            </span>
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+          </button>
+
           <div className="relative">
             <button
               onClick={() => setShowNotifications(!showNotifications)}

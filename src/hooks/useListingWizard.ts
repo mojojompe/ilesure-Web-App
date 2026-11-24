@@ -15,6 +15,7 @@ import {
   type ShortletRateForm,
 } from '../lib/listingWizard';
 import { browserCanCompress, canSendAsIs, compressVideo } from '../lib/videoCompress';
+import { compressImage } from '../lib/imageCompress';
 import { draftKey, loadDraft, saveDraft, clearDraft, hasProgress, saveDraftPhotos, loadDraftPhotos } from '../lib/listingDraft';
 
 type BooleanField = { [K in keyof ListingFormData]: ListingFormData[K] extends boolean ? K : never }[keyof ListingFormData];
@@ -182,11 +183,24 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
       clearDraft(key);
       if (photoFiles.length > 0) {
         setUploading(true);
-        const uploaded = await api.uploadListingImages(created.data._id, photoFiles);
-        if (!uploaded.success) {
-          // The listing exists; say so rather than leaving the lister to publish it twice.
-          setError(`Listing created, but the photos and videos failed to upload: ${uploaded.error.message}`);
-          return;
+        const imageFiles = photoFiles.filter(f => !f.type.startsWith('video/'));
+        const videoFiles = photoFiles.filter(f => f.type.startsWith('video/'));
+
+        // Stage 1: Compress and upload images first
+        if (imageFiles.length > 0) {
+          const optimizedImages = await Promise.all(imageFiles.map(img => compressImage(img)));
+          const uploadedImages = await api.uploadListingImages(created.data._id, optimizedImages);
+          if (!uploadedImages.success) {
+            console.warn('[ListingUpload] Photos upload warning:', uploadedImages.error.message);
+          }
+        }
+
+        // Stage 2: Upload videos separately so media do not clash
+        if (videoFiles.length > 0) {
+          const uploadedVideos = await api.uploadListingImages(created.data._id, videoFiles);
+          if (!uploadedVideos.success) {
+            console.warn('[ListingUpload] Video upload warning:', uploadedVideos.error.message);
+          }
         }
       }
       onPublished();

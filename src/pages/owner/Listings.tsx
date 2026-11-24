@@ -639,28 +639,28 @@ export function OwnerListingsPage({ role }: { role: OwnerRole }) {
         </div>
       )}
 
-      <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-3 mb-6">
         <div className="relative flex-1">
           <Search01Icon className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-          <input type="text" placeholder="Search listings..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="clay-input w-full pl-11" />
+          <input type="text" placeholder="Search listings..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="clay-input w-full pl-11 h-11" />
         </div>
-        <div className="flex gap-2">
-          <select className="clay-input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+        <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+          <select className="clay-input flex-1 sm:w-auto h-11 text-xs" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
             <option value="all">All Types</option>
             {propertyTypes.map(opt => <option key={opt.value} value={opt.value}>{opt.label}</option>)}
           </select>
-          <Button variant="primary" onClick={() => navigate(`/${role}/create-listing`)}>
-            <PlusSignIcon className="w-4 h-4 mr-2" /> Add Listing
+          <Button variant="primary" onClick={() => navigate(`/${role}/create-listing`)} className="whitespace-nowrap h-11 shrink-0">
+            <PlusSignIcon className="w-4 h-4 mr-1.5" /> Add Listing
           </Button>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-6">
+      <div className="flex gap-2 mb-6 overflow-x-auto no-scrollbar pb-1">
         {(['all', 'active', 'fully_booked', 'archived'] as const).map(f => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`px-4 py-2 rounded-pill text-sm font-medium transition-all ${filter === f ? 'bg-burnt-brown text-white' : 'bg-white text-text-secondary hover:bg-clay-border-light'}`}
+            className={`px-4 py-2 rounded-pill text-xs md:text-sm font-semibold whitespace-nowrap transition-all shrink-0 ${filter === f ? 'bg-burnt-brown text-white shadow-clay-sm' : 'bg-white text-text-secondary hover:bg-clay-border-light border border-clay-border'}`}
           >
             {f === 'fully_booked' ? 'Occupied' : f === 'archived' ? 'Archived / Inactive' : f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
