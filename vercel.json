@@ -23,7 +23,7 @@
         },
         {
           "key": "Permissions-Policy",
-          "value": "geolocation=(self), camera=(self \"https://identity.dojah.io\" \"https://widget.dojah.io\"), microphone=(self \"https://identity.dojah.io\" \"https://widget.dojah.io\"), unload=*"
+          "value": "geolocation=(self \"https://identity.dojah.io\" \"https://widget.dojah.io\"), camera=(self \"https://identity.dojah.io\" \"https://widget.dojah.io\"), microphone=(self \"https://identity.dojah.io\" \"https://widget.dojah.io\"), fullscreen=(self \"https://identity.dojah.io\" \"https://widget.dojah.io\"), unload=*"
         },
         {
           "key": "Content-Security-Policy",
