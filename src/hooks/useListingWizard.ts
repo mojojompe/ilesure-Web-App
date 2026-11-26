@@ -40,6 +40,10 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
   const [tenancyAgreement, setTenancyAgreement] = useState<TenancyAgreementDocument | null>(initialDraft?.tenancyAgreement ?? null);
   const [photosLoaded, setPhotosLoaded] = useState(false);
   const published = useRef(false);
+  /** Set once the listing is created, so a retried upload does not create it again. */
+  const createdListingId = useRef<string | null>(null);
+  /** Upload batches (photos, then each video) already saved on that listing. */
+  const uploadedBatches = useRef(new Set<number>());
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -173,34 +177,43 @@ export function useListingWizard(role: OwnerRole, onPublished: () => void, userI
     setError(null);
     setSubmitting(true);
     try {
-      const created = await api.createListing(buildListingPayload(form, { coordinates, tenancyAgreement }));
-      if (!created.success) {
-        setError(describeSubmitError(created.error));
-        return;
+      // A retry after a failed upload reuses the listing already created, so it is not made twice.
+      let listingId = createdListingId.current;
+      if (!listingId) {
+        const created = await api.createListing(buildListingPayload(form, { coordinates, tenancyAgreement }));
+        if (!created.success) {
+          setError(describeSubmitError(created.error));
+          return;
+        }
+        listingId = created.data._id;
+        createdListingId.current = listingId;
+        // The listing exists now; a leftover draft would invite publishing it twice.
+        published.current = true;
+        clearDraft(key);
       }
-      // The listing exists now; a leftover draft would invite publishing it twice.
-      published.current = true;
-      clearDraft(key);
+
       if (photoFiles.length > 0) {
         setUploading(true);
-        const imageFiles = photoFiles.filter(f => !f.type.startsWith('video/'));
-        const videoFiles = photoFiles.filter(f => f.type.startsWith('video/'));
+        const imageFiles = photoFiles.filter((f) => !f.type.startsWith('video/'));
+        const videoFiles = photoFiles.filter((f) => f.type.startsWith('video/'));
 
-        // Stage 1: Compress and upload images first
-        if (imageFiles.length > 0) {
-          const optimizedImages = await Promise.all(imageFiles.map(img => compressImage(img)));
-          const uploadedImages = await api.uploadListingImages(created.data._id, optimizedImages);
-          if (!uploadedImages.success) {
-            console.warn('[ListingUpload] Photos upload warning:', uploadedImages.error.message);
-          }
-        }
+        // Photos are compressed and sent together; each video goes in its own request so no
+        // single request runs long enough to be cut off on a mobile connection.
+        const batches: File[][] = [];
+        if (imageFiles.length > 0) batches.push(await Promise.all(imageFiles.map((img) => compressImage(img))));
+        videoFiles.forEach((v) => batches.push([v]));
 
-        // Stage 2: Upload videos separately so media do not clash
-        if (videoFiles.length > 0) {
-          const uploadedVideos = await api.uploadListingImages(created.data._id, videoFiles);
-          if (!uploadedVideos.success) {
-            console.warn('[ListingUpload] Video upload warning:', uploadedVideos.error.message);
+        for (let i = 0; i < batches.length; i++) {
+          if (uploadedBatches.current.has(i)) continue;
+          const isVideo = batches[i][0].type.startsWith('video/');
+          const result = await api.uploadListingImages(listingId, batches[i]);
+          if (!result.success) {
+            setError(
+              `Your listing was saved, but ${isVideo ? 'a video' : 'the photos'} failed to upload: ${result.error.message} Press Publish again to retry the upload.`,
+            );
+            return;
           }
+          uploadedBatches.current.add(i);
         }
       }
       onPublished();
