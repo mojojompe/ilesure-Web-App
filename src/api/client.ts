@@ -295,9 +295,11 @@ class ApiClient {
 
   async upload<T>(url: string, formData: FormData, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
     return this.client.post<T>(url, formData, {
+      timeout: 180000,
       ...config,
       headers: {
         'Content-Type': 'multipart/form-data',
+        ...config?.headers,
       },
     });
   }

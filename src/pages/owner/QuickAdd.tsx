@@ -10,6 +10,7 @@ import { useAuth } from '../../api/authContext';
 import { userApi } from '../../api/user';
 import { ownerApi, type OwnerRole } from '../../api/owner';
 import { buildListingPayload, describeSubmitError, isVerifiedToList, MAX_MEDIA, MIN_PHOTOS, ALLOWED_PHOTO_TYPES, MAX_PHOTO_SIZE_BYTES, type ListingFormData } from '../../lib/listingWizard';
+import { compressImage } from '../../lib/imageCompress';
 import { parseListingMessage } from '../../lib/whatsappListingParser';
 import { extractFrames, grabFrame, pickBestFrames, releaseFrames, type VideoFrame } from '../../lib/videoFrames';
 import { saveDraftPhotos, loadDraftPhotos } from '../../lib/listingDraft';
@@ -479,7 +480,7 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
       </div>
 
       <div className="space-y-3">
-        <div><FieldLabel guessed={g('distanceFromSchool')}>Distance from school</FieldLabel><Chips options={distanceOptions} value={form.distanceFromSchool} onChange={(v) => setField('distanceFromSchool', v)} guessed={g('distanceFromSchool')} /></div>
+        <div><FieldLabel guessed={g('distanceFromSchool')}>Distance from Landmark</FieldLabel><Chips options={distanceOptions} value={form.distanceFromSchool} onChange={(v) => setField('distanceFromSchool', v)} guessed={g('distanceFromSchool')} /></div>
         <div><FieldLabel guessed={g('furnishing')}>Furnishing</FieldLabel><Chips options={furnishingOptions} value={form.furnishing} onChange={(v) => setField('furnishing', v)} guessed={g('furnishing')} /></div>
         <div><FieldLabel guessed={g('power')}>Power</FieldLabel><Chips options={powerOptions} value={form.power} onChange={(v) => setField('power', v)} guessed={g('power')} /></div>
         <div><FieldLabel guessed={g('water')}>Water</FieldLabel><Chips options={waterOptions} value={form.water} onChange={(v) => setField('water', v)} guessed={g('water')} /></div>
@@ -546,7 +547,7 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
       )}
       {card.status === 'failed' && card.error && <ErrorLine message={card.error} />}
       {card.status === 'publishing' && (
-        <p className="flex items-center gap-2 text-sm text-text-secondary"><Loading02Icon className="w-4 h-4 animate-spin text-mustard" /> Publishing…</p>
+        <p className="flex items-center gap-2 text-sm text-text-secondary"><Loading02Icon className="w-4 h-4 animate-spin text-mustard" /> {card.uploadStage === 'video' ? 'Uploading video…' : 'Uploading photos…'}</p>
       )}
       {card.status !== 'publishing' && problem && <p className="text-xs text-status-error">Before publishing: {problem}</p>}
     </fieldset>
@@ -580,6 +581,7 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
   const [publishing, setPublishing] = useState(false);
   const cardsRef = useRef(cards);
   cardsRef.current = cards;
+  const compressedImagesRef = useRef(new WeakMap<File, Promise<File>>());
 
   // Bring back unpublished drafts (fields from localStorage, files from IndexedDB).
   useEffect(() => {
@@ -634,7 +636,13 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
     setPublishing(true);
     try {
       for (const card of cardsRef.current.filter((c) => (c.status === 'draft' || c.status === 'failed') && !cardProblem(c))) {
-        updateCard(card.id, { status: 'publishing', error: undefined });
+        const media = cardMedia(card);
+        const imageFiles = media.filter((f) => !f.type.startsWith('video/'));
+        const videoFiles = media.filter((f) => f.type.startsWith('video/'));
+        const uploadStage = !card.photosUploaded && imageFiles.length > 0
+          ? 'photos'
+          : !card.videoUploaded && videoFiles.length > 0 ? 'video' : undefined;
+        updateCard(card.id, { status: 'publishing', error: undefined, uploadStage });
         let listingId = card.listingId;
         if (!listingId) {
           const created = await api.createListing(buildListingPayload(card.form));
@@ -645,12 +653,44 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
           listingId = created.data._id;
           updateCard(card.id, { listingId });
         }
-        const uploaded = await api.uploadListingImages(listingId, cardMedia(card));
-        if (!uploaded.success) {
-          updateCard(card.id, { status: 'failed', listingId, error: `The listing was created, but the photos didn't upload (${uploaded.error.message}). Press Publish again to retry the photos only.` });
-          continue;
+
+        if (imageFiles.length > 0 && !card.photosUploaded) {
+          const optimizedImages = await Promise.all(imageFiles.map((image) => {
+            let compressed = compressedImagesRef.current.get(image);
+            if (!compressed) {
+              compressed = compressImage(image);
+              compressedImagesRef.current.set(image, compressed);
+            }
+            return compressed;
+          }));
+          const uploadedImages = await api.uploadListingImages(listingId, optimizedImages);
+          if (!uploadedImages.success) {
+            updateCard(card.id, {
+              status: 'failed',
+              listingId,
+              uploadStage: undefined,
+              error: `The listing was created, but photos failed to upload (${uploadedImages.error.message}). Press Publish again to retry.`,
+            });
+            continue;
+          }
+          updateCard(card.id, { photosUploaded: true, uploadStage: videoFiles.length > 0 ? 'video' : undefined });
         }
-        updateCard(card.id, { status: 'published', listingId });
+
+        if (videoFiles.length > 0 && !card.videoUploaded) {
+          const uploadedVideos = await api.uploadListingImages(listingId, videoFiles);
+          if (!uploadedVideos.success) {
+            updateCard(card.id, {
+              status: 'failed',
+              listingId,
+              uploadStage: undefined,
+              error: `Photos uploaded, but video failed to upload (${uploadedVideos.error.message}). Press Publish again to retry.`,
+            });
+            continue;
+          }
+          updateCard(card.id, { videoUploaded: true, uploadStage: undefined });
+        }
+
+        updateCard(card.id, { status: 'published', listingId, uploadStage: undefined });
       }
     } finally {
       setPublishing(false);

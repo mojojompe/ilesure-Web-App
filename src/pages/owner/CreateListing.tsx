@@ -170,7 +170,7 @@ function LocationStep({ w }: { w: ListingWizard }) {
         <input type="text" value={form.area} onChange={e => setField('area', e.target.value)} placeholder="e.g., Toll Gate, Bodija" className="clay-input w-full" />
       </div>
       <div>
-        <label className={labelClass}>Distance from Campus / Town Centre</label>
+        <label className={labelClass}>Distance from Landmark</label>
         <OptionGrid options={distanceOptions} value={form.distanceFromSchool} onChange={v => setField('distanceFromSchool', v)} columns={3} />
       </div>
     </div>

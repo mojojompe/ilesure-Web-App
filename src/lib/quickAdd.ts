@@ -48,6 +48,9 @@ export interface QuickCard {
   error?: string;
   /** Set once the listing exists, so a retry only re-sends the photos. */
   listingId?: string;
+  photosUploaded?: boolean;
+  videoUploaded?: boolean;
+  uploadStage?: 'photos' | 'video';
 }
 
 let seq = 0;
