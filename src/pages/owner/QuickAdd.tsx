@@ -1,44 +1,104 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { clsx } from 'clsx';
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { clsx } from "clsx";
 import {
-  Alert01Icon, Cancel02Icon, FlashIcon, Loading02Icon, Tick02Icon, Upload01Icon, Video01Icon, Camera01Icon, Delete02Icon, StarIcon,
-} from '@hugeicons/react';
-import { AppLayout } from '../../components/layout/AppLayout';
-import { Button } from '../../components/ui/Button';
-import { useAuth } from '../../api/authContext';
-import { userApi } from '../../api/user';
-import { ownerApi, type OwnerRole } from '../../api/owner';
-import { buildListingPayload, describeSubmitError, isVerifiedToList, MAX_MEDIA, MIN_PHOTOS, ALLOWED_PHOTO_TYPES, MAX_PHOTO_SIZE_BYTES, type ListingFormData } from '../../lib/listingWizard';
-import { compressImage } from '../../lib/imageCompress';
-import { parseListingMessage } from '../../lib/whatsappListingParser';
-import { extractFrames, grabFrame, pickBestFrames, releaseFrames, type VideoFrame } from '../../lib/videoFrames';
-import { saveDraftPhotos, loadDraftPhotos } from '../../lib/listingDraft';
-import { canSendAsIs, compressVideo } from '../../lib/videoCompress';
+  Alert01Icon,
+  Cancel02Icon,
+  FlashIcon,
+  Loading02Icon,
+  Tick02Icon,
+  Upload01Icon,
+  Video01Icon,
+  Camera01Icon,
+  Delete02Icon,
+  StarIcon,
+} from "@hugeicons/react";
+import { AppLayout } from "../../components/layout/AppLayout";
+import { Button } from "../../components/ui/Button";
+import { useAuth } from "../../api/authContext";
+import { userApi } from "../../api/user";
+import { ownerApi, type OwnerRole } from "../../api/owner";
 import {
-  cardsFromMessage, cardMedia, cardProblem, cardsKey, cardPhotosKey, defaultsKey, loadDefaults, saveDefaults,
-  loadStoredCards, saveStoredCards, splitMedia, REMEMBERED_FIELDS, type QuickCard, type QuickDefaults, type RememberedField,
-} from '../../lib/quickAdd';
+  buildListingPayload,
+  describeSubmitError,
+  isVerifiedToList,
+  MAX_MEDIA,
+  MIN_PHOTOS,
+  ALLOWED_PHOTO_TYPES,
+  MAX_PHOTO_SIZE_BYTES,
+  type ListingFormData,
+} from "../../lib/listingWizard";
+import { compressImage } from "../../lib/imageCompress";
+import { parseListingMessage } from "../../lib/whatsappListingParser";
 import {
-  amenityOptions, distanceOptions, furnishingOptions, genderOptions, powerOptions, propertyTypes, waterOptions, type Option,
-} from '../../constants/listingVocabulary';
+  extractFrames,
+  grabFrame,
+  pickBestFrames,
+  releaseFrames,
+  type VideoFrame,
+} from "../../lib/videoFrames";
+import { saveDraftPhotos, loadDraftPhotos } from "../../lib/listingDraft";
+import { canSendAsIs, compressVideo } from "../../lib/videoCompress";
+import {
+  cardsFromMessage,
+  cardMedia,
+  cardProblem,
+  cardsKey,
+  cardPhotosKey,
+  defaultsKey,
+  loadDefaults,
+  saveDefaults,
+  loadStoredCards,
+  saveStoredCards,
+  splitMedia,
+  REMEMBERED_FIELDS,
+  type QuickCard,
+  type QuickDefaults,
+  type RememberedField,
+} from "../../lib/quickAdd";
+import {
+  amenityOptions,
+  distanceOptions,
+  furnishingOptions,
+  genderOptions,
+  powerOptions,
+  propertyTypes,
+  waterOptions,
+  type Option,
+} from "../../constants/listingVocabulary";
 
-const labelClass = 'block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5';
-const mb = (bytes: number) => `${(bytes / 1048576).toFixed(bytes < 10 * 1048576 ? 1 : 0)}MB`;
-const naira = (v: string | number) => (v === '' || !Number.isFinite(Number(v)) ? '' : `₦${Number(v).toLocaleString()}`);
+const labelClass =
+  "block text-[11px] font-semibold text-text-secondary uppercase tracking-wider mb-1.5";
+const mb = (bytes: number) =>
+  `${(bytes / 1048576).toFixed(bytes < 10 * 1048576 ? 1 : 0)}MB`;
+const naira = (v: string | number) =>
+  v === "" || !Number.isFinite(Number(v))
+    ? ""
+    : `₦${Number(v).toLocaleString()}`;
 
 // ---------------------------------------------------------------------------------------
 // Small pieces
 // ---------------------------------------------------------------------------------------
 
-function Chips<V extends string>({ options, value, onChange, guessed }: {
+function Chips<V extends string>({
+  options,
+  value,
+  onChange,
+  guessed,
+}: {
   options: readonly Option<V>[];
   value: V;
   onChange: (v: V) => void;
   guessed?: boolean;
 }) {
   return (
-    <div className={clsx('flex flex-wrap gap-1.5 rounded-clay-sm', guessed && 'outline-dashed outline-2 outline-offset-4 outline-mustard/60')}>
+    <div
+      className={clsx(
+        "flex flex-wrap gap-1.5 rounded-clay-sm",
+        guessed &&
+          "outline-dashed outline-2 outline-offset-4 outline-mustard/60",
+      )}
+    >
       {options.map((o) => (
         <button
           key={o.value}
@@ -46,8 +106,10 @@ function Chips<V extends string>({ options, value, onChange, guessed }: {
           onClick={() => onChange(o.value)}
           aria-pressed={value === o.value}
           className={clsx(
-            'px-3 py-2 sm:py-1.5 rounded-full border text-xs font-medium transition-all',
-            value === o.value ? 'border-mustard bg-mustard-pale text-mustard' : 'border-clay-border text-text-secondary hover:border-mustard'
+            "px-3 py-2 sm:py-1.5 rounded-full border text-xs font-medium transition-all",
+            value === o.value
+              ? "border-mustard bg-mustard-pale text-mustard"
+              : "border-clay-border text-text-secondary hover:border-mustard",
           )}
         >
           {o.label}
@@ -57,11 +119,21 @@ function Chips<V extends string>({ options, value, onChange, guessed }: {
   );
 }
 
-function FieldLabel({ children, guessed }: { children: React.ReactNode; guessed?: boolean }) {
+function FieldLabel({
+  children,
+  guessed,
+}: {
+  children: React.ReactNode;
+  guessed?: boolean;
+}) {
   return (
     <span className={labelClass}>
       {children}
-      {guessed && <span className="ml-2 normal-case tracking-normal font-medium text-mustard">· not in message, please check</span>}
+      {guessed && (
+        <span className="ml-2 normal-case tracking-normal font-medium text-mustard">
+          · not in message, please check
+        </span>
+      )}
     </span>
   );
 }
@@ -75,26 +147,58 @@ function ErrorLine({ message }: { message: string }) {
   );
 }
 
-function Thumb({ file, onRemove, onCover, isCover }: { file: File; onRemove: () => void; onCover?: () => void; isCover?: boolean }) {
+function Thumb({
+  file,
+  onRemove,
+  onCover,
+  isCover,
+}: {
+  file: File;
+  onRemove: () => void;
+  onCover?: () => void;
+  isCover?: boolean;
+}) {
   // Created in the effect (not useMemo) so StrictMode's mount-unmount-mount cannot leave the
   // thumbnail pointing at a URL its own cleanup already revoked.
-  const [url, setUrl] = useState('');
+  const [url, setUrl] = useState("");
   useEffect(() => {
     const next = URL.createObjectURL(file);
     setUrl(next);
     return () => URL.revokeObjectURL(next);
   }, [file]);
-  const isVideo = file.type.startsWith('video/');
+  const isVideo = file.type.startsWith("video/");
   return (
     <div className="relative w-20 h-20 shrink-0 rounded-clay-sm overflow-hidden bg-clay-border/40 group">
-      {url && (isVideo ? <video src={url} className="w-full h-full object-cover" muted /> : <img src={url} alt="" className="w-full h-full object-cover" />)}
-      {isVideo && <Video01Icon className="absolute bottom-1 left-1 w-4 h-4 text-white drop-shadow" />}
-      {isCover && <span className="absolute bottom-0 inset-x-0 bg-mustard text-white text-[10px] text-center font-semibold">Cover</span>}
-      <button type="button" onClick={onRemove} aria-label="Remove" className="absolute top-1 right-1 w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-black/60 text-white flex items-center justify-center">
+      {url &&
+        (isVideo ? (
+          <video src={url} className="w-full h-full object-cover" muted />
+        ) : (
+          <img src={url} alt="" className="w-full h-full object-cover" />
+        ))}
+      {isVideo && (
+        <Video01Icon className="absolute bottom-1 left-1 w-4 h-4 text-white drop-shadow" />
+      )}
+      {isCover && (
+        <span className="absolute bottom-0 inset-x-0 bg-mustard text-white text-[10px] text-center font-semibold">
+          Cover
+        </span>
+      )}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Remove"
+        className="absolute top-1 right-1 w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-black/60 text-white flex items-center justify-center"
+      >
         <Cancel02Icon className="w-3.5 h-3.5" />
       </button>
       {onCover && !isCover && !isVideo && (
-        <button type="button" onClick={onCover} aria-label="Make cover photo" title="Make cover photo" className="absolute top-1 left-1 w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-black/60 text-white flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100 transition-opacity">
+        <button
+          type="button"
+          onClick={onCover}
+          aria-label="Make cover photo"
+          title="Make cover photo"
+          className="absolute top-1 left-1 w-7 h-7 sm:w-6 sm:h-6 rounded-full bg-black/60 text-white flex items-center justify-center sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100 transition-opacity"
+        >
           <StarIcon className="w-3.5 h-3.5" />
         </button>
       )}
@@ -122,8 +226,14 @@ interface VideoState {
   abort: AbortController;
 }
 
-function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (cards: QuickCard[]) => void }) {
-  const [text, setText] = useState('');
+function Composer({
+  defaults,
+  onCreate,
+}: {
+  defaults: QuickDefaults;
+  onCreate: (cards: QuickCard[]) => void;
+}) {
+  const [text, setText] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [video, setVideo] = useState<VideoState | null>(null);
   const [attachVideo, setAttachVideo] = useState(true);
@@ -134,14 +244,20 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
   const videoRef = useRef<VideoState | null>(null);
   videoRef.current = video;
 
-  useEffect(() => () => {
-    if (videoRef.current) {
-      releaseFrames(videoRef.current.frames);
-      URL.revokeObjectURL(videoRef.current.url);
-    }
-  }, []);
+  useEffect(
+    () => () => {
+      if (videoRef.current) {
+        releaseFrames(videoRef.current.frames);
+        URL.revokeObjectURL(videoRef.current.url);
+      }
+    },
+    [],
+  );
 
-  const parsed = useMemo(() => (text.trim() ? parseListingMessage(text) : null), [text]);
+  const parsed = useMemo(
+    () => (text.trim() ? parseListingMessage(text) : null),
+    [text],
+  );
 
   const clearVideo = () => {
     if (video) {
@@ -156,8 +272,16 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
     clearVideo();
     const asIs = canSendAsIs(file);
     const state: VideoState = {
-      file, url: URL.createObjectURL(file), frames: [], selected: [], loading: true, progress: 0,
-      uploadFile: asIs ? file : null, shrinking: false, shrinkProgress: 0, abort: new AbortController(),
+      file,
+      url: URL.createObjectURL(file),
+      frames: [],
+      selected: [],
+      loading: true,
+      progress: 0,
+      uploadFile: asIs ? file : null,
+      shrinking: false,
+      shrinkProgress: 0,
+      abort: new AbortController(),
     };
     setVideo(state);
     setAttachVideo(true);
@@ -165,11 +289,28 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
     try {
       const frames = await extractFrames(file, {
         onUpdate: (frames, done, total) =>
-          setVideo((v) => (v && v.file === file ? { ...v, frames, progress: Math.round((done / total) * 100) } : v)),
+          setVideo((v) =>
+            v && v.file === file
+              ? { ...v, frames, progress: Math.round((done / total) * 100) }
+              : v,
+          ),
       });
-      setVideo((v) => (v && v.file === file ? { ...v, frames, loading: false, selected: pickBestFrames(frames, 6) } : v));
+      setVideo((v) =>
+        v && v.file === file
+          ? {
+              ...v,
+              frames,
+              loading: false,
+              selected: pickBestFrames(frames, 6),
+            }
+          : v,
+      );
     } catch (e) {
-      setVideo((v) => (v && v.file === file ? { ...v, loading: false, error: (e as Error).message } : v));
+      setVideo((v) =>
+        v && v.file === file
+          ? { ...v, loading: false, error: (e as Error).message }
+          : v,
+      );
     }
     // Frames first (quick), then shrink the video for upload if it is too big or not MP4/MOV.
     if (asIs || state.abort.signal.aborted) return;
@@ -177,41 +318,77 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
     try {
       const small = await compressVideo(file, {
         signal: state.abort.signal,
-        onProgress: (f) => setVideo((v) => (mine(v) ? { ...v!, shrinkProgress: Math.round(f * 100) } : v)),
+        onProgress: (f) =>
+          setVideo((v) =>
+            mine(v) ? { ...v!, shrinkProgress: Math.round(f * 100) } : v,
+          ),
       });
-      setVideo((v) => (mine(v) ? { ...v!, shrinking: false, uploadFile: small } : v));
+      setVideo((v) =>
+        mine(v) ? { ...v!, shrinking: false, uploadFile: small } : v,
+      );
     } catch (e) {
       if (state.abort.signal.aborted) return;
-      setVideo((v) => (mine(v) ? { ...v!, shrinking: false, shrinkError: (e as Error).message } : v));
+      setVideo((v) =>
+        mine(v)
+          ? { ...v!, shrinking: false, shrinkError: (e as Error).message }
+          : v,
+      );
     }
   };
 
   const addFiles = (files: File[]) => {
     setProblem(null);
-    const vid = files.find((f) => f.type.startsWith('video/'));
+    const vid = files.find((f) => f.type.startsWith("video/"));
     if (vid) void loadVideo(vid);
-    const images = files.filter((f) => f.type.startsWith('image/'));
-    const ok = images.filter((f) => ALLOWED_PHOTO_TYPES.includes(f.type) && f.size <= MAX_PHOTO_SIZE_BYTES);
-    if (ok.length < images.length) setProblem('Some photos were skipped: only JPEG, PNG or WEBP up to 5MB.');
+    const images = files.filter((f) => f.type.startsWith("image/"));
+    const ok = images.filter(
+      (f) =>
+        ALLOWED_PHOTO_TYPES.includes(f.type) && f.size <= MAX_PHOTO_SIZE_BYTES,
+    );
+    if (ok.length < images.length)
+      setProblem("Some photos were skipped: only JPEG, PNG or WEBP up to 5MB.");
     setPhotos((prev) => [...prev, ...ok].slice(0, MAX_MEDIA));
   };
 
   const toggleFrame = (id: string) =>
-    setVideo((v) => v && { ...v, selected: v.selected.includes(id) ? v.selected.filter((s) => s !== id) : [...v.selected, id] });
+    setVideo(
+      (v) =>
+        v && {
+          ...v,
+          selected: v.selected.includes(id)
+            ? v.selected.filter((s) => s !== id)
+            : [...v.selected, id],
+        },
+    );
 
   const grabCurrent = async () => {
     const el = previewRef.current;
     if (!el || !video) return;
     el.pause();
     try {
-      const frame = await grabFrame(el, el.currentTime, video.file.name.replace(/\.[^.]+$/, ''));
-      setVideo((v) => v && { ...v, frames: [...v.frames, frame].sort((a, b) => a.time - b.time), selected: [...v.selected, frame.id] });
+      const frame = await grabFrame(
+        el,
+        el.currentTime,
+        video.file.name.replace(/\.[^.]+$/, ""),
+      );
+      setVideo(
+        (v) =>
+          v && {
+            ...v,
+            frames: [...v.frames, frame].sort((a, b) => a.time - b.time),
+            selected: [...v.selected, frame.id],
+          },
+      );
     } catch {
       setProblem("Couldn't grab that moment. Try pausing a little later.");
     }
   };
 
-  const selectedFrames = video ? video.frames.filter((f) => video.selected.includes(f.id)).map((f) => f.file) : [];
+  const selectedFrames = video
+    ? video.frames
+        .filter((f) => video.selected.includes(f.id))
+        .map((f) => f.file)
+    : [];
   const videoToAttach = video && attachVideo ? video.uploadFile : null;
   const waitingForVideo = Boolean(video && attachVideo && video.shrinking);
   const allPhotos = [...photos, ...selectedFrames];
@@ -220,19 +397,28 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
 
   const create = () => {
     if (!parsed) {
-      setProblem('Paste the message first.');
+      setProblem("Paste the message first.");
       return;
     }
     if (waitingForVideo) {
-      setProblem('The video is still being shrunk. Wait for it, or untick "attach the video" to use only the photos.');
+      setProblem(
+        'The video is still being shrunk. Wait for it, or untick "attach the video" to use only the photos.',
+      );
       return;
     }
     if (overLimit) {
-      setProblem(`A listing can hold ${MAX_MEDIA} photos and videos. Untick ${allPhotos.length - room} to continue.`);
+      setProblem(
+        `A listing can hold ${MAX_MEDIA} photos and videos. Untick ${allPhotos.length - room} to continue.`,
+      );
       return;
     }
-    onCreate(cardsFromMessage(parsed, defaults, { photos: allPhotos, video: videoToAttach }));
-    setText('');
+    onCreate(
+      cardsFromMessage(parsed, defaults, {
+        photos: allPhotos,
+        video: videoToAttach,
+      }),
+    );
+    setText("");
     setPhotos([]);
     clearVideo();
     setProblem(null);
@@ -241,56 +427,105 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
   return (
     <div className="clay-card p-5 space-y-4">
       <div>
-        <label htmlFor="qa-text" className={labelClass}>1. Paste the agent's message</label>
+        <label htmlFor="qa-text" className={labelClass}>
+          1. Paste the agent's message
+        </label>
         <textarea
           id="qa-text"
           value={text}
           onChange={(e) => setText(e.target.value)}
           rows={5}
-          placeholder={'e.g. Direct letting, 5 unit of Room self con and 1 unit of Room and palour self con, Toll gate very close to Lead City University\nRent 800k\nRoom and palour 1.2m'}
+          placeholder={
+            "e.g. Direct letting, 5 unit of Room self con and 1 unit of Room and palour self con, Toll gate very close to Lead City University\nRent 800k\nRoom and palour 1.2m"
+          }
           className="clay-input w-full resize-y text-sm"
         />
         {parsed && (
           <div className="mt-2 flex flex-wrap gap-1.5 text-xs">
             {parsed.units.map((u) => (
-              <span key={u.propertyType} className="px-2 py-1 rounded-full bg-mustard-pale text-mustard font-medium">
-                {u.label}{u.count && u.count > 1 ? ` ×${u.count}` : ''}{u.rent ? ` · ${naira(u.rent)}` : ' · no price'}
+              <span
+                key={u.propertyType}
+                className="px-2 py-1 rounded-full bg-mustard-pale text-mustard font-medium"
+              >
+                {u.label}
+                {u.count && u.count > 1 ? ` ×${u.count}` : ""}
+                {u.rent ? ` · ${naira(u.rent)}` : " · no price"}
               </span>
             ))}
-            {parsed.area && <span className="px-2 py-1 rounded-full bg-clay-border/50 text-text-secondary">{parsed.area}</span>}
-            {parsed.landmark && <span className="px-2 py-1 rounded-full bg-clay-border/50 text-text-secondary">near {parsed.landmark}</span>}
+            {parsed.area && (
+              <span className="px-2 py-1 rounded-full bg-clay-border/50 text-text-secondary">
+                {parsed.area}
+              </span>
+            )}
+            {parsed.landmark && (
+              <span className="px-2 py-1 rounded-full bg-clay-border/50 text-text-secondary">
+                near {parsed.landmark}
+              </span>
+            )}
           </div>
         )}
       </div>
 
       <div>
-        <span className={labelClass}>2. Drop the video or photos they sent</span>
+        <span className={labelClass}>
+          2. Drop the video or photos they sent
+        </span>
         <div
-          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragging(true);
+          }}
           onDragLeave={() => setDragging(false)}
-          onDrop={(e) => { e.preventDefault(); setDragging(false); addFiles(Array.from(e.dataTransfer.files)); }}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            addFiles(Array.from(e.dataTransfer.files));
+          }}
           onClick={() => fileInput.current?.click()}
           role="button"
           tabIndex={0}
-          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') fileInput.current?.click(); }}
-          className={clsx('border-2 border-dashed rounded-clay-sm p-4 sm:p-5 text-center cursor-pointer transition-all', dragging ? 'border-mustard bg-mustard-pale/40' : 'border-clay-border hover:border-mustard')}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") fileInput.current?.click();
+          }}
+          className={clsx(
+            "border-2 border-dashed rounded-clay-sm p-4 sm:p-5 text-center cursor-pointer transition-all",
+            dragging
+              ? "border-mustard bg-mustard-pale/40"
+              : "border-clay-border hover:border-mustard",
+          )}
         >
           <Upload01Icon className="w-7 h-7 text-text-tertiary mx-auto mb-1" />
-          <p className="text-sm text-text-primary font-medium"><span className="hidden sm:inline">Drop files here or click to choose</span><span className="sm:hidden">Tap to choose a video or photos</span></p>
-          <p className="text-xs text-text-tertiary">We'll pull the best photos out of the video for you</p>
+          <p className="text-sm text-text-primary font-medium">
+            <span className="hidden sm:inline">
+              Drop files here or click to choose
+            </span>
+            <span className="sm:hidden">Tap to choose a video or photos</span>
+          </p>
+          <p className="text-xs text-text-tertiary">
+            We'll pull the best photos out of the video for you
+          </p>
           <input
             ref={fileInput}
             type="file"
             multiple
             accept="image/jpeg,image/png,image/webp,video/*"
             className="hidden"
-            onChange={(e) => { addFiles(Array.from(e.target.files || [])); e.target.value = ''; }}
+            onChange={(e) => {
+              addFiles(Array.from(e.target.files || []));
+              e.target.value = "";
+            }}
           />
         </div>
 
         {photos.length > 0 && (
           <div className="mt-3 flex gap-2 overflow-x-auto pb-1">
-            {photos.map((f, i) => <Thumb key={`${f.name}-${i}`} file={f} onRemove={() => setPhotos((p) => p.filter((_, j) => j !== i))} />)}
+            {photos.map((f, i) => (
+              <Thumb
+                key={`${f.name}-${i}`}
+                file={f}
+                onRemove={() => setPhotos((p) => p.filter((_, j) => j !== i))}
+              />
+            ))}
           </div>
         )}
 
@@ -299,19 +534,32 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
             <div className="flex items-center justify-between gap-3 text-xs text-text-secondary">
               <span className="flex items-center gap-1.5 min-w-0">
                 <Video01Icon className="w-4 h-4 shrink-0" />
-                <span className="truncate" title={video.file.name}>{video.file.name}</span>
+                <span className="truncate" title={video.file.name}>
+                  {video.file.name}
+                </span>
               </span>
-              <button type="button" onClick={clearVideo} className="shrink-0 py-1 text-status-error font-semibold hover:underline">Remove</button>
+              <button
+                type="button"
+                onClick={clearVideo}
+                className="shrink-0 py-1 text-status-error font-semibold hover:underline"
+              >
+                Remove
+              </button>
             </div>
             {video.loading && (
               <p className="flex items-center gap-1.5 text-xs text-text-secondary">
-                <Loading02Icon className="w-3.5 h-3.5 animate-spin text-mustard" /> Reading frames… {video.progress}%
+                <Loading02Icon className="w-3.5 h-3.5 animate-spin text-mustard" />{" "}
+                Reading frames… {video.progress}%
               </p>
             )}
-            {video.error ? <ErrorLine message={video.error} /> : (
+            {video.error ? (
+              <ErrorLine message={video.error} />
+            ) : (
               <>
                 <p className="text-xs text-text-secondary">
-                  {video.frames.length} different shots found. Tap to choose the ones you want (up to {MAX_MEDIA}). The clearest are already ticked: {video.selected.length} selected.
+                  {video.frames.length} different shots found. Tap to choose the
+                  ones you want (up to {MAX_MEDIA}). The clearest are already
+                  ticked: {video.selected.length} selected.
                 </p>
                 <div className="grid grid-cols-4 sm:grid-cols-6 gap-1.5 max-h-[28rem] overflow-y-auto pr-1">
                   {video.frames.map((f) => {
@@ -322,56 +570,112 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
                         type="button"
                         onClick={() => toggleFrame(f.id)}
                         aria-pressed={on}
-                        className={clsx('relative aspect-square rounded-clay-sm overflow-hidden border-2 transition-all', on ? 'border-mustard' : 'border-transparent opacity-60 hover:opacity-100')}
+                        className={clsx(
+                          "relative aspect-square rounded-clay-sm overflow-hidden border-2 transition-all",
+                          on
+                            ? "border-mustard"
+                            : "border-transparent opacity-60 hover:opacity-100",
+                        )}
                       >
-                        <img src={f.url} alt={`Frame at ${f.time.toFixed(1)}s`} className="w-full h-full object-cover" />
+                        <img
+                          src={f.url}
+                          alt={`Frame at ${f.time.toFixed(1)}s`}
+                          className="w-full h-full object-cover"
+                        />
                         <span className="absolute bottom-1 left-1 px-1 rounded bg-black/60 text-white text-[10px] font-medium">
-                          {Math.floor(f.time / 60)}:{String(Math.floor(f.time % 60)).padStart(2, '0')}
+                          {Math.floor(f.time / 60)}:
+                          {String(Math.floor(f.time % 60)).padStart(2, "0")}
                         </span>
-                        {on && <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-mustard flex items-center justify-center"><Tick02Icon className="w-3 h-3 text-white" /></span>}
+                        {on && (
+                          <span className="absolute top-1 right-1 w-5 h-5 rounded-full bg-mustard flex items-center justify-center">
+                            <Tick02Icon className="w-3 h-3 text-white" />
+                          </span>
+                        )}
                       </button>
                     );
                   })}
                 </div>
                 <details className="text-xs">
-                  <summary className="cursor-pointer text-text-secondary font-semibold">Need a specific moment? Pause the video and grab it</summary>
+                  <summary className="cursor-pointer text-text-secondary font-semibold">
+                    Need a specific moment? Pause the video and grab it
+                  </summary>
                   <div className="mt-2 space-y-2">
-                    <video ref={previewRef} src={video.url} controls muted playsInline className="w-full max-h-72 rounded-clay-sm bg-black" />
-                    <Button type="button" size="sm" variant="secondary" onClick={() => void grabCurrent()}>
-                      <Camera01Icon className="w-4 h-4 mr-1.5" /> Grab this frame
+                    <video
+                      ref={previewRef}
+                      src={video.url}
+                      controls
+                      muted
+                      playsInline
+                      className="w-full max-h-72 rounded-clay-sm bg-black"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => void grabCurrent()}
+                    >
+                      <Camera01Icon className="w-4 h-4 mr-1.5" /> Grab this
+                      frame
                     </Button>
                   </div>
                 </details>
               </>
             )}
-              <div className="space-y-1 text-xs text-text-secondary">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={attachVideo && !video.shrinkError}
-                    disabled={Boolean(video.shrinkError)}
-                    onChange={(e) => setAttachVideo(e.target.checked)}
-                  />
-                  {video.shrinking
-                    ? <span className="flex items-center gap-1.5"><Loading02Icon className="w-3.5 h-3.5 animate-spin text-mustard" /> Shrinking the video ({mb(video.file.size)}) to fit the 100MB limit… {video.shrinkProgress}%</span>
-                    : video.uploadFile
-                      ? `Also attach the video (${mb(video.uploadFile.size)}${video.uploadFile !== video.file ? `, shrunk from ${mb(video.file.size)}` : ''})`
-                      : 'Also attach the video'}
-                </label>
-                {video.shrinkError && <p className="text-status-error">{video.shrinkError}</p>}
-                {video.shrinking && <p>You can tick photos and fill the message while this runs. Untick to skip the video.</p>}
-              </div>
+            <div className="space-y-1 text-xs text-text-secondary">
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={attachVideo && !video.shrinkError}
+                  disabled={Boolean(video.shrinkError)}
+                  onChange={(e) => setAttachVideo(e.target.checked)}
+                />
+                {video.shrinking ? (
+                  <span className="flex items-center gap-1.5">
+                    <Loading02Icon className="w-3.5 h-3.5 animate-spin text-mustard" />{" "}
+                    Shrinking the video ({mb(video.file.size)}) to fit the 100MB
+                    limit… {video.shrinkProgress}%
+                  </span>
+                ) : video.uploadFile ? (
+                  `Also attach the video (${mb(video.uploadFile.size)}${video.uploadFile !== video.file ? `, shrunk from ${mb(video.file.size)}` : ""})`
+                ) : (
+                  "Also attach the video"
+                )}
+              </label>
+              {video.shrinkError && (
+                <p className="text-status-error">{video.shrinkError}</p>
+              )}
+              {video.shrinking && (
+                <p>
+                  You can tick photos and fill the message while this runs.
+                  Untick to skip the video.
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
 
       {problem && <ErrorLine message={problem} />}
-      {overLimit && !problem && <p className="text-xs text-status-error">{allPhotos.length} photos picked; a listing holds {room}{videoToAttach ? ' plus the video' : ''}.</p>}
+      {overLimit && !problem && (
+        <p className="text-xs text-status-error">
+          {allPhotos.length} photos picked; a listing holds {room}
+          {videoToAttach ? " plus the video" : ""}.
+        </p>
+      )}
 
-      <Button type="button" variant="primary" className="w-full" onClick={create} disabled={!text.trim() || Boolean(video?.loading) || waitingForVideo}>
+      <Button
+        type="button"
+        variant="primary"
+        className="w-full"
+        onClick={create}
+        disabled={!text.trim() || Boolean(video?.loading) || waitingForVideo}
+      >
         <FlashIcon className="w-4 h-4 mr-2" />
-        {parsed && parsed.units.length > 1 ? `Make ${parsed.units.length} draft listings` : 'Make draft listing'}
-        {allPhotos.length > 0 && ` · ${allPhotos.length} photo${allPhotos.length === 1 ? '' : 's'}`}
+        {parsed && parsed.units.length > 1
+          ? `Make ${parsed.units.length} draft listings`
+          : "Make draft listing"}
+        {allPhotos.length > 0 &&
+          ` · ${allPhotos.length} photo${allPhotos.length === 1 ? "" : "s"}`}
       </Button>
     </div>
   );
@@ -381,15 +685,23 @@ function Composer({ defaults, onCreate }: { defaults: QuickDefaults; onCreate: (
 // Draft card
 // ---------------------------------------------------------------------------------------
 
-function DraftCard({ card, onChange, onRemember, onRemove }: {
+function DraftCard({
+  card,
+  onChange,
+  onRemember,
+  onRemove,
+}: {
   card: QuickCard;
   onChange: (patch: Partial<QuickCard>) => void;
   onRemember: (field: RememberedField, value: string) => void;
   onRemove: () => void;
 }) {
   const { form } = card;
-  const locked = card.status === 'publishing' || card.status === 'published';
-  const setField = <K extends keyof ListingFormData>(field: K, value: ListingFormData[K]) => {
+  const locked = card.status === "publishing" || card.status === "published";
+  const setField = <K extends keyof ListingFormData>(
+    field: K,
+    value: ListingFormData[K],
+  ) => {
     const patch: Partial<QuickCard> = { form: { ...form, [field]: value } };
     if ((REMEMBERED_FIELDS as string[]).includes(field)) {
       patch.guessed = card.guessed.filter((g) => g !== field);
@@ -401,13 +713,17 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
   const problem = cardProblem(card);
   const media = cardMedia(card);
 
-  if (card.status === 'published') {
+  if (card.status === "published") {
     return (
       <div className="clay-card p-4 flex items-center gap-3">
-        <span className="w-8 h-8 rounded-full bg-status-success flex items-center justify-center"><Tick02Icon className="w-4 h-4 text-white" /></span>
+        <span className="w-8 h-8 rounded-full bg-status-success flex items-center justify-center">
+          <Tick02Icon className="w-4 h-4 text-white" />
+        </span>
         <div className="text-sm">
           <p className="font-semibold text-text-primary">{form.title}</p>
-          <p className="text-text-secondary">Published. Waiting for admin approval.</p>
+          <p className="text-text-secondary">
+            Published. Waiting for admin approval.
+          </p>
         </div>
       </div>
     );
@@ -416,10 +732,23 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
   return (
     // min-w-0: a fieldset otherwise refuses to shrink below its content, so the scrolling photo
     // strip stretched the whole card wider than a phone screen.
-    <fieldset disabled={locked} className="clay-card p-4 sm:p-5 space-y-4 min-w-0 w-full">
+    <fieldset
+      disabled={locked}
+      className="clay-card p-4 sm:p-5 space-y-4 min-w-0 w-full"
+    >
       <div className="flex items-start gap-3">
-        <input value={form.title} onChange={(e) => setField('title', e.target.value)} aria-label="Title" className="clay-input flex-1 font-semibold" />
-        <button type="button" onClick={onRemove} aria-label="Remove this draft" className="p-2 text-text-tertiary hover:text-status-error">
+        <input
+          value={form.title}
+          onChange={(e) => setField("title", e.target.value)}
+          aria-label="Title"
+          className="clay-input flex-1 font-semibold"
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove this draft"
+          className="p-2 text-text-tertiary hover:text-status-error"
+        >
           <Delete02Icon className="w-5 h-5" />
         </button>
       </div>
@@ -430,91 +759,234 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
             key={`${f.name}-${i}`}
             file={f}
             isCover={i === 0}
-            onRemove={() => onChange({ photos: card.photos.filter((_, j) => j !== i) })}
-            onCover={() => onChange({ photos: [f, ...card.photos.filter((_, j) => j !== i)] })}
+            onRemove={() =>
+              onChange({ photos: card.photos.filter((_, j) => j !== i) })
+            }
+            onCover={() =>
+              onChange({
+                photos: [f, ...card.photos.filter((_, j) => j !== i)],
+              })
+            }
           />
         ))}
-        {card.video && <Thumb file={card.video} onRemove={() => onChange({ video: null })} />}
-        {media.length === 0 && <p className="text-xs text-text-tertiary py-6">No photos yet: at least {MIN_PHOTOS} are needed.</p>}
+        {card.video && (
+          <Thumb file={card.video} onRemove={() => onChange({ video: null })} />
+        )}
+        {media.length === 0 && (
+          <p className="text-xs text-text-tertiary py-6">
+            No photos yet: at least {MIN_PHOTOS} are needed.
+          </p>
+        )}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label>
           <span className={labelClass}>Type</span>
-          <select value={form.propertyType} onChange={(e) => setField('propertyType', e.target.value as ListingFormData['propertyType'])} className="clay-input w-full">
-            {propertyTypes.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          <select
+            value={form.propertyType}
+            onChange={(e) =>
+              setField(
+                "propertyType",
+                e.target.value as ListingFormData["propertyType"],
+              )
+            }
+            className="clay-input w-full"
+          >
+            {propertyTypes.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
           </select>
         </label>
-        {form.propertyType === 'shortlet' ? (
+        {form.propertyType === "shortlet" ? (
           <label>
             <span className={labelClass}>Price per night</span>
             <input
               type="number"
-              value={form.shortletRates[0]?.price ?? ''}
-              onChange={(e) => setField('shortletRates', [{ label: 'Per night', durationValue: '1', durationUnit: 'day', price: e.target.value }])}
+              value={form.shortletRates[0]?.price ?? ""}
+              onChange={(e) =>
+                setField("shortletRates", [
+                  {
+                    label: "Per night",
+                    durationValue: "1",
+                    durationUnit: "day",
+                    price: e.target.value,
+                  },
+                ])
+              }
               className="clay-input w-full"
             />
           </label>
         ) : (
           <label>
-            <span className={labelClass}>Rent per year {form.annualRent && <span className="normal-case tracking-normal text-mustard">{naira(form.annualRent)}</span>}</span>
-            <input type="number" value={form.annualRent} onChange={(e) => setField('annualRent', e.target.value)} className="clay-input w-full" placeholder="800000" />
+            <span className={labelClass}>
+              Rent per year{" "}
+              {form.annualRent && (
+                <span className="normal-case tracking-normal text-mustard">
+                  {naira(form.annualRent)}
+                </span>
+              )}
+            </span>
+            <input
+              type="number"
+              value={form.annualRent}
+              onChange={(e) => setField("annualRent", e.target.value)}
+              className="clay-input w-full"
+              placeholder="800000"
+            />
           </label>
         )}
         <label>
           <span className={labelClass}>Area</span>
-          <input value={form.area} onChange={(e) => setField('area', e.target.value)} className="clay-input w-full" placeholder="e.g. Toll Gate" />
+          <input
+            value={form.area}
+            onChange={(e) => setField("area", e.target.value)}
+            className="clay-input w-full"
+            placeholder="e.g. Toll Gate"
+          />
         </label>
         <label>
           <span className={labelClass}>Near (landmark)</span>
-          <input value={form.landmark} onChange={(e) => setField('landmark', e.target.value)} className="clay-input w-full" placeholder="e.g. Lead City University" />
+          <input
+            value={form.landmark}
+            onChange={(e) => setField("landmark", e.target.value)}
+            className="clay-input w-full"
+            placeholder="e.g. Lead City University"
+          />
         </label>
         <label>
           <span className={labelClass}>Address</span>
-          <input value={form.address} onChange={(e) => setField('address', e.target.value)} className="clay-input w-full" />
+          <input
+            value={form.address}
+            onChange={(e) => setField("address", e.target.value)}
+            className="clay-input w-full"
+          />
         </label>
         <label>
-          <FieldLabel guessed={g('city')}>City</FieldLabel>
-          <input value={form.city} onChange={(e) => setField('city', e.target.value)} className="clay-input w-full" />
+          <FieldLabel guessed={g("city")}>City</FieldLabel>
+          <input
+            value={form.city}
+            onChange={(e) => setField("city", e.target.value)}
+            className="clay-input w-full"
+          />
         </label>
       </div>
 
       <div className="space-y-3">
-        <div><FieldLabel guessed={g('distanceFromSchool')}>Distance from Landmark</FieldLabel><Chips options={distanceOptions} value={form.distanceFromSchool} onChange={(v) => setField('distanceFromSchool', v)} guessed={g('distanceFromSchool')} /></div>
-        <div><FieldLabel guessed={g('furnishing')}>Furnishing</FieldLabel><Chips options={furnishingOptions} value={form.furnishing} onChange={(v) => setField('furnishing', v)} guessed={g('furnishing')} /></div>
-        <div><FieldLabel guessed={g('power')}>Power</FieldLabel><Chips options={powerOptions} value={form.power} onChange={(v) => setField('power', v)} guessed={g('power')} /></div>
-        <div><FieldLabel guessed={g('water')}>Water</FieldLabel><Chips options={waterOptions} value={form.water} onChange={(v) => setField('water', v)} guessed={g('water')} /></div>
-        <div><FieldLabel guessed={g('gender')}>Who can rent</FieldLabel><Chips options={genderOptions} value={form.gender} onChange={(v) => setField('gender', v)} guessed={g('gender')} /></div>
+        <div>
+          <FieldLabel guessed={g("distanceFromSchool")}>
+            Distance from Landmark
+          </FieldLabel>
+          <Chips
+            options={distanceOptions}
+            value={form.distanceFromSchool}
+            onChange={(v) => setField("distanceFromSchool", v)}
+            guessed={g("distanceFromSchool")}
+          />
+        </div>
+        <div>
+          <FieldLabel guessed={g("furnishing")}>Furnishing</FieldLabel>
+          <Chips
+            options={furnishingOptions}
+            value={form.furnishing}
+            onChange={(v) => setField("furnishing", v)}
+            guessed={g("furnishing")}
+          />
+        </div>
+        <div>
+          <FieldLabel guessed={g("power")}>Power</FieldLabel>
+          <Chips
+            options={powerOptions}
+            value={form.power}
+            onChange={(v) => setField("power", v)}
+            guessed={g("power")}
+          />
+        </div>
+        <div>
+          <FieldLabel guessed={g("water")}>Water</FieldLabel>
+          <Chips
+            options={waterOptions}
+            value={form.water}
+            onChange={(v) => setField("water", v)}
+            guessed={g("water")}
+          />
+        </div>
+        <div>
+          <FieldLabel guessed={g("gender")}>Who can rent</FieldLabel>
+          <Chips
+            options={genderOptions}
+            value={form.gender}
+            onChange={(v) => setField("gender", v)}
+            guessed={g("gender")}
+          />
+        </div>
       </div>
 
       <details>
-        <summary className="cursor-pointer text-xs font-semibold text-text-secondary">Description, fees and amenities</summary>
+        <summary className="cursor-pointer text-xs font-semibold text-text-secondary">
+          Description, fees and amenities
+        </summary>
         <div className="mt-3 space-y-3">
           <label className="block">
             <span className={labelClass}>Description</span>
-            <textarea value={form.description} onChange={(e) => setField('description', e.target.value)} rows={5} className="clay-input w-full resize-y text-sm" />
+            <textarea
+              value={form.description}
+              onChange={(e) => setField("description", e.target.value)}
+              rows={5}
+              className="clay-input w-full resize-y text-sm"
+            />
           </label>
-          {form.propertyType !== 'shortlet' && (
+          {form.propertyType !== "shortlet" && (
             <div className="grid grid-cols-2 gap-3">
               <label>
                 <span className={labelClass}>Caution fee</span>
-                <input type="number" value={form.cautionFee} onChange={(e) => setField('cautionFee', e.target.value)} className="clay-input w-full" />
+                <input
+                  type="number"
+                  value={form.cautionFee}
+                  onChange={(e) => setField("cautionFee", e.target.value)}
+                  className="clay-input w-full"
+                />
               </label>
               <label>
                 <span className={labelClass}>Agency fee</span>
-                <input type="number" value={form.agencyFee} onChange={(e) => setField('agencyFee', e.target.value)} className="clay-input w-full" />
+                <input
+                  type="number"
+                  value={form.agencyFee}
+                  onChange={(e) => setField("agencyFee", e.target.value)}
+                  className="clay-input w-full"
+                />
               </label>
               <label>
                 <span className={labelClass}>Tenancy agreement</span>
-                <input type="number" value={form.tenancyAgreementFee} onChange={(e) => setField('tenancyAgreementFee', e.target.value)} className="clay-input w-full" />
+                <input
+                  type="number"
+                  value={form.tenancyAgreementFee}
+                  onChange={(e) =>
+                    setField("tenancyAgreementFee", e.target.value)
+                  }
+                  className="clay-input w-full"
+                />
               </label>
               <label>
                 <span className={labelClass}>Service charge (yearly)</span>
-                <input type="number" value={form.serviceCharge} onChange={(e) => setField('serviceCharge', e.target.value)} className="clay-input w-full" />
+                <input
+                  type="number"
+                  value={form.serviceCharge}
+                  onChange={(e) => setField("serviceCharge", e.target.value)}
+                  className="clay-input w-full"
+                />
               </label>
               <label>
                 <span className={labelClass}>Inspection fee (max ₦10,000)</span>
-                <input type="number" min={0} max={10000} value={form.inspectionFee} onChange={(e) => setField('inspectionFee', e.target.value)} className="clay-input w-full" />
+                <input
+                  type="number"
+                  min={0}
+                  max={10000}
+                  value={form.inspectionFee}
+                  onChange={(e) => setField("inspectionFee", e.target.value)}
+                  className="clay-input w-full"
+                />
               </label>
             </div>
           )}
@@ -527,9 +999,21 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
                   <button
                     key={o.value}
                     type="button"
-                    onClick={() => setField('amenities', on ? form.amenities.filter((a) => a !== o.value) : [...form.amenities, o.value])}
+                    onClick={() =>
+                      setField(
+                        "amenities",
+                        on
+                          ? form.amenities.filter((a) => a !== o.value)
+                          : [...form.amenities, o.value],
+                      )
+                    }
                     aria-pressed={on}
-                    className={clsx('px-3 py-2 sm:py-1.5 rounded-full border text-xs font-medium', on ? 'border-mustard bg-mustard-pale text-mustard' : 'border-clay-border text-text-secondary hover:border-mustard')}
+                    className={clsx(
+                      "px-3 py-2 sm:py-1.5 rounded-full border text-xs font-medium",
+                      on
+                        ? "border-mustard bg-mustard-pale text-mustard"
+                        : "border-clay-border text-text-secondary hover:border-mustard",
+                    )}
                   >
                     {o.label}
                   </button>
@@ -542,14 +1026,27 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
 
       {card.warnings.length > 0 && (
         <ul className="text-xs text-mustard space-y-1">
-          {card.warnings.map((w) => <li key={w}>• {w}</li>)}
+          {card.warnings.map((w) => (
+            <li key={w}>• {w}</li>
+          ))}
         </ul>
       )}
-      {card.status === 'failed' && card.error && <ErrorLine message={card.error} />}
-      {card.status === 'publishing' && (
-        <p className="flex items-center gap-2 text-sm text-text-secondary"><Loading02Icon className="w-4 h-4 animate-spin text-mustard" /> {card.uploadStage === 'video' ? 'Uploading video…' : 'Uploading photos…'}</p>
+      {card.status === "failed" && card.error && (
+        <ErrorLine message={card.error} />
       )}
-      {card.status !== 'publishing' && problem && <p className="text-xs text-status-error">Before publishing: {problem}</p>}
+      {card.status === "publishing" && (
+        <p className="flex items-center gap-2 text-sm text-text-secondary">
+          <Loading02Icon className="w-4 h-4 animate-spin text-mustard" />{" "}
+          {card.uploadStage === "video"
+            ? "Uploading video…"
+            : "Uploading photos…"}
+        </p>
+      )}
+      {card.status !== "publishing" && problem && (
+        <p className="text-xs text-status-error">
+          Before publishing: {problem}
+        </p>
+      )}
     </fieldset>
   );
 }
@@ -559,9 +1056,17 @@ function DraftCard({ card, onChange, onRemember, onRemove }: {
 // ---------------------------------------------------------------------------------------
 
 function useVerified(role: string, cached: boolean) {
-  const [verified, setVerified] = useState<boolean | null>(cached ? true : null);
+  const [verified, setVerified] = useState<boolean | null>(
+    cached ? true : null,
+  );
   useEffect(() => {
-    void userApi.getKycStatus().then((res) => setVerified(res.success && res.data ? isVerifiedToList(res.data, role) : cached));
+    void userApi
+      .getKycStatus()
+      .then((res) =>
+        setVerified(
+          res.success && res.data ? isVerifiedToList(res.data, role) : cached,
+        ),
+      );
   }, []);
   return verified;
 }
@@ -570,12 +1075,17 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
   const navigate = useNavigate();
   const { user } = useAuth();
   const userRole = user?.role || role;
-  const verified = useVerified(userRole, user?.verificationStatus === 'verified');
+  const verified = useVerified(
+    userRole,
+    user?.verificationStatus === "verified",
+  );
   const api = useMemo(() => ownerApi(role), [role]);
   const dKey = defaultsKey(role, user?.id);
   const cKey = cardsKey(role, user?.id);
 
-  const [defaults, setDefaults] = useState<QuickDefaults>(() => loadDefaults(dKey));
+  const [defaults, setDefaults] = useState<QuickDefaults>(() =>
+    loadDefaults(dKey),
+  );
   const [cards, setCards] = useState<QuickCard[]>([]);
   const [restored, setRestored] = useState(false);
   const [publishing, setPublishing] = useState(false);
@@ -587,28 +1097,55 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
   useEffect(() => {
     let cancelled = false;
     const stored = loadStoredCards(cKey);
-    void Promise.all(stored.map((c) => loadDraftPhotos(cardPhotosKey(role, user?.id, c.id)))).then((files) => {
+    void Promise.all(
+      stored.map((c) => loadDraftPhotos(cardPhotosKey(role, user?.id, c.id))),
+    ).then((files) => {
       if (cancelled) return;
-      const back = stored.map(({ hasVideo: _hasVideo, ...c }, i) => ({ ...c, ...splitMedia(files[i]) }));
-      setCards((prev) => [...back.filter((b) => !prev.some((p) => p.id === b.id)), ...prev]);
+      const back = stored.map(({ hasVideo: _hasVideo, ...c }, i) => ({
+        ...c,
+        ...splitMedia(files[i]),
+      }));
+      setCards((prev) => [
+        ...back.filter((b) => !prev.some((p) => p.id === b.id)),
+        ...prev,
+      ]);
       setRestored(true);
     });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [cKey]);
 
   useEffect(() => {
     if (restored) saveStoredCards(cKey, cards);
   }, [cKey, cards, restored]);
 
-  const storeFiles = (card: QuickCard) => void saveDraftPhotos(cardPhotosKey(role, user?.id, card.id), card.status === 'published' ? [] : cardMedia(card));
+  const storeFiles = (card: QuickCard) =>
+    void saveDraftPhotos(
+      cardPhotosKey(role, user?.id, card.id),
+      card.status === "published" ? [] : cardMedia(card),
+    );
 
   const updateCard = (id: string, patch: Partial<QuickCard>) =>
-    setCards((prev) => prev.map((c) => {
-      if (c.id !== id) return c;
-      const next = { ...c, ...patch, ...(c.status === 'failed' && !patch.status ? { status: 'draft' as const, error: undefined } : {}) };
-      if ('photos' in patch || 'video' in patch || patch.status === 'published') storeFiles(next);
-      return next;
-    }));
+    setCards((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
+        const next = {
+          ...c,
+          ...patch,
+          ...(c.status === "failed" && !patch.status
+            ? { status: "draft" as const, error: undefined }
+            : {}),
+        };
+        if (
+          "photos" in patch ||
+          "video" in patch ||
+          patch.status === "published"
+        )
+          storeFiles(next);
+        return next;
+      }),
+    );
 
   const addCards = (created: QuickCard[]) => {
     created.forEach(storeFiles);
@@ -628,26 +1165,43 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
     });
   };
 
-  const drafts = cards.filter((c) => c.status === 'draft' || c.status === 'failed');
+  const drafts = cards.filter(
+    (c) => c.status === "draft" || c.status === "failed",
+  );
   const ready = drafts.filter((c) => !cardProblem(c));
-  const published = cards.filter((c) => c.status === 'published');
+  const published = cards.filter((c) => c.status === "published");
 
   const publishAll = async () => {
     setPublishing(true);
     try {
-      for (const card of cardsRef.current.filter((c) => (c.status === 'draft' || c.status === 'failed') && !cardProblem(c))) {
+      for (const card of cardsRef.current.filter(
+        (c) =>
+          (c.status === "draft" || c.status === "failed") && !cardProblem(c),
+      )) {
         const media = cardMedia(card);
-        const imageFiles = media.filter((f) => !f.type.startsWith('video/'));
-        const videoFiles = media.filter((f) => f.type.startsWith('video/'));
-        const uploadStage = !card.photosUploaded && imageFiles.length > 0
-          ? 'photos'
-          : !card.videoUploaded && videoFiles.length > 0 ? 'video' : undefined;
-        updateCard(card.id, { status: 'publishing', error: undefined, uploadStage });
+        const imageFiles = media.filter((f) => !f.type.startsWith("video/"));
+        const videoFiles = media.filter((f) => f.type.startsWith("video/"));
+        const uploadStage =
+          !card.photosUploaded && imageFiles.length > 0
+            ? "photos"
+            : !card.videoUploaded && videoFiles.length > 0
+              ? "video"
+              : undefined;
+        updateCard(card.id, {
+          status: "publishing",
+          error: undefined,
+          uploadStage,
+        });
         let listingId = card.listingId;
         if (!listingId) {
-          const created = await api.createListing(buildListingPayload(card.form));
+          const created = await api.createListing(
+            buildListingPayload(card.form),
+          );
           if (!created.success) {
-            updateCard(card.id, { status: 'failed', error: describeSubmitError(created.error) });
+            updateCard(card.id, {
+              status: "failed",
+              error: describeSubmitError(created.error),
+            });
             continue;
           }
           listingId = created.data._id;
@@ -655,32 +1209,43 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
         }
 
         if (imageFiles.length > 0 && !card.photosUploaded) {
-          const optimizedImages = await Promise.all(imageFiles.map((image) => {
-            let compressed = compressedImagesRef.current.get(image);
-            if (!compressed) {
-              compressed = compressImage(image);
-              compressedImagesRef.current.set(image, compressed);
-            }
-            return compressed;
-          }));
-          const uploadedImages = await api.uploadListingImages(listingId, optimizedImages);
+          const optimizedImages = await Promise.all(
+            imageFiles.map((image) => {
+              let compressed = compressedImagesRef.current.get(image);
+              if (!compressed) {
+                compressed = compressImage(image);
+                compressedImagesRef.current.set(image, compressed);
+              }
+              return compressed;
+            }),
+          );
+          const uploadedImages = await api.uploadListingImages(
+            listingId,
+            optimizedImages,
+          );
           if (!uploadedImages.success) {
             updateCard(card.id, {
-              status: 'failed',
+              status: "failed",
               listingId,
               uploadStage: undefined,
               error: `The listing was created, but photos failed to upload (${uploadedImages.error.message}). Press Publish again to retry.`,
             });
             continue;
           }
-          updateCard(card.id, { photosUploaded: true, uploadStage: videoFiles.length > 0 ? 'video' : undefined });
+          updateCard(card.id, {
+            photosUploaded: true,
+            uploadStage: videoFiles.length > 0 ? "video" : undefined,
+          });
         }
 
         if (videoFiles.length > 0 && !card.videoUploaded) {
-          const uploadedVideos = await api.uploadListingImages(listingId, videoFiles);
+          const uploadedVideos = await api.uploadListingImages(
+            listingId,
+            videoFiles,
+          );
           if (!uploadedVideos.success) {
             updateCard(card.id, {
-              status: 'failed',
+              status: "failed",
               listingId,
               uploadStage: undefined,
               error: `Photos uploaded, but video failed to upload (${uploadedVideos.error.message}). Press Publish again to retry.`,
@@ -690,7 +1255,11 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
           updateCard(card.id, { videoUploaded: true, uploadStage: undefined });
         }
 
-        updateCard(card.id, { status: 'published', listingId, uploadStage: undefined });
+        updateCard(card.id, {
+          status: "published",
+          listingId,
+          uploadStage: undefined,
+        });
       }
     } finally {
       setPublishing(false);
@@ -700,7 +1269,9 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
   if (verified === null) {
     return (
       <AppLayout role={role} title="Quick Add">
-        <div className="flex items-center justify-center h-64"><Loading02Icon className="w-8 h-8 animate-spin text-mustard" /></div>
+        <div className="flex items-center justify-center h-64">
+          <Loading02Icon className="w-8 h-8 animate-spin text-mustard" />
+        </div>
       </AppLayout>
     );
   }
@@ -709,23 +1280,38 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
     return (
       <AppLayout role={role} title="Quick Add">
         <div className="max-w-lg mx-auto py-12 px-4 clay-card p-6 text-center">
-          <h2 className="text-xl font-bold text-text-primary mb-2">Verify your identity first</h2>
-          <p className="text-text-secondary mb-4">Listings can only be published once your identity is verified.</p>
-          <Link to={`/${role}/create-listing`} className="text-mustard font-semibold hover:underline">Verify now</Link>
+          <h2 className="text-xl font-bold text-text-primary mb-2">
+            Verify your identity first
+          </h2>
+          <p className="text-text-secondary mb-4">
+            Listings can only be published once your identity is verified.
+          </p>
+          <Link
+            to={`/${role}/create-listing`}
+            className="text-mustard font-semibold hover:underline"
+          >
+            Verify now
+          </Link>
         </div>
       </AppLayout>
     );
   }
 
   return (
-    <AppLayout role={role} title="Quick Add" subtitle="Paste the agent's message, drop the video, publish">
+    <AppLayout
+      role={role}
+      title="Quick Add"
+      subtitle="Paste the agent's message, drop the video, publish"
+    >
       {/* Bottom space so the pinned publish bar and AI Support button never hide the last card. */}
       <div className="max-w-3xl mx-auto pb-48 space-y-5">
         <Composer defaults={defaults} onCreate={addCards} />
 
         {drafts.length > 0 && (
           <h2 className="text-sm font-semibold text-text-secondary uppercase tracking-wider">
-            Drafts ({drafts.length}){ready.length < drafts.length && ` · ${drafts.length - ready.length} need a look`}
+            Drafts ({drafts.length})
+            {ready.length < drafts.length &&
+              ` · ${drafts.length - ready.length} need a look`}
           </h2>
         )}
         {cards.map((card) => (
@@ -745,16 +1331,37 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
           <div className="fixed z-30 bottom-24 inset-x-4 md:inset-x-auto md:right-6 md:w-[26rem] clay-card bg-clay-surface/95 backdrop-blur px-4 py-3 shadow-clay-lg">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
               <p className="text-sm text-text-secondary">
-                {published.length > 0 && <span className="text-status-success font-semibold">{published.length} published. </span>}
-                {drafts.length > 0 ? `${ready.length} of ${drafts.length} ready` : 'All done.'}
+                {published.length > 0 && (
+                  <span className="text-status-success font-semibold">
+                    {published.length} published.{" "}
+                  </span>
+                )}
+                {drafts.length > 0
+                  ? `${ready.length} of ${drafts.length} ready`
+                  : "All done."}
               </p>
               <div className="flex gap-2 [&>*]:flex-1 sm:[&>*]:flex-none">
                 {published.length > 0 && (
-                  <Button type="button" variant="secondary" size="sm" onClick={() => navigate(`/${role}/listings`)}>My Listings</Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => navigate(`/${role}/listings`)}
+                  >
+                    My Listings
+                  </Button>
                 )}
                 {drafts.length > 0 && (
-                  <Button type="button" variant="primary" size="sm" loading={publishing} disabled={ready.length === 0} onClick={() => void publishAll()}>
-                    Publish {ready.length} listing{ready.length === 1 ? '' : 's'}
+                  <Button
+                    type="button"
+                    variant="primary"
+                    size="sm"
+                    loading={publishing}
+                    disabled={ready.length === 0}
+                    onClick={() => void publishAll()}
+                  >
+                    Publish {ready.length} listing
+                    {ready.length === 1 ? "" : "s"}
                   </Button>
                 )}
               </div>
@@ -762,7 +1369,6 @@ export function OwnerQuickAddPage({ role }: { role: OwnerRole }) {
           </div>
         )}
       </div>
-
     </AppLayout>
   );
 }
